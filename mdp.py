@@ -1,5 +1,6 @@
 import mdptoolbox
 import numpy as np
+import utils
 
 
 class State:
@@ -67,15 +68,16 @@ class SliceMDP:
     Q[2] -> transition matrix related action 0 (deallocate 1)
     """
     def _calculate_transition_matrix(self):
-        states = self._generate_states()
+        self._states = self._generate_states()
 
         if self._verbose:
-            for i in range(len(states)):
-                print(f"S{i}: {states[i]}")
+            for i in range(len(self._states)):
+                print(f"S{i}: {self._states[i]}")
 
-        self._transition_matrix = np.zeros((3, len(states), len(states)))
+        self._transition_matrix = np.zeros((3, len(self._states), len(self._states)))
 
         # action 0 (do nothing)
+        # with this action, N is constant
         if self._verbose:
             print("Calculating transition matrix for action 0 (do nothing)")
 
@@ -84,51 +86,53 @@ class SliceMDP:
 
                 # _______________
 
-                if i <= j < self._queue_size:  # m' >= m; m' < max_jobs
-                    temp = 0
-                    for p_t in range(len(self._departures_histogram)):
-                        try:
-                            temp += self._arrivals_histogram[j - i + p_t] * self._departures_histogram[p_t]
-                        except IndexError:
-                            pass
+                if self._states[i].n == self._states[j].n:
 
-                    self._transition_matrix[0][i][j] = temp
-
-                    if self._verbose:
-                        print(f"1) Q({states[i]}->{states[j]}) = {self._transition_matrix[0][i][j]}")
-
-                elif j >= i and j == self._queue_size:  # m' >= m; m' = max_jobs
-                    temp = 0
-                    temp2 = 0
-                    for p_t in range(len(self._departures_histogram)):
-                        try:
-                            temp += self._arrivals_histogram[j - i + p_t] * self._departures_histogram[p_t]
-                        except IndexError:
-                            pass
-
-                        for x in range(p_t + j - i + 1, self._queue_size + 1):  # ci vuole un +1 in queue_size(?)
+                    if i <= j < self._queue_size:  # m' >= m; m' < max_jobs
+                        temp = 0
+                        for p_t in range(len(self._departures_histogram)):
                             try:
-                                temp2 += self._arrivals_histogram[x] * self._departures_histogram[p_t]
+                                temp += self._arrivals_histogram[j - i + p_t] * self._departures_histogram[p_t]
                             except IndexError:
                                 pass
 
-                    self._transition_matrix[0][i][j] = temp + temp2
+                        self._transition_matrix[0][i][j] = temp
 
-                    if self._verbose:
-                        print(f"2) Q({states[i]}->{states[j]}) = {self._transition_matrix[0][i][j]}")
+                        if self._verbose:
+                            print(f"1) Q({self._states[i]}->{self._states[j]}) = {self._transition_matrix[0][i][j]}")
 
-                elif j < i:
-                    temp = 0
-                    for p_t in range(1, len(self._departures_histogram)):
-                        try:
-                            temp += self._arrivals_histogram[j - i + p_t] * self._departures_histogram[p_t]
-                        except IndexError:
-                            pass
+                    elif j >= i and j == self._queue_size:  # m' >= m; m' = max_jobs
+                        temp = 0
+                        temp2 = 0
+                        for p_t in range(len(self._departures_histogram)):
+                            try:
+                                temp += self._arrivals_histogram[j - i + p_t] * self._departures_histogram[p_t]
+                            except IndexError:
+                                pass
 
-                    self._transition_matrix[0][i][j] = temp
+                            for x in range(p_t + j - i + 1, self._queue_size + 1):  # ci vuole un +1 in queue_size(?)
+                                try:
+                                    temp2 += self._arrivals_histogram[x] * self._departures_histogram[p_t]
+                                except IndexError:
+                                    pass
 
-                    if self._verbose:
-                        print(f"3) Q({states[i]}->{states[j]}) = {self._transition_matrix[0][i][j]}")
+                        self._transition_matrix[0][i][j] = temp + temp2
+
+                        if self._verbose:
+                            print(f"2) Q({self._states[i]}->{self._states[j]}) = {self._transition_matrix[0][i][j]}")
+
+                    elif j < i:
+                        temp = 0
+                        for p_t in range(1, len(self._departures_histogram)):
+                            try:
+                                temp += self._arrivals_histogram[j - i + p_t] * self._departures_histogram[p_t]
+                            except IndexError:
+                                pass
+
+                        self._transition_matrix[0][i][j] = temp
+
+                        if self._verbose:
+                            print(f"3) Q({self._states[i]}->{self._states[j]}) = {self._transition_matrix[0][i][j]}")
 
 
 
@@ -167,7 +171,7 @@ if __name__ == '__main__':
 
     slice_mdp = SliceMDP(arrivals, departures, 2, 1)
 
-    print(slice_mdp._transition_matrix)
+    utils.export_markov_chain("toy", "azione0", slice_mdp._states, slice_mdp._transition_matrix[0])
 
 
 
