@@ -24,6 +24,11 @@ class State:
         n = self.n - other.n
         return State(k, n)
 
+    def __eq__(self, other):
+        if isinstance(other, State):
+            return self._k == other._k and self._n == other._n
+        return False
+
 
 class SliceMDP:
     def __init__(self, arrivals_histogram, departures_histogram, queue_size, max_server_num,
@@ -63,15 +68,6 @@ class SliceMDP:
                 states.append(State(j, i))
         return states
 
-    def _calculate_alloc_dealloc_probability(self, state):
-        p_alloc = 1.
-        p_dealloc = 1.
-        if state.n == 0:
-            p_dealloc = 0.
-        elif state.n == self._max_server_num:
-            p_alloc = 0.
-        return p_alloc, p_dealloc
-
     def _calculate_h_p(self, state):
         # le probabilità di departure hanno senso solo per server_num > 0
         # in caso di server_num > 0, H_p per il sistema = H_p convuluto H_p nel caso di due server
@@ -84,6 +80,7 @@ class SliceMDP:
 
     # old calculate_transition_prob https://0bin.net/paste/myC+f0f5d6CoKF79#4nJw-dt4IhQxddw6D4EjbiG0aWeUhzdYniWC3i0DWjm
     def _calculate_transition_probability(self, from_state, to_state, action_id):
+        h_p = self._calculate_h_p(from_state)
         transition_probability = 0
         diff = to_state - from_state
 
@@ -99,9 +96,9 @@ class SliceMDP:
         else:
             if diff.k == 0 and to_state.k == 0:
                 tmp = 0
-                for i in range(1, len(self._departures_histogram)):
+                for i in range(1, len(h_p)):
                     try:
-                        tmp += self._arrivals_histogram[i] * self._departures_histogram[i]
+                        tmp += self._arrivals_histogram[i] * h_p[i]
                     except IndexError:
                         pass
                 transition_probability = self._arrivals_histogram[0] + tmp
@@ -112,56 +109,49 @@ class SliceMDP:
                     tmp2 = 0
                     for i in range(diff.k, self._queue_size):
                         try:
-                            tmp += self._arrivals_histogram[i] * self._departures_histogram[i - diff.k]
+                            tmp += self._arrivals_histogram[i] * h_p[i - diff.k]
                         except IndexError:
                             pass
                     for i in range(len(self._arrivals_histogram) - self._queue_size):
                         try:
-                            tmp2 += self._arrivals_histogram[self._queue_size + i] * self._departures_histogram[self._queue_size - to_state.k]
+                            tmp2 += self._arrivals_histogram[self._queue_size + i] * h_p[self._queue_size - to_state.k]
                         except IndexError:
                             pass
                     transition_probability = tmp + tmp2
                 elif to_state.k == self._queue_size:
                     for i in range(diff.k, len(self._arrivals_histogram)):
                         try:
-                            transition_probability += self._arrivals_histogram[i] * self._departures_histogram[0]
+                            transition_probability += self._arrivals_histogram[i] * h_p[0]
                         except IndexError:
                             pass
 
             elif diff.k < 0:
-                for i in range(-diff.k, len(self._departures_histogram)):
+                for i in range(-diff.k, len(h_p)):
                     try:
-                        transition_probability += self._arrivals_histogram[diff.k + i] * self._departures_histogram[i]
+                        transition_probability += self._arrivals_histogram[diff.k + i] * h_p[i]
                     except IndexError:
                         pass
-                if self._queue_size <= len(self._departures_histogram) - 1 or from_state.k == self._queue_size and -diff.k <= len(self._departures_histogram) - 1:
-                    for i in range(len(self._departures_histogram) - 1, len(self._arrivals_histogram)):
+                if self._queue_size <= len(h_p) - 1 or from_state.k == self._queue_size and -diff.k <= len(h_p) - 1:
+                    for i in range(len(h_p) - 1, len(self._arrivals_histogram)):
                         try:
-                            transition_probability += self._arrivals_histogram[i] * self._departures_histogram[len(self._departures_histogram) - 1]
+                            transition_probability += self._arrivals_histogram[i] * h_p[len(h_p) - 1]
                         except IndexError:
                             pass
 
-        p_alloc, p_dealloc = self._calculate_alloc_dealloc_probability(from_state)
-
         # adesso valuto le eventuali transizioni "verticali"
         if action_id == 0:  # do nothing
-            if to_state.n != from_state.n:
+            if diff.n != 0:
                 return 0.
 
         elif action_id == 1:  # allocate 1 server
-            if to_state.n != from_state.n + 1:
-                return 0.
-            else:
-                transition_probability *= p_alloc
+            if diff.n != 1 and to_state.n != self._max_server_num:
+                return 0.0
 
         elif action_id == 2:  # deallocate 1 server
-            if to_state.n != from_state.n - 1:
+            if diff.n != -1 and to_state.n != 0:
                 return 0.
-            else:
-                transition_probability *= p_dealloc
-
-
-
+            # else:
+            #     transition_probability *= p_dealloc
 
         return transition_probability
 
@@ -212,12 +202,14 @@ if __name__ == '__main__':
 
     # @findme : generare grafico partenze e arrivi
 
-    slice_mdp = SliceMDP(arrivals, departures, 2, 2)
+    slice_mdp = SliceMDP(arrivals, departures, 2, 1)
 
     #print(slice_mdp._transition_matrix[0])
     utils.export_markov_chain("toy", "a0-do-nothing", slice_mdp._states, slice_mdp._transition_matrix[0], view=True)
     utils.export_markov_chain("toy", "a1-alloc1", slice_mdp._states, slice_mdp._transition_matrix[1], view=True)
-    #utils.export_markov_chain("toy", "a2-dealloc1", slice_mdp._states, slice_mdp._transition_matrix[2], view=True)
+    utils.export_markov_chain("toy", "a2-dealloc1", slice_mdp._states, slice_mdp._transition_matrix[2], view=True)
+
+    print(slice_mdp._transition_matrix)
 
 
 
