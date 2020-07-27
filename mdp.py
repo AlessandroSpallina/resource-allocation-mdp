@@ -48,7 +48,15 @@ class SliceMDP:
         self._c_job = c_job
         self._c_server = c_server
         self._alpha = alpha
-        self._current_reward = self._calculate_reward()
+        self._reward_vector = self._generate_reward_vector()
+
+    @property
+    def transition_matrix(self):
+        return self._transition_matrix
+
+    @property
+    def reward_vector(self):
+        return self._reward_vector
 
     """
     es. b=2; s=1
@@ -150,8 +158,6 @@ class SliceMDP:
         elif action_id == 2:  # deallocate 1 server
             if diff.n != -1 and to_state.n != 0:
                 return 0.
-            # else:
-            #     transition_probability *= p_dealloc
 
         return transition_probability
 
@@ -168,35 +174,30 @@ class SliceMDP:
             for i in range(len(self._states)):
                 print(f"S{i}: {self._states[i]}")
 
-        self._transition_matrix = np.zeros((3, len(self._states), len(self._states)))
+        transition_matrix = np.zeros((3, len(self._states), len(self._states)))
 
         # lets iterate the trans matrix and fill with correct probabilities
-        for a in range(len(self._transition_matrix)):
+        for a in range(len(transition_matrix)):
             for i in range(len(self._states)):
                 for j in range(len(self._states)):
-                    self._transition_matrix[a][i][j] = self._calculate_transition_probability(self._states[i], self._states[j], a)
+                    transition_matrix[a][i][j] = self._calculate_transition_probability(self._states[i], self._states[j], a)
+        return transition_matrix
 
-        return self._transition_matrix
+    def _generate_reward_vector(self):
+        transition_matrix = np.zeros((3, len(self._states), len(self._states)))
+        return np.array([[0,-1,-2,-1,-2,-3],[-1,0,1,0,0,0],[0,0,0,1,0,-1]])
 
-    def _calculate_reward(self):
-        pass
-
-    def allocate_server(self, count=1):
-        pass
-
-    def deallocate_server(self, count=1):
-        pass
-
-    def run_value_iteration(self):
-        pass
+    def run_value_iteration(self, discount):
+        vi = mdptoolbox.mdp.ValueIteration(self._transition_matrix, self._reward_vector, discount)
+        vi.run()
+        print(f"Expected values: {vi.K}")
+        return vi.policy
 
 
 if __name__ == '__main__':
-    # generate histogram of arrivals
     # this means: Pr(0 job incoming in this timeslot) = 0.5; Pr(1 job incoming in this timeslot) = 0.5
     arrivals = [0.5, 0.5]
 
-    # generate histogram of arrivals
     # this means: Pr(0 job processed in this timeslot) = 0.6; Pr(1 job processed in this timeslot) = 0.4
     departures = [0.6, 0.4]
 
@@ -204,13 +205,11 @@ if __name__ == '__main__':
 
     slice_mdp = SliceMDP(arrivals, departures, 2, 1)
 
-    #print(slice_mdp._transition_matrix[0])
     utils.export_markov_chain("toy", "a0-do-nothing", slice_mdp._states, slice_mdp._transition_matrix[0], view=True)
     utils.export_markov_chain("toy", "a1-alloc1", slice_mdp._states, slice_mdp._transition_matrix[1], view=True)
     utils.export_markov_chain("toy", "a2-dealloc1", slice_mdp._states, slice_mdp._transition_matrix[2], view=True)
 
-    print(slice_mdp._transition_matrix)
-
+    print(slice_mdp.run_value_iteration(0.8))
 
 
 
