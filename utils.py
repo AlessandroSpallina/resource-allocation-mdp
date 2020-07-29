@@ -9,7 +9,7 @@ def print_blue(message):
 
 
 # Export to file a graph representing the markov chain related to an action
-def export_markov_chain(projectname, filename, states, transition_matrix, view=False):
+def export_markov_chain(projectname, filename, states, transition_matrix, reward_matrix=[], view=False):
     dot = Digraph(filename=filename + ".gv", format="png")
 
     for i in range(len(states)):
@@ -18,6 +18,9 @@ def export_markov_chain(projectname, filename, states, transition_matrix, view=F
     for x in range(len(transition_matrix)):
         for y in range(len(transition_matrix)):
             if transition_matrix[x][y] > 0:
-                dot.edge(str(x), str(y), label=str(transition_matrix[x][y]))
+                if len(reward_matrix) > 0:
+                    dot.edge(str(x), str(y), label=f"P: {transition_matrix[x][y]} [R: {reward_matrix[x][y]}]")
+                else:
+                    dot.edge(str(x), str(y), label=f"P: {transition_matrix[x][y]}")
 
     dot.render(STORAGE_PATH + projectname + "/" + filename, view=view)

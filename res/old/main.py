@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-import queue_simulator as q
+import slice_simulator as q
 import utils
 
 
