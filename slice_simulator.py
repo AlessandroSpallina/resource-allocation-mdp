@@ -3,8 +3,9 @@
 # * consider using generators, see https://wiki.python.org/moin/Generators
 
 import numpy as np
-import matplotlib.pyplot as plt
 import queue
+from slice_mdp import State
+import random
 
 
 class Error(Exception):
@@ -32,31 +33,57 @@ class Job:
         return self._arrival_timeslot
 
 
-class QueueSimulator:
-    def __init__(self, arrival_rate, departure_rate, simulation_time, max_server_number_cap=100):
-        self._arrival_rate = arrival_rate
-        self._departure_rate = departure_rate
+class SliceSimulator:
+    def __init__(self, arrivals_histogram, departures_histogram, queue_size=2, simulation_time=100, max_server_num=1):
+        self._arrivals_histogram = arrivals_histogram
+        self._departures_histogram = departures_histogram
         self._simulation_time = simulation_time
-        self._max_server_number_cap = max_server_number_cap
-        # server_num: dynamic value
-        self._server_num = 1
-        # rho: lambda / miu * servers
-        self._rho = self._update_rho()
+        self._max_server_num = max_server_num
+        self._queue_size = queue_size
+
+        self._current_state = State(0, 0)
+        self._current_timeslot = 0  # contains the current timeslot
+
         # incoming jobs: index i represents timeslot i, value[i] represents the number of jobs
-        self._incoming_jobs = np.random.poisson(arrival_rate, simulation_time)
+        self._incoming_jobs = self._generate_incoming_jobs
         # service time: index i represents service time for i-esimo job
-        self._service_time = np.random.exponential(1 / departure_rate, self._incoming_jobs.sum())
+        self._outcoming_jobs = self._generate_outcoming_jobs()
         self._terminated_jobs = 0
-        self._simulation_timeslot = 0 # contains the current timeslot
+
         self._queue = queue.Queue()
         # server_time: lista contenente N elementi, ogni elemento indica l'utilizzo (in frazione di timeslot) del server
         # [0, 1, 0.5] indica che il primo server è occupato per tutto il timeslot, il secondo è idle,
         # il terzo è occupato per metà timeslot
         self._server_time = [1.0]
 
-    def _update_rho(self):
-        self._rho = self._arrival_rate / (self._departure_rate * self._server_num)
-        return self._rho
+    def _generate_incoming_jobs(self):
+        incoming_jobs = []
+
+        for i in range(self._simulation_time):
+            prob = random.random()  # genera valore random tra 0.1 e 1.0
+            for j in range(len(self._arrivals_histogram)):
+                if prob <= self._arrivals_histogram[j]:
+                    # in questo ts arrivano j jobs
+                    incoming_jobs.append(j)
+                else:
+                    prob -= self._arrivals_histogram[j]
+
+        return incoming_jobs
+
+    # job processati
+    def _generate_outcoming_jobs(self):
+        outcoming_jobs = []
+
+        for i in range(self._simulation_time):
+            prob = random.random()  # genera valore random tra 0.1 e 1.0
+            for j in range(len(self._departures_histogram)):
+                if prob <= self._departures_histogram[j]:
+                    # in questo ts arrivano j jobs
+                    outcoming_jobs.append(j)
+                else:
+                    prob -= self._departures_histogram[j]
+
+        return outcoming_jobs
 
     @property
     def incoming_jobs(self):
@@ -66,7 +93,7 @@ class QueueSimulator:
     Return the period of simulation (i.e. 1000 timeslot)
     """
     @property
-    def simulation_time(self):
+    def outcoming_jobs(self):
         return self._simulation_time
 
     """

@@ -238,21 +238,21 @@ class SliceMDP:
         return vi.policy
 
 
-# if __name__ == '__main__':
-#     # this means: Pr(0 job incoming in this timeslot) = 0.5; Pr(1 job incoming in this timeslot) = 0.5
-#     arrivals = [0.5, 0.5]
-#
-#     # this means: Pr(0 job processed in this timeslot) = 0.6; Pr(1 job processed in this timeslot) = 0.4
-#     departures = [0.6, 0.4]
-#
-#     # @findme : generare grafico partenze e arrivi
-#
-#     slice_mdp = SliceMDP(arrivals, departures, 2, 1, alpha=0.5)
-#
-#     utils.export_markov_chain("toy", "a0-do-nothing", slice_mdp.states, slice_mdp.transition_matrix[0], slice_mdp.reward_matrix[0], view=True)
-#     utils.export_markov_chain("toy", "a1-alloc1", slice_mdp.states, slice_mdp.transition_matrix[1], slice_mdp.reward_matrix[1], view=True)
-#     utils.export_markov_chain("toy", "a2-dealloc1", slice_mdp.states, slice_mdp.transition_matrix[2], slice_mdp.reward_matrix[1], view=True)
-#
-#     print(slice_mdp.reward_matrix)
-#
-#     print(slice_mdp.run_value_iteration(0.8))
+if __name__ == '__main__':
+    # this means: Pr(0 job incoming in this timeslot) = 0.5; Pr(1 job incoming in this timeslot) = 0.5
+    arrivals = [0.5, 0.5]
+
+    # this means: Pr(0 job processed in this timeslot) = 0.6; Pr(1 job processed in this timeslot) = 0.4
+    departures = [0.6, 0.4]
+
+    # @findme : generare grafico partenze e arrivi
+
+    slice_mdp = SliceMDP(arrivals, departures, 2, 1, alpha=0.5)
+
+    utils.plot_markov_chain("toy", "a0-do-nothing", slice_mdp.states, slice_mdp.transition_matrix[0], slice_mdp.reward_matrix[0], view=True)
+    utils.plot_markov_chain("toy", "a1-alloc1", slice_mdp.states, slice_mdp.transition_matrix[1], slice_mdp.reward_matrix[1], view=True)
+    utils.plot_markov_chain("toy", "a2-dealloc1", slice_mdp.states, slice_mdp.transition_matrix[2], slice_mdp.reward_matrix[1], view=True)
+
+    print(slice_mdp.reward_matrix)
+
+    print(slice_mdp.run_value_iteration(0.8))

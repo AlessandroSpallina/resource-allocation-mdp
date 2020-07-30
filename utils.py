@@ -1,5 +1,6 @@
 import colorama as color
 from graphviz import Digraph
+import matplotlib.pyplot as plt
 
 STORAGE_PATH = "./res/exported/"
 
@@ -9,7 +10,7 @@ def print_blue(message):
 
 
 # Export to file a graph representing the markov chain related to an action
-def export_markov_chain(projectname, filename, states, transition_matrix, reward_matrix=[], view=False):
+def plot_markov_chain(projectname, filename, states, transition_matrix, reward_matrix=[], view=False):
     dot = Digraph(filename=filename + ".gv", format="png")
 
     for i in range(len(states)):
@@ -24,3 +25,25 @@ def export_markov_chain(projectname, filename, states, transition_matrix, reward
                     dot.edge(str(x), str(y), label=f"P: {transition_matrix[x][y]}")
 
     dot.render(STORAGE_PATH + projectname + "/" + filename, view=view)
+
+
+# def simple_bar_plot(x, y):
+#     ax = plt.subplot(111)
+#     ax.bar(x, y, width=10)
+#
+#     plt.show()
+#
+#
+#     plt.bar(x, y)
+#     plt.xlabel('x')
+#     plt.ylabel('y')
+#     plt.title(title)
+#     plt.xlabel(xlabel)
+#     plt.ylabel(ylabel)
+#
+#
+# def plot_histograms(arrivals_histogram, departures_histogram):
+#     x = list(range(len(arrivals_histogram)))
+#
+#     simple_bar_plot(x, arrivals_histogram, "Arrivals Histogram", "Timeslot", "Arrivals")
+#     simple_bar_plot(x, departures_histogram, "Departures Histogram", "Timeslot", "Departures")
