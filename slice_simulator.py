@@ -6,6 +6,7 @@ import numpy as np
 import queue
 from slice_mdp import State
 import random
+import numpy as np
 
 
 class Error(Exception):
@@ -42,129 +43,107 @@ class SliceSimulator:
         self._queue_size = queue_size
 
         self._current_state = State(0, 0)
+        self._h_p = self._generate_h_p()
         self._current_timeslot = 0  # contains the current timeslot
 
         # incoming jobs: index i represents timeslot i, value[i] represents the number of jobs
-        self._incoming_jobs = self._generate_incoming_jobs
-        # service time: index i represents service time for i-esimo job
-        self._outcoming_jobs = self._generate_outcoming_jobs()
-        self._terminated_jobs = 0
+        self._incoming_jobs = self._generate_incoming_jobs()
 
-        self._queue = queue.Queue()
-        # server_time: lista contenente N elementi, ogni elemento indica l'utilizzo (in frazione di timeslot) del server
-        # [0, 1, 0.5] indica che il primo server è occupato per tutto il timeslot, il secondo è idle,
-        # il terzo è occupato per metà timeslot
-        self._server_time = [1.0]
+        self._queue = queue.Queue(queue_size)
 
+    @property
+    def incoming_jobs(self):
+        return self._incoming_jobs
+
+    def _generate_h_p(self):
+        h_p = []
+        for i in range(self._max_server_num + 1):
+            if i == 0:
+                h_p.append([])
+            elif i == 1:
+                h_p.append(self._departures_histogram)
+            else:
+                h_p.append(np.convolve(self._departures_histogram, h_p))
+        return h_p
+
+    # returns an array, each element represent the num of jobs arrived in the timeslot
     def _generate_incoming_jobs(self):
         incoming_jobs = []
-
         for i in range(self._simulation_time):
-            prob = random.random()  # genera valore random tra 0.1 e 1.0
+            prob = random.random()  # genera valore random tra [0., 1.[
             for j in range(len(self._arrivals_histogram)):
                 if prob <= self._arrivals_histogram[j]:
                     # in questo ts arrivano j jobs
                     incoming_jobs.append(j)
                 else:
                     prob -= self._arrivals_histogram[j]
-
         return incoming_jobs
 
-    # job processati
-    def _generate_outcoming_jobs(self):
-        outcoming_jobs = []
+    # returns the number of jobs processed in one timeslot
+    def _calculate_processed_jobs(self):
+        prob = random.random()
+        for j in range(len(self._h_p[self._current_state.n])):
+            if prob <= self._h_p[self._current_state.n][j]:
+                return j
+            else:
+                prob -= self._h_p[self._current_state.n][j]
 
-        for i in range(self._simulation_time):
-            prob = random.random()  # genera valore random tra 0.1 e 1.0
-            for j in range(len(self._departures_histogram)):
-                if prob <= self._departures_histogram[j]:
-                    # in questo ts arrivano j jobs
-                    outcoming_jobs.append(j)
-                else:
-                    prob -= self._departures_histogram[j]
-
-        return outcoming_jobs
-
-    @property
-    def incoming_jobs(self):
-        return self._incoming_jobs
-
-    """
-    Return the period of simulation (i.e. 1000 timeslot)
-    """
-    @property
-    def outcoming_jobs(self):
-        return self._simulation_time
-
-    """
-    func allocate_server returns rho if success, otherwise raise ServerMaxCapError 
-    """
-    def allocate_server(self, count=1):
-        if self._server_num + count > self._max_server_number_cap:
+    def _allocate_server(self, count=1):
+        if self._current_state.n + count > self._max_server_num:
             raise ServerMaxCapError('Max Cap Limit Reached',
                                     'Unable to allocate {self._server_num + count} servers; '
                                     'max cap is {self._max_server_number_cap}')
-        self._server_num += count
-        self._server_time.append(1.0)
-        return self._update_rho()
+        self._current_state.n += count
 
-    """
-    func deallocate_server returns rho if success, otherwise raise ServerMinCapError 
-    """
-    def deallocate_server(self, count=1):
-        if self._server_num - count < 1:
+    def _deallocate_server(self, count=1):
+        if self._current_state.n - count < 0:
             raise ServerMinCapError('Min Cap Limit Reached',
                                     'Unable to deallocate to {self._server_num + count} servers; min cap is 1')
-        self._server_num -= count
-        # fixme: dovresti deallocare una vm idle, altrimenti perdi il job in esecuzione!!
-        #        e quindi gestire il problema (ritardare la deallocazione) se non trovi vm idle
-        self._server_time.pop()
-        return self._update_rho()
+        self._current_state.n -= count
 
-    # this can be (probably) huge optimized
-    def simulate_timeslot(self, verbose=False):
-        # estrarre 1 elemento da self._incoming_jobs (numero di job arrivati in un timeslot)
-        # possono lavorare N server in parallelo
-        if self._incoming_jobs.size > 0:
-            job_num = self._incoming_jobs[0]
-            self._incoming_jobs = np.delete(self._incoming_jobs, 0)  # cancella il primo elemento
-            # aggiungi alla coda gli n job ricevuti in questo time slot
-            j = Job(self._simulation_timeslot)
-            for i in range(job_num):
-                self._queue.put(j)
+    # returns the current state
+    def simulate_timeslot(self, action_id, verbose=False):
+        if verbose:
+            print(f"[TS{self._current_timeslot}] Current state: {self._current_state}")
+
+        if len(self._incoming_jobs) > 0:
+            arrived_jobs = self._incoming_jobs.pop()
+
             if verbose:
-                print(f"At timeslot {self._simulation_timeslot} the queue has {self._queue.qsize()} pending job")
+                print(f"[TS{self._current_timeslot}] Arrived {arrived_jobs} jobs")
 
-            # se ci sono server liberi, che prendano un task in carico!
-            for i in range(self._server_num):
+            j = Job(self._current_timeslot)
+            for i in range(arrived_jobs):
+                try:
+                    self._queue.put(j, False)
+                    self._current_state.k += 1
+                except queue.Full:
+                    if verbose:
+                        print(f"[TS{self._current_timeslot}] Lost packet here")
+
+            if verbose:
+                print(f"[TS{self._current_timeslot}] The queue has {self._queue.qsize()} pending job")
+
+            if self._current_state.n > 0 and self._queue.qsize() > 0:  # allora c'è processamento
+                processed_jobs = self._calculate_processed_jobs()
+
                 if verbose:
-                    print(f"Server[{i}] in execution (current timeslot {self._simulation_timeslot})")
-                if self._server_time[i] > 0:  # server con tempo utile :)
-                    # NB. in un timeslot posso potenzialmente processare più job in un timeslot
-                    while self._server_time[i] > 0:
-                        if verbose:
-                            print(f"Server[{i}] has {self._server_time[i] * 100}% of the timeslot free")
+                    print(f"[TS{self._current_timeslot}] Processed {processed_jobs} jobs")
 
-                        # estraggo un job dalla coda
-                        # ottenere delle statistiche empiriche(?), es. tempo in coda di questo task
-                        try:
-                            tmp = self._queue.get(False)
-                        except queue.Empty:
-                            pass
+                for i in range(processed_jobs):
+                    try:
+                        job = self._queue.get(False)
+                        self._current_state.k -= 1
+                        # todo: collezionare statistiche!
+                    except queue.Empty:
+                        pass
 
-                        # estraggo un service time, il server ci impiegerà quel tempo per processare il job
-                        # quindi il tempo utile in _server_time[i] diminuisce
-                        self._server_time[i] -= self._service_time[0]
-                        self._service_time = np.delete(self._service_time, 0)
-                        self._terminated_jobs += 1
+            if action_id == 1:
+                self._allocate_server()
+            elif action_id == 2:
+                self._deallocate_server()
 
-            self._simulation_timeslot += 1
-            # il tempo è passato, dò un timeslot a tutti i server
-            for i in range(self._server_num):
-                self._server_time[i] += 1
-                if verbose:
-                    print(f"Server[{i}] can work the {self._server_time[i]}% of the next timeslot")
+            self._current_timeslot += 1
 
-        return {"total_processed_jobs": self._terminated_jobs,
-                "jobs_in_queue": self._queue.qsize(),
-                "server_count": self._server_num}
+        return self._current_state
+
