@@ -1,6 +1,6 @@
 import mdptoolbox
 import numpy as np
-import utils
+from graphviz import Digraph
 
 
 class State:
@@ -59,6 +59,9 @@ class SliceMDP:
         self._c_lost = c_lost
         self._alpha = alpha
         self._reward_matrix = self._generate_reward_matrix()
+
+        # plotting stuff
+        self._STORAGE_PATH = "./res/exported/"
 
     @property
     def transition_matrix(self):
@@ -200,28 +203,28 @@ class SliceMDP:
         # utilizzo approccio "costo di stare nello stato", mi serve solo lo stato di arrivo
         # costs are mapped into the reward matrix
         # C = alpha * C_k * num of jobs + (1 - alpha) * C_n * num of server
-        costs = self._alpha * self._c_job * to_state.k + (1 - self._alpha) * self._c_server * to_state.n
+        cost1 = self._c_job * to_state.k
+        cost2 = self._c_server * to_state.n
 
         # expected value of lost packets
         for i in range(len(self._arrivals_histogram)):
             if to_state.k + i > self._queue_size:
-                #print(to_state)
-                costs += self._arrivals_histogram[i] * i * self._c_lost
+                cost1 += self._arrivals_histogram[i] * i * self._c_lost
 
-        return -costs
+        return - (self._alpha * cost1 + (1 - self._alpha) * cost2)
 
-    def _calculate_transition_reward2(self, from_state, to_state):
-        # utilizzo approccio "costo del passaggio"
-        costs_from = self._alpha * self._c_job * from_state.k + (1 - self._alpha) * self._c_server * from_state.n
-        costs_to = self._alpha * self._c_job * to_state.k + (1 - self._alpha) * self._c_server * to_state.n
-
-        # expected value of lost packets
-        for i in range(len(self._arrivals_histogram)):
-            if to_state.k + i > self._queue_size:
-                #print(to_state)
-                costs_to += self._arrivals_histogram[i] * i * self._c_lost
-
-        return costs_from - costs_to
+    # def _calculate_transition_reward2(self, from_state, to_state):
+    #     # utilizzo approccio "costo del passaggio"
+    #     costs_from = self._alpha * self._c_job * from_state.k + (1 - self._alpha) * self._c_server * from_state.n
+    #     costs_to = self._alpha * self._c_job * to_state.k + (1 - self._alpha) * self._c_server * to_state.n
+    #
+    #     # expected value of lost packets
+    #     for i in range(len(self._arrivals_histogram)):
+    #         if to_state.k + i > self._queue_size:
+    #             #print(to_state)
+    #             costs_to += self._arrivals_histogram[i] * i * self._c_lost
+    #
+    #     return costs_from - costs_to
 
     def _generate_reward_matrix(self):
         reward_matrix = np.zeros((3, len(self._states), len(self._states)))
@@ -230,7 +233,7 @@ class SliceMDP:
             for i in range(len(self._states)):
                 for j in range(len(self._states)):
                     if self._transition_matrix[a][i][j] > 0:
-                        #reward_matrix[a][i][j] = self._calculate_transition_reward2(self._states[i], self._states[j])
+                        #  reward_matrix[a][i][j] = self._calculate_transition_reward2(self._states[i], self._states[j])
                         reward_matrix[a][i][j] = self._calculate_transition_reward(self._states[j])
         return reward_matrix
 
@@ -244,3 +247,21 @@ class SliceMDP:
         vi.run()
         print(f"Expected values: {vi.V}")
         return vi.policy
+
+    def plot(self, projectname, view=False):
+
+        for a in range(len(self._transition_matrix)):
+            dot = Digraph(filename=str(a) + ".gv", format="png")
+
+            for i in range(len(self._states)):
+                dot.node(str(i), "S" + str(i) + ": " + str(self._states[i]))
+
+            for x in range(len(self._transition_matrix[a])):
+                for y in range(len(self._transition_matrix[a])):
+                    if self._transition_matrix[a][x][y] > 0:
+                        if len(self._reward_matrix[a]) > 0:
+                            dot.edge(str(x), str(y), label=f"P: {self._transition_matrix[a][x][y]} [R: {self._reward_matrix[a][x][y]}]")
+                        else:
+                            dot.edge(str(x), str(y), label=f"P: {self._transition_matrix[a][x][y]}")
+
+            dot.render(self._STORAGE_PATH + projectname + "/" + f"action{a}", view=view)

@@ -35,12 +35,18 @@ class Job:
 
 
 class SliceSimulator:
-    def __init__(self, arrivals_histogram, departures_histogram, queue_size=2, simulation_time=100, max_server_num=1):
+    def __init__(self, arrivals_histogram, departures_histogram, queue_size=2, simulation_time=100, max_server_num=1,
+                 c_job=1, c_server=1, c_lost=1, alpha=0.5):
+
         self._arrivals_histogram = arrivals_histogram
         self._departures_histogram = departures_histogram
         self._simulation_time = simulation_time
         self._max_server_num = max_server_num
         self._queue_size = queue_size
+        self._c_job = c_job
+        self._c_server = c_server
+        self._c_lost = c_lost
+        self._alpha = alpha
 
         self._current_state = State(0, 0)
         self._h_p = self._generate_h_p()
@@ -51,9 +57,20 @@ class SliceSimulator:
 
         self._queue = queue.Queue(queue_size)
 
+        # statistics
+        self._costs_per_timeslot = []
+        self._lost_jobs_per_timeslot = []
+        self._processed_jobs_per_timeslot = []
+        self._wait_time_per_job = []
+        self._state_sequence = []
+
     @property
     def incoming_jobs(self):
         return self._incoming_jobs
+
+    def _calculate_timeslot_costs(self, current_state, lost_jobs):
+        # C = alpha * C_k * num of jobs + (1 - alpha) * C_n * num of server + C_l * num of lost jobs
+        return self._alpha * self._c_job * current_state.k + (1 - self._alpha) * self._c_server * current_state.n + self._c_lost * lost_jobs
 
     def _generate_h_p(self):
         h_p = []
@@ -106,6 +123,9 @@ class SliceSimulator:
         if verbose:
             print(f"[TS{self._current_timeslot}] Current state: {self._current_state}")
 
+        # statistics
+        self._state_sequence.append(str(self._current_state))
+
         if len(self._incoming_jobs) > 0:
             arrived_jobs = self._incoming_jobs.pop()
 
@@ -113,19 +133,28 @@ class SliceSimulator:
                 print(f"[TS{self._current_timeslot}] Arrived {arrived_jobs} jobs")
 
             j = Job(self._current_timeslot)
+            lost_counter = 0
             for i in range(arrived_jobs):
                 try:
                     self._queue.put(j, False)
                     self._current_state.k += 1
                 except queue.Full:
+                    lost_counter += 1
                     if verbose:
                         print(f"[TS{self._current_timeslot}] Lost packet here")
+
+            # statistics
+            self._costs_per_timeslot.append(self._calculate_timeslot_costs(self._current_state, lost_counter))
+            self._lost_jobs_per_timeslot.append(lost_counter)
 
             if verbose:
                 print(f"[TS{self._current_timeslot}] The queue has {self._queue.qsize()} pending job")
 
             if self._current_state.n > 0 and self._queue.qsize() > 0:  # allora c'è processamento
                 processed_jobs = self._calculate_processed_jobs()
+
+                # statistics
+                self._processed_jobs_per_timeslot.append(processed_jobs)
 
                 if verbose:
                     print(f"[TS{self._current_timeslot}] Processed {processed_jobs} jobs")
@@ -134,9 +163,14 @@ class SliceSimulator:
                     try:
                         job = self._queue.get(False)
                         self._current_state.k -= 1
-                        # todo: collezionare statistiche!
+
+                        # statistics
+                        self._wait_time_per_job.append(self._current_timeslot - job.arrival_timeslot)
                     except queue.Empty:
                         pass
+            else:
+                # statistics
+                self._processed_jobs_per_timeslot.append(0)
 
             if action_id == 1:
                 self._allocate_server()
@@ -146,4 +180,13 @@ class SliceSimulator:
             self._current_timeslot += 1
 
         return self._current_state
+
+    def get_statistics(self):
+        return {
+            "costs_per_timeslot": self._costs_per_timeslot,
+            "lost_jobs_per_timeslot": self._lost_jobs_per_timeslot,
+            "processed_jobs_per_timeslot": self._processed_jobs_per_timeslot,
+            "wait_time_per_job": self._wait_time_per_job,
+            "state_sequence": self._state_sequence
+            }
 
