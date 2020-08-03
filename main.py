@@ -38,10 +38,11 @@ if __name__ == '__main__':
 
     # mdp agent
     slice_mdp = SliceMDP(arrivals, departures, 2, 1, alpha=0.5, c_lost=2)
-    plotter.plot_markov_chain("toy", slice_mdp.states, slice_mdp.transition_matrix, slice_mdp.reward_matrix, False)
+    plotter.plot_markov_chain(slice_mdp.states, slice_mdp.transition_matrix, slice_mdp.reward_matrix,
+                              projectname="toy", view=False)
 
     for i in range(SIMULATIONS):
-        slice_simulator = SliceSimulator(arrivals, departures, c_lost=2)
+        slice_simulator = SliceSimulator(arrivals, departures, c_lost=2, simulation_time=10000)
         mdp_agent = Agent(slice_mdp.states, slice_mdp.run_value_iteration(0.8), slice_simulator)
         stats.append(mdp_agent.control_environment())
 
@@ -52,10 +53,22 @@ if __name__ == '__main__':
     mean_lost_jobs = get_mean_lost_jobs(stats)
 
     # plotting of one simulation
-    plotter.plot_cumulative({"costs": stats[0]['costs_per_timeslot'], "processed": stats[0]['processed_jobs_per_timeslot'], "lost": stats[0]['lost_jobs_per_timeslot']}, title="One Sim Cumulative")
-    plotter.plot({"costs": stats[0]['costs_per_timeslot'], "processed": stats[0]['processed_jobs_per_timeslot'], "lost": stats[0]['lost_jobs_per_timeslot']}, title="One Sim per Timeslot")
+    plotter.plot_cumulative({"costs": stats[0]['costs_per_timeslot'],
+                             "processed": stats[0]['processed_jobs_per_timeslot'],
+                             "lost": stats[0]['lost_jobs_per_timeslot']},
+                            title="One Sim Cumulative", projectname="toy", view=False)
+    plotter.plot({"costs": stats[0]['costs_per_timeslot'],
+                  "processed": stats[0]['processed_jobs_per_timeslot'],
+                  "lost": stats[0]['lost_jobs_per_timeslot']},
+                 title="One Sim per Timeslot", projectname="toy", view=False)
 
     # plotting of the mean of N simulations
-    plotter.plot_cumulative({"costs": mean_costs['mean'], "processed": mean_processed_jobs['mean'], "lost": mean_lost_jobs['mean']}, title="Mean Cumulative")
-    plotter.plot({"costs per ts": mean_costs['mean'], "processed per ts": mean_processed_jobs['mean'], "lost per ts": mean_lost_jobs['mean']}, title="Mean per Timeslot")
+    plotter.plot_cumulative({"costs": mean_costs['mean'],
+                             "processed": mean_processed_jobs['mean'],
+                             "lost": mean_lost_jobs['mean']},
+                            title="Mean Cumulative", projectname="toy", view=False)
+    plotter.plot({"costs per ts": mean_costs['mean'],
+                  "processed per ts": mean_processed_jobs['mean'],
+                  "lost per ts": mean_lost_jobs['mean']},
+                 title="Mean per Timeslot", projectname="toy", view=False)
 

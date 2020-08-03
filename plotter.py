@@ -6,7 +6,7 @@ STORAGE_PATH = "./res/exported/"
 
 
 # Export to file a graph representing the markov chain related to an action
-def plot_markov_chain(projectname, states, transition_matrix, reward_matrix=None, view=False):
+def plot_markov_chain(states, transition_matrix, reward_matrix=None, projectname="", view=False):
 
     for a in range(len(transition_matrix)):
         dot = Digraph(filename=f"action{a}" + ".gv", format="png")
@@ -24,33 +24,8 @@ def plot_markov_chain(projectname, states, transition_matrix, reward_matrix=None
 
         dot.render(STORAGE_PATH + projectname + "/" + f"action{a}", view=view)
 
-# def plot_cumulative_cost_processed_lost_jobs(costs_per_timeslot, processed_per_timeslot, lost_per_timeslot):
-#     cumulative_costs = []
-#     cumulative_processed_jobs = []
-#     cumulative_lost_jobs = []
-#     for i in range(len(costs_per_timeslot)):
-#         if i > 0:
-#             cumulative_costs.append(cumulative_costs[i-1] + costs_per_timeslot[i])
-#             cumulative_processed_jobs.append(cumulative_processed_jobs[i-1] + processed_per_timeslot[i])
-#             cumulative_lost_jobs.append(cumulative_lost_jobs[i-1] + lost_per_timeslot[i])
-#         else:
-#             cumulative_costs.append(costs_per_timeslot[0])
-#             cumulative_processed_jobs.append(processed_per_timeslot[0])
-#             cumulative_lost_jobs.append(lost_per_timeslot[0])
-#
-#     fig, ax = plt.subplots()
-#
-#     ax.set_title("Mean Cumulative Costs")
-#     ax.set_xlabel('Timeslot')
-#     ax.set_ylabel('Cost')
-#     ax.plot(list(range(len(costs_per_timeslot))), cumulative_costs, label="costs")
-#     ax.plot(list(range(len(processed_per_timeslot))), cumulative_processed_jobs, label="processed jobs")
-#     ax.plot(list(range(len(lost_per_timeslot))), cumulative_lost_jobs, label="lost jobs")
-#     ax.legend()
-#     plt.show()
 
-
-def plot_cumulative(stuff, title="", xlabel="", ylabel=""):
+def plot_cumulative(stuff, title="", xlabel="", ylabel="", projectname="", view=False):
     fig, ax = plt.subplots()
     for k in stuff:
         cumulative_buf = []
@@ -66,10 +41,12 @@ def plot_cumulative(stuff, title="", xlabel="", ylabel=""):
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     ax.legend()
-    plt.show()
+    plt.savefig(STORAGE_PATH + projectname + "/" + title)
+    if view:
+        plt.show()
 
 
-def plot(stuff, title="", xlabel="", ylabel=""):
+def plot(stuff, title="", xlabel="", ylabel="", projectname="", view=False):
     fig, ax = plt.subplots()
     for k in stuff:
         ax.plot(list(range(len(stuff[k]))), stuff[k], label=k)
@@ -77,4 +54,6 @@ def plot(stuff, title="", xlabel="", ylabel=""):
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     ax.legend()
-    plt.show()
+    plt.savefig(STORAGE_PATH + projectname + "/" + title)
+    if view:
+        plt.show()
