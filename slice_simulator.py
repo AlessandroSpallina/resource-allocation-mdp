@@ -4,9 +4,10 @@
 
 import numpy as np
 import queue
-from slice_mdp import State
+from state import State
 import random
 import numpy as np
+from copy import copy
 
 
 class Error(Exception):
@@ -36,7 +37,9 @@ class Job:
 
 class SliceSimulator:
     def __init__(self, arrivals_histogram, departures_histogram, queue_size=2, simulation_time=100, max_server_num=1,
-                 c_job=1, c_server=1, c_lost=1, alpha=0.5):
+                 c_job=1, c_server=1, c_lost=1, alpha=0.5, verbose=True):
+
+        self._verbose = verbose
 
         self._arrivals_histogram = arrivals_histogram
         self._departures_histogram = departures_histogram
@@ -68,9 +71,14 @@ class SliceSimulator:
     def incoming_jobs(self):
         return self._incoming_jobs
 
+    @property
+    def simulation_time(self):
+        return self._simulation_time
+
     def _calculate_timeslot_costs(self, current_state, lost_jobs):
         # C = alpha * C_k * num of jobs + (1 - alpha) * C_n * num of server + C_l * num of lost jobs
-        return self._alpha * self._c_job * current_state.k + (1 - self._alpha) * self._c_server * current_state.n + self._c_lost * lost_jobs
+        return self._alpha * (self._c_job * current_state.k + self._c_lost * lost_jobs) + \
+               (1 - self._alpha) * self._c_server * current_state.n
 
     def _generate_h_p(self):
         h_p = []
@@ -119,17 +127,18 @@ class SliceSimulator:
         self._current_state.n -= count
 
     # returns the current state
-    def simulate_timeslot(self, action_id, verbose=False):
-        if verbose:
+    def simulate_timeslot(self, action_id):
+        if self._verbose:
             print(f"[TS{self._current_timeslot}] Current state: {self._current_state}")
 
         # statistics
-        self._state_sequence.append(str(self._current_state))
+        initial_state = copy(self._current_state)
+        self._state_sequence.append(initial_state)
 
         if len(self._incoming_jobs) > 0:
             arrived_jobs = self._incoming_jobs.pop()
 
-            if verbose:
+            if self._verbose:
                 print(f"[TS{self._current_timeslot}] Arrived {arrived_jobs} jobs")
 
             j = Job(self._current_timeslot)
@@ -140,14 +149,14 @@ class SliceSimulator:
                     self._current_state.k += 1
                 except queue.Full:
                     lost_counter += 1
-                    if verbose:
+                    if self._verbose:
                         print(f"[TS{self._current_timeslot}] Lost packet here")
 
             # statistics
-            self._costs_per_timeslot.append(self._calculate_timeslot_costs(self._current_state, lost_counter))
+            self._costs_per_timeslot.append(self._calculate_timeslot_costs(initial_state, lost_counter))
             self._lost_jobs_per_timeslot.append(lost_counter)
 
-            if verbose:
+            if self._verbose:
                 print(f"[TS{self._current_timeslot}] The queue has {self._queue.qsize()} pending job")
 
             if self._current_state.n > 0 and self._queue.qsize() > 0:  # allora c'è processamento
@@ -156,7 +165,7 @@ class SliceSimulator:
                 # statistics
                 self._processed_jobs_per_timeslot.append(processed_jobs)
 
-                if verbose:
+                if self._verbose:
                     print(f"[TS{self._current_timeslot}] Processed {processed_jobs} jobs")
 
                 for i in range(processed_jobs):

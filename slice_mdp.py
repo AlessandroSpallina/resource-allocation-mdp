@@ -1,41 +1,6 @@
 import mdptoolbox
 import numpy as np
-from graphviz import Digraph
-
-
-class State:
-    def __init__(self, k, n):
-        self._k = k  # k jobs
-        self._n = n  # n servers
-
-    @property
-    def k(self):
-        return self._k
-
-    @k.setter
-    def k(self, k):
-        self._k = k
-
-    @property
-    def n(self):
-        return self._n
-
-    @n.setter
-    def n(self, n):
-        self._n = n
-
-    def __str__(self):
-        return "(" + str(self._k) + "," + str(self._n) + ")"
-
-    def __sub__(self, other):
-        k = self.k - other.k
-        n = self.n - other.n
-        return State(k, n)
-
-    def __eq__(self, other):
-        if isinstance(other, State):
-            return self._k == other._k and self._n == other._n
-        return False
+from state import State
 
 
 class SliceMDP:
@@ -59,9 +24,6 @@ class SliceMDP:
         self._c_lost = c_lost
         self._alpha = alpha
         self._reward_matrix = self._generate_reward_matrix()
-
-        # plotting stuff
-        self._STORAGE_PATH = "./res/exported/"
 
     @property
     def transition_matrix(self):
@@ -247,21 +209,3 @@ class SliceMDP:
         vi.run()
         print(f"Expected values: {vi.V}")
         return vi.policy
-
-    def plot(self, projectname, view=False):
-
-        for a in range(len(self._transition_matrix)):
-            dot = Digraph(filename=str(a) + ".gv", format="png")
-
-            for i in range(len(self._states)):
-                dot.node(str(i), "S" + str(i) + ": " + str(self._states[i]))
-
-            for x in range(len(self._transition_matrix[a])):
-                for y in range(len(self._transition_matrix[a])):
-                    if self._transition_matrix[a][x][y] > 0:
-                        if len(self._reward_matrix[a]) > 0:
-                            dot.edge(str(x), str(y), label=f"P: {self._transition_matrix[a][x][y]} [R: {self._reward_matrix[a][x][y]}]")
-                        else:
-                            dot.edge(str(x), str(y), label=f"P: {self._transition_matrix[a][x][y]}")
-
-            dot.render(self._STORAGE_PATH + projectname + "/" + f"action{a}", view=view)
