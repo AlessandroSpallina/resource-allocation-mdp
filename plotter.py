@@ -1,6 +1,6 @@
 from graphviz import Digraph
 import matplotlib.pyplot as plt
-import numpy as np
+import os
 
 STORAGE_PATH = "./res/exported/"
 
@@ -22,11 +22,14 @@ def plot_markov_chain(states, transition_matrix, reward_matrix=None, projectname
                     else:
                         dot.edge(str(x), str(y), label=f"P: {transition_matrix[a][x][y]}")
 
+        if not os.path.exists(STORAGE_PATH + projectname + "/"):
+            os.makedirs(STORAGE_PATH + projectname + "/")
         dot.render(STORAGE_PATH + projectname + "/" + f"action{a}", view=view)
 
 
 def plot_cumulative(stuff, title="", xlabel="", ylabel="", projectname="", view=False):
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(15, 10))
+    ax.grid(True)
     for k in stuff:
         cumulative_buf = []
 
@@ -37,23 +40,29 @@ def plot_cumulative(stuff, title="", xlabel="", ylabel="", projectname="", view=
                 cumulative_buf.append(stuff[k][0])
 
         ax.plot(list(range(len(stuff[k]))), cumulative_buf, label=k)
+
     ax.set_title(title)
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     ax.legend()
+    if not os.path.exists(STORAGE_PATH + projectname + "/"):
+        os.makedirs(STORAGE_PATH + projectname + "/")
     plt.savefig(STORAGE_PATH + projectname + "/" + title)
     if view:
         plt.show()
 
 
 def plot(stuff, title="", xlabel="", ylabel="", projectname="", view=False):
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(15, 10))
+    ax.grid(True)
     for k in stuff:
         ax.plot(list(range(len(stuff[k]))), stuff[k], label=k)
     ax.set_title(title)
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     ax.legend()
+    if not os.path.exists(STORAGE_PATH + projectname + "/"):
+        os.makedirs(STORAGE_PATH + projectname + "/")
     plt.savefig(STORAGE_PATH + projectname + "/" + title)
     if view:
         plt.show()

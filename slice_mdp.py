@@ -5,7 +5,7 @@ from state import State
 
 class SliceMDP:
     def __init__(self, arrivals_histogram, departures_histogram, queue_size, max_server_num,
-                 c_job=1, c_server=1, c_lost=1, alpha=0.5, verbose=True):
+                 c_job=1, c_server=1, c_lost=1, alpha=0.5, verbose=False):
 
         self._verbose = verbose
 
@@ -207,5 +207,4 @@ class SliceMDP:
         # (on average) by following that solution from state s.
         vi = mdptoolbox.mdp.ValueIteration(self._transition_matrix, self._reward_matrix, discount)
         vi.run()
-        print(f"Expected values: {vi.V}")
         return vi.policy

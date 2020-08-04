@@ -37,7 +37,7 @@ class Job:
 
 class SliceSimulator:
     def __init__(self, arrivals_histogram, departures_histogram, queue_size=2, simulation_time=100, max_server_num=1,
-                 c_job=1, c_server=1, c_lost=1, alpha=0.5, verbose=True):
+                 c_job=1, c_server=1, c_lost=1, alpha=0.5, verbose=False):
 
         self._verbose = verbose
 
