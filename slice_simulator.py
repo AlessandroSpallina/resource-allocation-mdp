@@ -2,7 +2,6 @@
 # * consider using cupy for gpu acceleration
 # * consider using generators, see https://wiki.python.org/moin/Generators
 
-import numpy as np
 import queue
 from state import State
 import random
@@ -100,6 +99,7 @@ class SliceSimulator:
                 if prob <= self._arrivals_histogram[j]:
                     # in questo ts arrivano j jobs
                     incoming_jobs.append(j)
+                    break
                 else:
                     prob -= self._arrivals_histogram[j]
         return incoming_jobs
@@ -188,9 +188,28 @@ class SliceSimulator:
 
             self._current_timeslot += 1
 
-        return self._current_state
+        to_return = copy(self._current_state)
+        return to_return
+
+    def _convert_wait_time_in_percentage(self):
+        percentage_wait_time = []
+        tot_job = len(self._wait_time_per_job)
+        try:
+            max_wait_time = max(self._wait_time_per_job)
+        except ValueError:
+            max_wait_time = 0
+        for i in range(max_wait_time + 1):
+            tmp = np.array(self._wait_time_per_job)
+            indexes = np.where(tmp == i)
+            if tot_job > 0:
+                percentage_wait_time.append(len(indexes[0])/tot_job)
+            else:
+                percentage_wait_time.append(0)
+        self._wait_time_per_job = percentage_wait_time
 
     def get_statistics(self):
+        self._convert_wait_time_in_percentage()
+
         return {
             "costs_per_timeslot": self._costs_per_timeslot,
             "lost_jobs_per_timeslot": self._lost_jobs_per_timeslot,

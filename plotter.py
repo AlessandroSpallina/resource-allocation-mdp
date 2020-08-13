@@ -30,6 +30,7 @@ def plot_markov_chain(states, transition_matrix, reward_matrix=None, projectname
 def plot_cumulative(stuff, title="", xlabel="", ylabel="", projectname="", view=False):
     fig, ax = plt.subplots(figsize=(15, 10))
     ax.grid(True)
+    ax.minorticks_on()
     for k in stuff:
         cumulative_buf = []
 
@@ -55,6 +56,7 @@ def plot_cumulative(stuff, title="", xlabel="", ylabel="", projectname="", view=
 def plot(stuff, title="", xlabel="", ylabel="", projectname="", view=False):
     fig, ax = plt.subplots(figsize=(15, 10))
     ax.grid(True)
+    ax.minorticks_on()
     for k in stuff:
         ax.plot(list(range(len(stuff[k]))), stuff[k], label=k)
     ax.set_title(title)
@@ -66,3 +68,21 @@ def plot(stuff, title="", xlabel="", ylabel="", projectname="", view=False):
     plt.savefig(STORAGE_PATH + projectname + "/" + title)
     if view:
         plt.show()
+
+
+def bar(stuff, title="", xlabel="", ylabel="", projectname="", view=False):
+    fig, ax = plt.subplots(figsize=(15, 10))
+    ax.minorticks_on()
+    ax.grid(True)
+    for k in stuff:
+        ax.bar(list(range(len(stuff[k]))), stuff[k], label=k)
+    ax.set_title(title)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.legend()
+    if not os.path.exists(STORAGE_PATH + projectname + "/"):
+        os.makedirs(STORAGE_PATH + projectname + "/")
+    plt.savefig(STORAGE_PATH + projectname + "/" + title)
+    if view:
+        plt.show()
+

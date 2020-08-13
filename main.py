@@ -1,75 +1,16 @@
+"""
+Confront MPD policy based agent vs the average of N random policy based agent.
+Then it find the best random policy and plot it.
+"""
 from slice_mdp import SliceMDP
 from agent import Agent
 from slice_simulator import SliceSimulator
-import plotter
-import numpy as np
-import random
 import time
+import plotter
+import utils
 
 SIMULATIONS = 100
-
-
-def get_mean_costs(raw_stats):
-    cps = np.array([d['costs_per_timeslot'] for d in raw_stats])
-    return {
-        "mean": cps.mean(axis=0),
-        "var": cps.var(axis=0)
-        }
-
-
-def get_mean_processed_jobs(raw_stats):
-    pj = np.array([d['processed_jobs_per_timeslot'] for d in raw_stats])
-    return {
-        "mean": pj.mean(axis=0),
-        "var": pj.var(axis=0)
-    }
-
-
-def get_mean_lost_jobs(raw_stats):
-    lj = np.array([d['lost_jobs_per_timeslot'] for d in raw_stats])
-    return {
-        "mean": lj.mean(axis=0),
-        "var": lj.var(axis=0)
-    }
-
-
-# 3 azioni (0,1,2) e 6 stati
-def generate_random_policy(states_num, action_num):
-    rpolicy = []
-    for s in range(states_num):
-        rpolicy.append(random.randint(0, action_num - 1))
-    return tuple(rpolicy)
-
-
-def easy_plot(projectname, stats, view):
-    mean_costs = get_mean_costs(stats)
-    mean_processed_jobs = get_mean_processed_jobs(stats)
-    mean_lost_jobs = get_mean_lost_jobs(stats)
-
-    # plotting of one simulation
-    plotter.plot_cumulative({"costs": stats[0]['costs_per_timeslot'],
-                             "processed jobs": stats[0]['processed_jobs_per_timeslot'],
-                             "lost jobs": stats[0]['lost_jobs_per_timeslot']},
-                            xlabel="timeslot", title=f"[{projectname}] One Sim Cumulative",
-                            projectname=projectname, view=view)
-    plotter.plot({"costs": stats[0]['costs_per_timeslot'],
-                  "processed jobs": stats[0]['processed_jobs_per_timeslot'],
-                  "lost jobs": stats[0]['lost_jobs_per_timeslot']},
-                 xlabel="timeslot", title=f"[{projectname}] One Sim per Timeslot",
-                 projectname=projectname, view=view)
-
-    # plotting of the mean of N simulations
-    plotter.plot_cumulative({"costs": mean_costs['mean'],
-                             "processed jobs": mean_processed_jobs['mean'],
-                             "lost jobs": mean_lost_jobs['mean']},
-                            xlabel="timeslot", title=f"[{projectname}] Mean Cumulative",
-                            projectname=projectname, view=view)
-    plotter.plot({"costs per ts": mean_costs['mean'],
-                  "processed jobs per ts": mean_processed_jobs['mean'],
-                  "lost jobs per ts": mean_lost_jobs['mean']},
-                 xlabel="timeslot", title=f"[{projectname}] Mean per Timeslot",
-                 projectname=projectname, view=view)
-
+SIMULATION_TIME = 1000
 
 if __name__ == '__main__':
     arrivals = [0.5, 0.5]
@@ -86,26 +27,51 @@ if __name__ == '__main__':
                               projectname="mdp-toy", view=False)
 
     for i in range(SIMULATIONS):
-        slice_simulator = SliceSimulator(arrivals, departures, c_lost=2, simulation_time=1000, verbose=False)
+        slice_simulator = SliceSimulator(arrivals, departures, c_lost=2, simulation_time=SIMULATION_TIME, verbose=False)
         mdp_agent = Agent(slice_mdp.states, policy, slice_simulator)
         mdp_stats.append(mdp_agent.control_environment())
 
+    mdp_costs = utils.get_mean_costs(mdp_stats)['mean'].sum()
+    mdp_processed = utils.get_mean_processed_jobs(mdp_stats)['mean'].sum()
+    print(f"[MDP with policy {policy}]: Total cumulative costs {mdp_costs}, total processed {mdp_processed}, "
+          f"cost per processed {mdp_costs / mdp_processed}")
+
     # random agent
+    best_random_costs = None
+    best_random_processed = None
+    best_random_policy = None
+
     for i in range(SIMULATIONS):
         random_stats_tmp = []
-        random_policy = generate_random_policy(len(slice_mdp.states), 3)
+        random_policy = utils.generate_random_policy(len(slice_mdp.states), 3)
+
         for j in range(SIMULATIONS):
-            random_simulation = SliceSimulator(arrivals, departures, c_lost=2, simulation_time=1000, verbose=False)
+            random_simulation = SliceSimulator(arrivals, departures, c_lost=2, simulation_time=SIMULATION_TIME, verbose=False)
             random_agent = Agent(slice_mdp.states, random_policy, random_simulation)
             random_stats_tmp.append(random_agent.control_environment())
-        random_stats.append({'costs_per_timeslot': get_mean_costs(random_stats_tmp)['mean'],
-                             'processed_jobs_per_timeslot': get_mean_processed_jobs(random_stats_tmp)['mean'],
-                             'lost_jobs_per_timeslot': get_mean_lost_jobs(random_stats_tmp)['mean']})
+
+        random_stats.append({'costs_per_timeslot': utils.get_mean_costs(random_stats_tmp)['mean'].tolist(),
+                             'processed_jobs_per_timeslot': utils.get_mean_processed_jobs(random_stats_tmp)['mean'].tolist(),
+                             'lost_jobs_per_timeslot': utils.get_mean_lost_jobs(random_stats_tmp)['mean'].tolist(),
+                             'wait_time_per_job': utils.get_mean_wait_time(random_stats_tmp)['mean'].tolist()})
+
+        tmp_costs = utils.get_mean_costs(random_stats_tmp)['mean'].sum()
+        tmp_processed = utils.get_mean_processed_jobs(random_stats_tmp)['mean'].sum()
+        print(f"[Random with policy {random_policy}]: Total cumulative costs {tmp_costs}, total processed {tmp_processed}, "
+              f"cost per processed {tmp_costs / tmp_processed}")
+
+        if best_random_costs is None or tmp_costs < best_random_costs:
+            best_random_costs = tmp_costs
+            best_random_processed = tmp_processed
+            best_random_policy = random_policy
+
+    print(f"Best random policy found is {best_random_policy} with costs {best_random_costs} and processed {best_random_processed}, "
+          f"cost per processed {best_random_costs / best_random_processed}")
 
     print(f"Simulation done in {(time.time() - time_start) / 60} minutes")
 
     # plotting!
-    easy_plot("mdp-toy", mdp_stats, True)
-    easy_plot("random-toy", random_stats, True)
+    utils.easy_plot("mdp-toy", mdp_stats, True)
+    utils.easy_plot("random-toy", random_stats, True)
 
 
