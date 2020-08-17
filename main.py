@@ -12,6 +12,8 @@ import utils
 SIMULATIONS = 100
 SIMULATION_TIME = 1000
 
+MDP_DISCOUNT_INCREMENT = 1
+
 if __name__ == '__main__':
     arrivals = [0.5, 0.5]
     departures = [0.6, 0.4]
@@ -21,15 +23,24 @@ if __name__ == '__main__':
     time_start = time.time()
 
     # mdp agent
+    best_mdp_costs = None
+    best_mdp_processed = None
+    best_mdp_policy = None
+
     slice_mdp = SliceMDP(arrivals, departures, 2, 1, alpha=0.5, c_lost=2, verbose=False)
-    policy = slice_mdp.run_value_iteration(0.8)
+
+    tmp_discount_factor = 0.
+    while(tmp_discount_factor < 1.):
+        policy = slice_mdp.run_value_iteration(0 + MDP_DISCOUNT_INCREMENT)
+
+
+        for j in range(SIMULATIONS):
+            slice_simulator = SliceSimulator(arrivals, departures, c_lost=2, simulation_time=SIMULATION_TIME, verbose=False)
+            mdp_agent = Agent(slice_mdp.states, policy, slice_simulator)
+            mdp_stats.append(mdp_agent.control_environment())
+
     plotter.plot_markov_chain(slice_mdp.states, slice_mdp.transition_matrix, slice_mdp.reward_matrix,
                               projectname="mdp-toy", view=False)
-
-    for i in range(SIMULATIONS):
-        slice_simulator = SliceSimulator(arrivals, departures, c_lost=2, simulation_time=SIMULATION_TIME, verbose=False)
-        mdp_agent = Agent(slice_mdp.states, policy, slice_simulator)
-        mdp_stats.append(mdp_agent.control_environment())
 
     mdp_costs = utils.get_mean_costs(mdp_stats)['mean'].sum()
     mdp_processed = utils.get_mean_processed_jobs(mdp_stats)['mean'].sum()
