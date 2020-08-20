@@ -1,5 +1,5 @@
 from slice_simulator import SliceSimulator
-import main
+import utils
 
 if __name__ == '__main__':
     slice_sim = SliceSimulator([0.5,0.5], [0.6,0.4], c_lost=2, simulation_time=50, verbose=True)
@@ -12,4 +12,4 @@ if __name__ == '__main__':
 
     stats = slice_sim.get_statistics()
 
-    main.easy_plot('debug', [stats], True)
+    utils.easy_plot('debug', [stats], True)

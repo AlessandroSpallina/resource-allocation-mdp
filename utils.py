@@ -54,36 +54,19 @@ def generate_random_policy(states_num, action_num):
     return tuple(rpolicy)
 
 
-def easy_plot(projectname, stats, view):
-    mean_costs = get_mean_costs(stats)
-    mean_processed_jobs = get_mean_processed_jobs(stats)
-    mean_lost_jobs = get_mean_lost_jobs(stats)
-    mean_wait_time = get_mean_wait_time(stats)
+def easy_plot(projectname, comment, stats, view):
 
-    # plots of one simulation
-    plotter.plot_cumulative({"costs": stats[0]['costs_per_timeslot'],
-                             "processed jobs": stats[0]['processed_jobs_per_timeslot'],
-                             "lost jobs": stats[0]['lost_jobs_per_timeslot']},
-                            xlabel="timeslot", title=f"[{projectname}] One Sim Cumulative",
+    plotter.plot_cumulative({"costs": stats['costs_per_timeslot'],
+                             "processed jobs": stats['processed_jobs_per_timeslot'],
+                             "lost jobs": stats['lost_jobs_per_timeslot']},
+                            xlabel="timeslot", title=f"[{projectname}] Mean Cumulative ({comment})",
                             projectname=projectname, view=view)
-    plotter.plot({"costs": stats[0]['costs_per_timeslot'],
-                  "processed jobs": stats[0]['processed_jobs_per_timeslot'],
-                  "lost jobs": stats[0]['lost_jobs_per_timeslot']},
-                 xlabel="timeslot", title=f"[{projectname}] One Sim per Timeslot",
+    plotter.plot({"costs per ts": stats['costs_per_timeslot'],
+                  "processed jobs per ts": stats['processed_jobs_per_timeslot'],
+                  "lost jobs per ts": stats['lost_jobs_per_timeslot']},
+                 xlabel="timeslot", title=f"[{projectname}] Mean per Timeslot ({comment})",
                  projectname=projectname, view=view)
 
-    # plotting of the mean of N simulations
-    plotter.plot_cumulative({"costs": mean_costs['mean'],
-                             "processed jobs": mean_processed_jobs['mean'],
-                             "lost jobs": mean_lost_jobs['mean']},
-                            xlabel="timeslot", title=f"[{projectname}] Mean Cumulative",
-                            projectname=projectname, view=view)
-    plotter.plot({"costs per ts": mean_costs['mean'],
-                  "processed jobs per ts": mean_processed_jobs['mean'],
-                  "lost jobs per ts": mean_lost_jobs['mean']},
-                 xlabel="timeslot", title=f"[{projectname}] Mean per Timeslot",
-                 projectname=projectname, view=view)
-
-    plotter.bar({"job wait time": mean_wait_time['mean']},
-                xlabel="timeslot", ylabel="percentage of wait time", title=f"[{projectname}] Mean Job Wait Time",
+    plotter.bar({"job wait time": stats['wait_time_per_job']},
+                xlabel="timeslot", ylabel="percentage of wait time", title=f"[{projectname}] Mean Job Wait Time ({comment})",
                 projectname=projectname, view=view)
