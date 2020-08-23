@@ -61,12 +61,14 @@ def easy_plot(projectname, comment, stats, view):
                              "lost jobs": stats['lost_jobs_per_timeslot']},
                             xlabel="timeslot", title=f"[{projectname}] Mean Cumulative ({comment})",
                             projectname=projectname, view=view)
+
     plotter.plot({"costs per ts": stats['costs_per_timeslot'],
                   "processed jobs per ts": stats['processed_jobs_per_timeslot'],
                   "lost jobs per ts": stats['lost_jobs_per_timeslot']},
                  xlabel="timeslot", title=f"[{projectname}] Mean per Timeslot ({comment})",
                  projectname=projectname, view=view)
 
+    # total time is wait time in the system
     plotter.bar({"job wait time": stats['wait_time_per_job']},
-                xlabel="timeslot", ylabel="percentage of wait time", title=f"[{projectname}] Mean Job Wait Time ({comment})",
+                xlabel="timeslot", ylabel="percentage of wait time", title=f"[{projectname}] Mean Job Total Time ({comment})",
                 projectname=projectname, view=view)

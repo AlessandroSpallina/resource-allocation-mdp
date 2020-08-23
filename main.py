@@ -8,14 +8,17 @@ import time
 import plotter
 import utils
 
-SIMULATIONS = 10
-SIMULATION_TIME = 1000
-
-MDP_DISCOUNT_INCREMENT = 0.1
-
 if __name__ == '__main__':
-    arrivals = [0.5, 0.5]
-    departures = [0.6, 0.4]
+    ARRIVALS = [0.5, 0.5]
+    DEPARTURES = [0.6, 0.4]
+    QUEUE_SIZE = 2
+
+    SIMULATIONS = 10
+    SIMULATION_TIME = 1000
+    RANDOM_POLICY_ATTEMPT = 5
+
+    MDP_DISCOUNT_INCREMENT = 0.1
+
     mdp_stats = []
     random_stats = []
 
@@ -28,19 +31,19 @@ if __name__ == '__main__':
     best_mdp_policy = None
     best_discount_factor = None
 
-    slice_mdp = SliceMDP(arrivals, departures, 2, 1, alpha=0.5, c_lost=2, verbose=False)
+    slice_mdp = SliceMDP(ARRIVALS, DEPARTURES, QUEUE_SIZE, 1, alpha=0.5, c_lost=10, verbose=False)
 
     plotter.plot_markov_chain(slice_mdp.states, slice_mdp.transition_matrix, slice_mdp.reward_matrix,
                               projectname="mdp-toy", view=False)
 
-    tmp_discount_factor = 0.1
+    tmp_discount_factor = 0.5
 
     while tmp_discount_factor <= 1.:
         mdp_stats_tmp = []
         policy = slice_mdp.run_value_iteration(tmp_discount_factor)
 
         for j in range(SIMULATIONS):
-            slice_simulator = SliceSimulator(arrivals, departures, c_lost=2, simulation_time=SIMULATION_TIME, verbose=False)
+            slice_simulator = SliceSimulator(ARRIVALS, DEPARTURES, QUEUE_SIZE, c_lost=10, simulation_time=SIMULATION_TIME, verbose=False)
             mdp_agent = Agent(slice_mdp.states, policy, slice_simulator)
             mdp_stats_tmp.append(mdp_agent.control_environment())
 
@@ -59,10 +62,11 @@ if __name__ == '__main__':
             best_mdp_policy = policy
             best_discount_factor = tmp_discount_factor
             # N.B. random_stats contain the stats of the best policy simulated!
-            mdp_stats = {'costs_per_timeslot': utils.get_mean_costs(mdp_stats_tmp)['mean'].tolist(),
-                         'processed_jobs_per_timeslot': utils.get_mean_processed_jobs(mdp_stats_tmp)['mean'].tolist(),
-                         'lost_jobs_per_timeslot': utils.get_mean_lost_jobs(mdp_stats_tmp)['mean'].tolist(),
-                         'wait_time_per_job': utils.get_mean_wait_time(mdp_stats_tmp)['mean'].tolist()}
+            mdp_stats = {'costs_per_timeslot': utils.get_mean_costs(mdp_stats_tmp)['mean'],
+                         'processed_jobs_per_timeslot': utils.get_mean_processed_jobs(mdp_stats_tmp)['mean'],
+                         'lost_jobs_per_timeslot': utils.get_mean_lost_jobs(mdp_stats_tmp)['mean'],
+                         'wait_time_per_job': utils.get_mean_wait_time(mdp_stats_tmp)['mean']}
+            # print(f"MDP BEST HERE {mdp_stats['wait_time_per_job']}")
 
         tmp_discount_factor += MDP_DISCOUNT_INCREMENT
 
@@ -72,12 +76,12 @@ if __name__ == '__main__':
     best_random_lost = None
     best_random_policy = None
 
-    for i in range(SIMULATIONS):
+    for i in range(RANDOM_POLICY_ATTEMPT):
         random_stats_tmp = []
         random_policy = utils.generate_random_policy(len(slice_mdp.states), 3)
 
         for j in range(SIMULATIONS):
-            random_simulation = SliceSimulator(arrivals, departures, c_lost=2, simulation_time=SIMULATION_TIME, verbose=False)
+            random_simulation = SliceSimulator(ARRIVALS, DEPARTURES, QUEUE_SIZE, c_lost=10, simulation_time=SIMULATION_TIME, verbose=False)
             random_agent = Agent(slice_mdp.states, random_policy, random_simulation)
             random_stats_tmp.append(random_agent.control_environment())
 
@@ -89,16 +93,19 @@ if __name__ == '__main__':
               f"total processed {tmp_processed}, total lost jobs {tmp_lost}"
               f"cost per processed {tmp_costs / tmp_processed}")
 
+        print(utils.get_mean_wait_time(random_stats_tmp)['mean'])
+
         if best_random_costs is None or tmp_costs < best_random_costs:
             best_random_costs = tmp_costs
             best_random_processed = tmp_processed
             best_random_lost = tmp_lost
             best_random_policy = random_policy
             # N.B. random_stats contain the stats of the best policy simulated!
-            random_stats = {'costs_per_timeslot': utils.get_mean_costs(random_stats_tmp)['mean'].tolist(),
-                            'processed_jobs_per_timeslot': utils.get_mean_processed_jobs(random_stats_tmp)['mean'].tolist(),
-                            'lost_jobs_per_timeslot': utils.get_mean_lost_jobs(random_stats_tmp)['mean'].tolist(),
-                            'wait_time_per_job': utils.get_mean_wait_time(random_stats_tmp)['mean'].tolist()}
+            random_stats = {'costs_per_timeslot': utils.get_mean_costs(random_stats_tmp)['mean'],
+                            'processed_jobs_per_timeslot': utils.get_mean_processed_jobs(random_stats_tmp)['mean'],
+                            'lost_jobs_per_timeslot': utils.get_mean_lost_jobs(random_stats_tmp)['mean'],
+                            'wait_time_per_job': utils.get_mean_wait_time(random_stats_tmp)['mean']}
+            # print(f"BEST RANDOM HERE {random_stats['wait_time_per_job']}")
 
     utils.print_blue(f"Best mdp policy found is {best_mdp_policy} with costs {best_mdp_costs} "
                      f"and processed {best_mdp_processed} and lost jobs {best_mdp_lost} "
@@ -110,8 +117,10 @@ if __name__ == '__main__':
 
     print(f"Simulation done in {(time.time() - time_start) / 60} minutes")
 
+    print(random_stats['wait_time_per_job'])
+
     # plotting!
-    utils.easy_plot("mdp-toy", "Policy {}".format(best_mdp_policy), mdp_stats, True)
-    utils.easy_plot("random-toy", "Policy {}".format(best_random_policy), random_stats, True)
+    utils.easy_plot("mdp-toy", "Policy {}".format(best_mdp_policy), mdp_stats, False)
+    utils.easy_plot("random-toy", "Policy {}".format(best_random_policy), random_stats, False)
 
 

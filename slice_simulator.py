@@ -115,16 +115,21 @@ class SliceSimulator:
 
     def _allocate_server(self, count=1):
         if self._current_state.n + count > self._max_server_num:
-            raise ServerMaxCapError('Max Cap Limit Reached',
-                                    'Unable to allocate {self._server_num + count} servers; '
-                                    'max cap is {self._max_server_number_cap}')
-        self._current_state.n += count
+            if self._verbose:
+                print(f"Max Cap Limit Reached, "
+                      f"Unable to allocate {self._current_state.n + count} servers; "
+                      f"max cap is {self._max_server_num}")
+        else:
+            self._current_state.n += count
 
     def _deallocate_server(self, count=1):
         if self._current_state.n - count < 0:
-            raise ServerMinCapError('Min Cap Limit Reached',
-                                    'Unable to deallocate to {self._server_num + count} servers; min cap is 1')
-        self._current_state.n -= count
+            if self._verbose:
+                print(f"Min Cap Limit Reached, "
+                      f"Unable to deallocate to {self._current_state.n - count} servers; "
+                      f"min cap is 0")
+        else:
+            self._current_state.n -= count
 
     # returns the current state
     def simulate_timeslot(self, action_id):
