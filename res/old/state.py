@@ -25,7 +25,7 @@ class State(object):
         self.free_locs = [(0, 1), (1, 0)]
 
     def blockable(self):  # Return true if blockable. Terminal and freeLocs are not blockable
-        #return self.playable() and not self.loc in self.free_locs
+        # return self.playable() and not self.loc in self.free_locs
         return self.playable() and self.loc not in self.free_locs
 
     def playable(self):  # playable states are Reachable non terminal states

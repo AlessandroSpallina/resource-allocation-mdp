@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
+
 import slice_simulator as q
 import utils
-
 
 if __name__ == '__main__':
     slice = q.QueueSimulator(29, 30, 30, 5)

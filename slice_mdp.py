@@ -1,5 +1,6 @@
 import mdptoolbox
 import numpy as np
+
 from state import State
 
 
@@ -48,6 +49,7 @@ class SliceMDP:
     S4: (1,1)
     S5: (2,1)
     """
+
     def _generate_states(self):
         states = []  # state at pos 0 -> S0, etc..
         for i in range(self._max_server_num + 1):
@@ -151,6 +153,7 @@ class SliceMDP:
     Q[1] -> transition matrix related action 0 (allocate 1)
     Q[2] -> transition matrix related action 0 (deallocate 1)
     """
+
     def _generate_transition_matrix(self):
         transition_matrix = np.zeros((3, len(self._states), len(self._states)))
 
@@ -158,7 +161,8 @@ class SliceMDP:
         for a in range(len(transition_matrix)):
             for i in range(len(self._states)):
                 for j in range(len(self._states)):
-                    transition_matrix[a][i][j] = self._calculate_transition_probability(self._states[i], self._states[j], a)
+                    transition_matrix[a][i][j] = self._calculate_transition_probability(self._states[i],
+                                                                                        self._states[j], a)
         return transition_matrix
 
     def _calculate_transition_reward(self, to_state):

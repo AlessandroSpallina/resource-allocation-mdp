@@ -1,7 +1,18 @@
-import colorama as color
-import plotter
-import numpy as np
 import random
+
+import colorama as color
+import numpy as np
+import yaml
+
+import plotter
+
+
+def read_config(verbose=False):
+    with open('config.yaml') as f:
+        data = yaml.load(f, Loader=yaml.FullLoader)
+    if verbose:
+        print(f"CONF: {data}")
+    return data
 
 
 def print_blue(message):
@@ -13,7 +24,7 @@ def get_mean_costs(raw_stats):
     return {
         "mean": cps.mean(axis=0),
         "var": cps.var(axis=0)
-        }
+    }
 
 
 def get_mean_processed_jobs(raw_stats):
@@ -55,7 +66,6 @@ def generate_random_policy(states_num, action_num):
 
 
 def easy_plot(projectname, comment, stats, view):
-
     plotter.plot_cumulative({"costs": stats['costs_per_timeslot'],
                              "processed jobs": stats['processed_jobs_per_timeslot'],
                              "lost jobs": stats['lost_jobs_per_timeslot']},
@@ -70,5 +80,6 @@ def easy_plot(projectname, comment, stats, view):
 
     # total time is wait time in the system
     plotter.bar({"job wait time": stats['wait_time_per_job']},
-                xlabel="timeslot", ylabel="percentage of wait time", title=f"[{projectname}] Mean Job Total Time ({comment})",
+                xlabel="timeslot", ylabel="percentage of wait time",
+                title=f"[{projectname}] Mean Job Total Time ({comment})",
                 projectname=projectname, view=view)

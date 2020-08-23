@@ -54,7 +54,6 @@ class SliceCalculator(object):
         self._pc = self._finalTerm * self._p0
         self._probSum = preSum * self._p0
 
-
     @property
     def arrival(self):
         return self._arrival
@@ -142,7 +141,6 @@ class SliceCalculator(object):
         Return the average number of busy Server.
         """
         return self.arrival / self.departure
-
 
     def getPorbWhenQueueTimeLargerThan(self, queueTime):
         """

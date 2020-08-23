@@ -6,8 +6,8 @@ class Agent(object):
     def __init__(self, grid):
         self.grid = grid
 
-    def getAction (self, state, i): #Random action selector
-        return np.random.randint(1,5)
+    def getAction(self, state, i):  # Random action selector
+        return np.random.randint(1, 5)
 
     def learn(self, experienceTuples):
         return

@@ -1,9 +1,10 @@
 # see https://github.com/sarthak0120/M-M-1-Queue-Simulation/blob/master/Queue%20Simulation.py
 
-import numpy as np
-import queue
 import copy
+import queue
+
 import matplotlib.pyplot as plt
+import numpy as np
 
 # Input Parameters
 total_time = int(input("Enter time for simulation (Hours): "))

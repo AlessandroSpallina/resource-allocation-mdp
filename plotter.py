@@ -1,13 +1,11 @@
-from graphviz import Digraph
-import matplotlib.pyplot as plt
 import os
 
-STORAGE_PATH = "./res/exported/"
+import matplotlib.pyplot as plt
+from graphviz import Digraph
 
 
 # Export to file a graph representing the markov chain related to an action
 def plot_markov_chain(states, transition_matrix, reward_matrix=None, projectname="", view=False):
-
     for a in range(len(transition_matrix)):
         dot = Digraph(filename=f"action{a}" + ".gv", format="png")
 
@@ -22,9 +20,9 @@ def plot_markov_chain(states, transition_matrix, reward_matrix=None, projectname
                     else:
                         dot.edge(str(x), str(y), label=f"P: {transition_matrix[a][x][y]}")
 
-        if not os.path.exists(STORAGE_PATH + projectname + "/"):
-            os.makedirs(STORAGE_PATH + projectname + "/")
-        dot.render(STORAGE_PATH + projectname + "/" + f"action{a}", view=view)
+        if not os.path.exists(projectname + "/"):
+            os.makedirs(projectname + "/")
+        dot.render(projectname + "/" + f"action{a}", view=view)
 
 
 def plot_cumulative(stuff, title="", xlabel="", ylabel="", projectname="", view=False):
@@ -36,7 +34,7 @@ def plot_cumulative(stuff, title="", xlabel="", ylabel="", projectname="", view=
 
         for i in range(len(stuff[k])):
             if i > 0:
-                cumulative_buf.append(cumulative_buf[i-1] + stuff[k][i])
+                cumulative_buf.append(cumulative_buf[i - 1] + stuff[k][i])
             else:
                 cumulative_buf.append(stuff[k][0])
 
@@ -46,9 +44,9 @@ def plot_cumulative(stuff, title="", xlabel="", ylabel="", projectname="", view=
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     ax.legend()
-    if not os.path.exists(STORAGE_PATH + projectname + "/"):
-        os.makedirs(STORAGE_PATH + projectname + "/")
-    plt.savefig(STORAGE_PATH + projectname + "/" + title)
+    if not os.path.exists(projectname + "/"):
+        os.makedirs(projectname + "/")
+    plt.savefig(projectname + "/" + title)
     if view:
         plt.show()
 
@@ -63,9 +61,9 @@ def plot(stuff, title="", xlabel="", ylabel="", projectname="", view=False):
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     ax.legend()
-    if not os.path.exists(STORAGE_PATH + projectname + "/"):
-        os.makedirs(STORAGE_PATH + projectname + "/")
-    plt.savefig(STORAGE_PATH + projectname + "/" + title)
+    if not os.path.exists(projectname + "/"):
+        os.makedirs(projectname + "/")
+    plt.savefig(projectname + "/" + title)
     if view:
         plt.show()
 
@@ -80,9 +78,8 @@ def bar(stuff, title="", xlabel="", ylabel="", projectname="", view=False):
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     ax.legend()
-    if not os.path.exists(STORAGE_PATH + projectname + "/"):
-        os.makedirs(STORAGE_PATH + projectname + "/")
-    plt.savefig(STORAGE_PATH + projectname + "/" + title)
+    if not os.path.exists(projectname + "/"):
+        os.makedirs(projectname + "/")
+    plt.savefig(projectname + "/" + title)
     if view:
         plt.show()
-

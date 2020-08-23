@@ -3,10 +3,12 @@
 # * consider using generators, see https://wiki.python.org/moin/Generators
 
 import queue
-from state import State
 import random
-import numpy as np
 from copy import copy
+
+import numpy as np
+
+from state import State
 
 
 class Error(Exception):
@@ -207,7 +209,7 @@ class SliceSimulator:
             tmp = np.array(self._wait_time_per_job)
             indexes = np.where(tmp == i)
             if tot_job > 0:
-                percentage_wait_time.append(len(indexes[0])/tot_job)
+                percentage_wait_time.append(len(indexes[0]) / tot_job)
             else:
                 percentage_wait_time.append(0)
         self._wait_time_per_job = percentage_wait_time
@@ -221,5 +223,4 @@ class SliceSimulator:
             "processed_jobs_per_timeslot": self._processed_jobs_per_timeslot,
             "wait_time_per_job": self._wait_time_per_job,
             "state_sequence": self._state_sequence
-            }
-
+        }
