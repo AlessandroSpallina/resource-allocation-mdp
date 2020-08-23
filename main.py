@@ -121,6 +121,8 @@ if __name__ == '__main__':
 
     print(f"Simulation done in {(time.time() - time_start) / 60} minutes")
 
+    if not os.path.exists(STORAGE_PATH):
+        os.makedirs(STORAGE_PATH)
     shutil.copyfile("./config.yaml", f"{STORAGE_PATH}config.yaml")
     os.chdir(STORAGE_PATH)
 
