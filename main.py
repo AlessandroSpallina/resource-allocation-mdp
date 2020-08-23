@@ -4,6 +4,7 @@ Find the best discount factor and the best random policy
 import os
 import shutil
 import time
+import logging
 
 import plotter
 import utils
@@ -14,6 +15,10 @@ from slice_simulator import SliceSimulator
 STORAGE_PATH = "./res/exported/{}/".format(int(time.time()))
 
 if __name__ == '__main__':
+    if not os.path.exists(STORAGE_PATH):
+        os.makedirs(STORAGE_PATH)
+    logging.basicConfig(filename=f"{STORAGE_PATH}report.log", level=logging.INFO)
+
     conf = utils.read_config(True)
 
     ARRIVALS = conf['arrivals_histogram']
@@ -57,9 +62,9 @@ if __name__ == '__main__':
         tmp_processed = utils.get_mean_processed_jobs(mdp_stats_tmp)['mean'].sum()
         tmp_lost = utils.get_mean_lost_jobs(mdp_stats_tmp)['mean'].sum()
 
-        print(f"[MDP with policy {policy} (discount {tmp_discount_factor})]: Total cumulative costs {tmp_costs}, "
-              f"total processed {tmp_processed}, total lost jobs {tmp_lost},"
-              f"cost per processed {tmp_costs / tmp_processed}")
+        logging.info(f"[MDP with policy {policy} (discount {tmp_discount_factor})]: Total cumulative costs {tmp_costs}, "
+                      f"total processed {tmp_processed}, total lost jobs {tmp_lost},"
+                      f"cost per processed {tmp_costs / tmp_processed}")
 
         if best_mdp_costs is None or tmp_costs < best_mdp_costs:
             best_mdp_costs = tmp_costs
@@ -95,9 +100,9 @@ if __name__ == '__main__':
         tmp_processed = utils.get_mean_processed_jobs(random_stats_tmp)['mean'].sum()
         tmp_lost = utils.get_mean_lost_jobs(random_stats_tmp)['mean'].sum()
 
-        print(f"[Random with policy {random_policy}]: Total cumulative costs {tmp_costs}, "
-              f"total processed {tmp_processed}, total lost jobs {tmp_lost}"
-              f"cost per processed {tmp_costs / tmp_processed}")
+        logging.info(f"[Random with policy {random_policy}]: Total cumulative costs {tmp_costs}, "
+                      f"total processed {tmp_processed}, total lost jobs {tmp_lost}"
+                      f"cost per processed {tmp_costs / tmp_processed}")
 
         if best_random_costs is None or tmp_costs < best_random_costs:
             best_random_costs = tmp_costs
@@ -111,18 +116,16 @@ if __name__ == '__main__':
                             'wait_time_per_job': utils.get_mean_wait_time(random_stats_tmp)['mean']}
             # print(f"BEST RANDOM HERE {random_stats['wait_time_per_job']}")
 
-    utils.print_blue(f"Best mdp policy found is {best_mdp_policy} with costs {best_mdp_costs} "
-                     f"and processed {best_mdp_processed} and lost jobs {best_mdp_lost} "
-                     f"cost per processed {best_mdp_costs / best_mdp_processed}")
+    logging.info(f"* Best mdp policy found is {best_mdp_policy} with costs {best_mdp_costs} "
+                 f"and processed {best_mdp_processed} and lost jobs {best_mdp_lost} "
+                 f"cost per processed {best_mdp_costs / best_mdp_processed}")
 
-    utils.print_blue(f"Best random policy found is {best_random_policy} with costs {best_random_costs} "
-                     f"and processed {best_random_processed} and lost jobs {best_random_lost}, "
-                     f"cost per processed {best_random_costs / best_random_processed}")
+    logging.info(f"* Best random policy found is {best_random_policy} with costs {best_random_costs} "
+                 f"and processed {best_random_processed} and lost jobs {best_random_lost}, "
+                 f"cost per processed {best_random_costs / best_random_processed}")
 
-    print(f"Simulation done in {(time.time() - time_start) / 60} minutes")
+    logging.info(f"*** Simulation done in {(time.time() - time_start) / 60} minutes ***")
 
-    if not os.path.exists(STORAGE_PATH):
-        os.makedirs(STORAGE_PATH)
     shutil.copyfile("./config.yaml", f"{STORAGE_PATH}config.yaml")
     os.chdir(STORAGE_PATH)
 

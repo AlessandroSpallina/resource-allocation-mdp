@@ -1,4 +1,5 @@
 import random
+import logging
 
 import colorama as color
 import numpy as np
@@ -11,7 +12,7 @@ def read_config(verbose=False):
     with open('config.yaml') as f:
         data = yaml.load(f, Loader=yaml.FullLoader)
     if verbose:
-        print(f"CONF: {data}")
+        logging.info(f"CONF: {data}")
     return data
 
 
