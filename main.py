@@ -93,7 +93,6 @@ if __name__ == '__main__':
               f"total processed {tmp_processed}, total lost jobs {tmp_lost}"
               f"cost per processed {tmp_costs / tmp_processed}")
 
-        print(utils.get_mean_wait_time(random_stats_tmp)['mean'])
 
         if best_random_costs is None or tmp_costs < best_random_costs:
             best_random_costs = tmp_costs
@@ -116,8 +115,6 @@ if __name__ == '__main__':
                      f"cost per processed {best_random_costs / best_random_processed}")
 
     print(f"Simulation done in {(time.time() - time_start) / 60} minutes")
-
-    print(random_stats['wait_time_per_job'])
 
     # plotting!
     utils.easy_plot("mdp-toy", "Policy {}".format(best_mdp_policy), mdp_stats, False)
