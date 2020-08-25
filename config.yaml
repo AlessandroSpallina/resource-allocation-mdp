@@ -11,7 +11,7 @@ departures_histogram:
   - 0.4
 
 # queue size is the max number of jobs waiting in the queue
-queue_size: 2
+queue_size: 20
 
 # alpha is the parameter responsible for the cost normalization
 alpha: 0.5
@@ -23,7 +23,7 @@ c_lost: 10
 simulations: 10
 
 # simulation time (in timeslots) indicates timing for each simulation done
-simulation_time: 10000
+simulation_time: 1000
 
 # random policy attempts represent the number of attempts to generate a random policy
 random_policy_attempts: 5

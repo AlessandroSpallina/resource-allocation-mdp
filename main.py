@@ -63,8 +63,8 @@ if __name__ == '__main__':
         tmp_lost = utils.get_mean_lost_jobs(mdp_stats_tmp)['mean'].sum()
 
         logging.info(f"[MDP with policy {policy} (discount {tmp_discount_factor})]: Total cumulative costs {tmp_costs}, "
-                      f"total processed {tmp_processed}, total lost jobs {tmp_lost},"
-                      f"cost per processed {tmp_costs / tmp_processed}")
+                     f"total processed {tmp_processed}, total lost jobs {tmp_lost},"
+                     f"cost per processed {tmp_costs / tmp_processed}")
 
         if best_mdp_costs is None or tmp_costs < best_mdp_costs:
             best_mdp_costs = tmp_costs
@@ -101,8 +101,8 @@ if __name__ == '__main__':
         tmp_lost = utils.get_mean_lost_jobs(random_stats_tmp)['mean'].sum()
 
         logging.info(f"[Random with policy {random_policy}]: Total cumulative costs {tmp_costs}, "
-                      f"total processed {tmp_processed}, total lost jobs {tmp_lost}"
-                      f"cost per processed {tmp_costs / tmp_processed}")
+                     f"total processed {tmp_processed}, total lost jobs {tmp_lost}"
+                     f"cost per processed {tmp_costs / tmp_processed}")
 
         if best_random_costs is None or tmp_costs < best_random_costs:
             best_random_costs = tmp_costs

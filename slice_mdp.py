@@ -106,7 +106,7 @@ class SliceMDP:
                             tmp += self._arrivals_histogram[i] * h_p[i - diff.k]
                         except IndexError:
                             pass
-                    for i in range(len(self._arrivals_histogram) - self._queue_size):
+                    for i in range(len(self._arrivals_histogram) - self._queue_size): # sicuro che qui non ci voglia +1?
                         try:
                             tmp2 += self._arrivals_histogram[self._queue_size + i] * h_p[self._queue_size - to_state.k]
                         except IndexError:
