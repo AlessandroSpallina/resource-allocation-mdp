@@ -19,6 +19,8 @@ if __name__ == '__main__':
         os.makedirs(STORAGE_PATH)
     logging.basicConfig(filename=f"{STORAGE_PATH}report.log", level=logging.INFO)
 
+    logging.info(f"Last commit available at {utils.get_last_commit_link()}")
+
     conf = utils.read_config(True)
 
     ARRIVALS = conf['arrivals_histogram']

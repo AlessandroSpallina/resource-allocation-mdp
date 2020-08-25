@@ -1,11 +1,17 @@
 import random
 import logging
+import subprocess
 
 import colorama as color
 import numpy as np
 import yaml
 
 import plotter
+
+
+def get_last_commit_link():
+    commit_hash = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"])
+    return f"https://github.com/AlessandroSpallina/Slicing-5G-MDP/commit/{commit_hash[:-1].decode('utf-8')}"
 
 
 def read_config(verbose=False):
