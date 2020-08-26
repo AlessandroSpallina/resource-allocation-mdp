@@ -26,6 +26,66 @@ def plot_markov_chain(states, transition_matrix, reward_matrix=None, projectname
         dot.render(projectname + "/" + f"action{a}", view=view)
 
 
+def plot_cumulative(stuff, title="", xlabel="", ylabel="", projectname="", view=False):
+    fig, ax = plt.subplots(figsize=(15, 10))
+    ax.grid(True)
+    ax.minorticks_on()
+    for k in stuff:
+        cumulative_buf = []
+
+        for i in range(len(stuff[k])):
+            if i > 0:
+                cumulative_buf.append(cumulative_buf[i - 1] + stuff[k][i])
+            else:
+                cumulative_buf.append(stuff[k][0])
+
+        ax.plot(list(range(len(stuff[k]))), cumulative_buf, label=k)
+
+    ax.set_title(title)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.legend()
+    if not os.path.exists(projectname + "/"):
+        os.makedirs(projectname + "/")
+    plt.savefig(projectname + "/" + title)
+    if view:
+        plt.show()
+
+
+def plot(stuff, title="", xlabel="", ylabel="", projectname="", view=False):
+    fig, ax = plt.subplots(figsize=(15, 10))
+    ax.grid(True)
+    ax.minorticks_on()
+    for k in stuff:
+        ax.plot(list(range(len(stuff[k]))), stuff[k], label=k)
+    ax.set_title(title)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.legend()
+    if not os.path.exists(projectname + "/"):
+        os.makedirs(projectname + "/")
+    plt.savefig(projectname + "/" + title)
+    if view:
+        plt.show()
+
+
+def bar(stuff, title="", xlabel="", ylabel="", projectname="", view=False):
+    fig, ax = plt.subplots(figsize=(15, 10))
+    ax.minorticks_on()
+    ax.grid(True)
+    for k in stuff:
+        ax.bar(list(range(len(stuff[k]))), stuff[k], label=k)
+    ax.set_title(title)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.legend()
+    if not os.path.exists(projectname + "/"):
+        os.makedirs(projectname + "/")
+    plt.savefig(projectname + "/" + title)
+    if view:
+        plt.show()
+
+
 # this function supports multiple y axes
 # def plot_cumulative(stuff, title="", xlabel="", projectname="", view=False):
 #     fig, ax = plt.subplots(figsize=(15, 10))
@@ -119,63 +179,3 @@ def plot_markov_chain(states, transition_matrix, reward_matrix=None, projectname
 #     plt.savefig(projectname + "/" + title)
 #     if view:
 #         plt.show()
-
-
-def plot_cumulative(stuff, title="", xlabel="", ylabel="", projectname="", view=False):
-    fig, ax = plt.subplots(figsize=(15, 10))
-    ax.grid(True)
-    ax.minorticks_on()
-    for k in stuff:
-        cumulative_buf = []
-
-        for i in range(len(stuff[k])):
-            if i > 0:
-                cumulative_buf.append(cumulative_buf[i - 1] + stuff[k][i])
-            else:
-                cumulative_buf.append(stuff[k][0])
-
-        ax.plot(list(range(len(stuff[k]))), cumulative_buf, label=k)
-
-    ax.set_title(title)
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
-    ax.legend()
-    if not os.path.exists(projectname + "/"):
-        os.makedirs(projectname + "/")
-    plt.savefig(projectname + "/" + title)
-    if view:
-        plt.show()
-
-
-def plot(stuff, title="", xlabel="", ylabel="", projectname="", view=False):
-    fig, ax = plt.subplots(figsize=(15, 10))
-    ax.grid(True)
-    ax.minorticks_on()
-    for k in stuff:
-        ax.plot(list(range(len(stuff[k]))), stuff[k], label=k)
-    ax.set_title(title)
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
-    ax.legend()
-    if not os.path.exists(projectname + "/"):
-        os.makedirs(projectname + "/")
-    plt.savefig(projectname + "/" + title)
-    if view:
-        plt.show()
-
-
-def bar(stuff, title="", xlabel="", ylabel="", projectname="", view=False):
-    fig, ax = plt.subplots(figsize=(15, 10))
-    ax.minorticks_on()
-    ax.grid(True)
-    for k in stuff:
-        ax.bar(list(range(len(stuff[k]))), stuff[k], label=k)
-    ax.set_title(title)
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
-    ax.legend()
-    if not os.path.exists(projectname + "/"):
-        os.makedirs(projectname + "/")
-    plt.savefig(projectname + "/" + title)
-    if view:
-        plt.show()

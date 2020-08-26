@@ -80,22 +80,42 @@ class SliceMDP:
 
         # prima valuto le transizioni "orizzontali"
         if from_state.n == 0:
-            if diff.k == 0 and to_state.k == self._queue_size:
-                transition_probability = 1.
-            elif diff.k >= 0:
-                try:
-                    transition_probability = self._arrivals_histogram[diff.k]
-                except IndexError:
-                    pass
+            if diff.k >= 0:
+                if to_state.k <= from_state.k + (len(self._arrivals_histogram) - 1):
+                    if to_state.k < self._queue_size:
+                        try:
+                            transition_probability = self._arrivals_histogram[diff.k]
+                        except IndexError:
+                            pass
+                    elif to_state.k == self._queue_size:
+                        for x in range(diff.k, len(self._arrivals_histogram)):
+                            transition_probability += self._arrivals_histogram[x]
         else:
             if diff.k == 0 and to_state.k == 0:
                 tmp = 0
-                for i in range(1, len(h_p)):
-                    try:
-                        tmp += self._arrivals_histogram[i] * h_p[i]
-                    except IndexError:
-                        pass
+
+                if len(self._arrivals_histogram) - 1 > self._queue_size:
+                    for i in range(len(h_p)):
+                        for j in range(1, len(self._arrivals_histogram)):
+                            try:
+                                tmp += self._arrivals_histogram[i + j] * h_p[j]
+                            except IndexError:
+                                pass
+                else:
+                    for i in range(1, len(h_p)):
+                        try:
+                            tmp += self._arrivals_histogram[i] * h_p[i]
+                        except IndexError:
+                            pass
                 transition_probability = self._arrivals_histogram[0] + tmp
+
+                #
+                # for i in range(1, len(h_p)):
+                #     try:
+                #         tmp += self._arrivals_histogram[i] * h_p[i]
+                #     except IndexError:
+                #         pass
+                # transition_probability = self._arrivals_histogram[0] + tmp
 
             elif diff.k >= 0:
                 if to_state.k < self._queue_size:
