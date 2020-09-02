@@ -27,7 +27,9 @@ if __name__ == '__main__':
     DEPARTURES = conf['departures_histogram']
     QUEUE_SIZE = conf['queue_size']
     ALPHA = conf['alpha']
+    C_SERVER = conf['c_server']
     C_LOST = conf['c_lost']
+
 
     SIMULATIONS = conf['simulations']
     SIMULATION_TIME = conf['simulation_time']
@@ -48,14 +50,14 @@ if __name__ == '__main__':
     best_mdp_policy = None
     best_discount_factor = None
 
-    slice_mdp = SliceMDP(ARRIVALS, DEPARTURES, QUEUE_SIZE, 1, alpha=ALPHA, c_lost=C_LOST, verbose=False)
+    slice_mdp = SliceMDP(ARRIVALS, DEPARTURES, QUEUE_SIZE, 1, alpha=ALPHA, c_server=C_SERVER, c_lost=C_LOST, verbose=False)
 
     while tmp_discount_factor <= 1.:
         mdp_stats_tmp = []
         policy = slice_mdp.run_value_iteration(tmp_discount_factor)
 
         for j in range(SIMULATIONS):
-            slice_simulator = SliceSimulator(ARRIVALS, DEPARTURES, QUEUE_SIZE, alpha=ALPHA, c_lost=C_LOST,
+            slice_simulator = SliceSimulator(ARRIVALS, DEPARTURES, QUEUE_SIZE, alpha=ALPHA, c_server=C_SERVER, c_lost=C_LOST,
                                              simulation_time=SIMULATION_TIME, verbose=False)
             mdp_agent = Agent(slice_mdp.states, policy, slice_simulator)
             mdp_stats_tmp.append(mdp_agent.control_environment())
@@ -93,7 +95,7 @@ if __name__ == '__main__':
         random_policy = utils.generate_random_policy(len(slice_mdp.states), 3)
 
         for j in range(SIMULATIONS):
-            random_simulation = SliceSimulator(ARRIVALS, DEPARTURES, QUEUE_SIZE, alpha=ALPHA, c_lost=C_LOST,
+            random_simulation = SliceSimulator(ARRIVALS, DEPARTURES, QUEUE_SIZE, alpha=ALPHA, c_server=C_SERVER, c_lost=C_LOST,
                                                simulation_time=SIMULATION_TIME, verbose=False)
             random_agent = Agent(slice_mdp.states, random_policy, random_simulation)
             random_stats_tmp.append(random_agent.control_environment())

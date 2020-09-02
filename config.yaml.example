@@ -17,6 +17,9 @@ queue_size: 1
 # alpha is the parameter responsible for the cost normalization
 alpha: 0.5
 
+# c server is the cost to have a vm turned on in a time slot
+c_server: 1
+
 # c lost is the cost to lost a job due to queue full
 c_lost: 10
 
