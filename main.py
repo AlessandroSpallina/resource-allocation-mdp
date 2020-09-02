@@ -19,7 +19,7 @@ if __name__ == '__main__':
         os.makedirs(STORAGE_PATH)
     logging.basicConfig(filename=f"{STORAGE_PATH}report.log", level=logging.INFO)
 
-    logging.info(f"Last commit available at {utils.get_last_commit_link()}")
+    logging.info(f"Latest commit available at {utils.get_last_commit_link()}")
 
     conf = utils.read_config(True)
 
@@ -29,7 +29,6 @@ if __name__ == '__main__':
     ALPHA = conf['alpha']
     C_SERVER = conf['c_server']
     C_LOST = conf['c_lost']
-
 
     SIMULATIONS = conf['simulations']
     SIMULATION_TIME = conf['simulation_time']

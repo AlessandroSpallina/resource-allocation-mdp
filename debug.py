@@ -2,13 +2,13 @@ from slice_mdp import SliceMDP
 import plotter
 
 if __name__ == '__main__':
-    slice_mdp = SliceMDP([0.2, 0.8], [0., 1.], 30, 1, c_lost=10, c_server=5)
+    slice_mdp = SliceMDP([0.5, 0.4, 0.1], [0., 0., 1.], 2, 1, c_lost=10)
 
     plotter.plot_markov_chain(slice_mdp.states, slice_mdp.transition_matrix, slice_mdp.reward_matrix,
                               projectname="res/exported/debug", view=True)
 
 
-    # matrix = mdp.transition_matrix
+    print(slice_mdp.transition_matrix)
     r = slice_mdp.run_value_iteration(0.8)
     print(r)
     # e = mdptoolbox.mdp.ValueIteration(matrix, mdp.reward_matrix, 0.8)
