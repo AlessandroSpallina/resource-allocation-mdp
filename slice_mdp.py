@@ -91,7 +91,7 @@ class SliceMDP:
                             transition_probability += self._arrivals_histogram[x]
         else:  # if s > 0
             if diff.k >= 0:
-                print(f"P({from_state} -> {to_state}) - Diff.k >= 0")
+                # print(f"P({from_state} -> {to_state}) - Diff.k >= 0")
                 tmp = 0
                 tmp2 = 0
 
@@ -105,7 +105,7 @@ class SliceMDP:
                         p_arr = 0
                         # p_proc = 0
 
-                    if from_state.k + x - to_state.k >= to_state.k:
+                    if from_state.k + x - to_state.k >= from_state.k + x:
                         p_proc = sum(h_d[from_state.k + x - to_state.k:])
                     else:
                         try:
@@ -135,12 +135,12 @@ class SliceMDP:
 
                     tmp2 += p_arr * p_proc
 
-                print(f" P({from_state} -> {to_state}) - TMP {tmp} e TMP2 {tmp2}")
+                # print(f" P({from_state} -> {to_state}) - TMP {tmp} e TMP2 {tmp2}")
 
                 transition_probability = tmp + tmp2
 
             elif diff.k < 0:
-                print(f" P({from_state} -> {to_state}) - Diff.k < 0")
+                # print(f" P({from_state} -> {to_state}) - Diff.k < 0")
                 tmp = 0
                 tmp2 = 0
 
@@ -153,7 +153,7 @@ class SliceMDP:
                     except IndexError:
                         p_arr = 0
 
-                    if from_state.k + x - to_state.k >= from_state.k:
+                    if from_state.k + x - to_state.k >= from_state.k + x:
                         p_proc = sum(h_d[from_state.k + x - to_state.k:])
                     else:
                         try:
@@ -182,7 +182,7 @@ class SliceMDP:
 
                     tmp2 += p_arr * p_proc
 
-                print(f" P({from_state} -> {to_state}) - TMP {tmp} e TMP2 {tmp2}")
+                # print(f" P({from_state} -> {to_state}) - TMP {tmp} e TMP2 {tmp2}")
 
                 transition_probability = tmp + tmp2
 

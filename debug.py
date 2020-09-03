@@ -2,10 +2,10 @@ from slice_mdp import SliceMDP
 import plotter
 
 if __name__ == '__main__':
-    slice_mdp = SliceMDP([0.5, 0.4, 0.1], [0., 0., 1.], 2, 1, c_lost=10)
+    slice_mdp = SliceMDP([0.5, 0.4, 0.05, 0.04, 0.01], [0., 0., 0., 1.], 2, 1, c_lost=10)
 
     plotter.plot_markov_chain(slice_mdp.states, slice_mdp.transition_matrix, slice_mdp.reward_matrix,
-                              projectname="res/exported/debug", view=True)
+                              projectname="res/exported/debug", view=False)
 
 
     print(slice_mdp.transition_matrix)
