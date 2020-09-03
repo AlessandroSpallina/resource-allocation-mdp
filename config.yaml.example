@@ -14,6 +14,9 @@ departures_histogram:
 # queue size is the max number of jobs waiting in the queue
 queue_size: 1
 
+# server max cap represent the max cap of servers allocated in the slice
+server_max_cap: 1
+
 # alpha is the parameter responsible for the cost normalization
 alpha: 0.5
 

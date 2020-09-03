@@ -26,6 +26,7 @@ if __name__ == '__main__':
     ARRIVALS = conf['arrivals_histogram']
     DEPARTURES = conf['departures_histogram']
     QUEUE_SIZE = conf['queue_size']
+    SERVER_MAX_CAP = conf['server_max_cap']
     ALPHA = conf['alpha']
     C_SERVER = conf['c_server']
     C_LOST = conf['c_lost']
