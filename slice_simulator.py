@@ -89,7 +89,7 @@ class SliceSimulator:
             elif i == 1:
                 h_p.append(self._departures_histogram)
             else:
-                h_p.append(np.convolve(self._departures_histogram, h_p))
+                h_p.append(np.convolve(self._departures_histogram, h_p[i - 1]).tolist())
         return h_p
 
     # returns an array, each element represent the num of jobs arrived in the timeslot

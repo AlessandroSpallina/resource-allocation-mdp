@@ -187,16 +187,18 @@ class SliceMDP:
                 transition_probability = tmp + tmp2
 
         # adesso valuto le eventuali transizioni "verticali"
-        if action_id == 0:  # do nothing
+        if action_id == 0 \
+                or (action_id == 1 and diff.n == 0 and from_state.n == self._max_server_num)\
+                or (action_id == 2 and diff.n == 0 and from_state.n == 0):  # do nothing
             if diff.n != 0:
                 return 0.
 
         elif action_id == 1:  # allocate 1 server
-            if diff.n != 1 and to_state.n != self._max_server_num:
-                return 0.0
+            if diff.n != 1:  # and to_state.n != self._max_server_num:
+                return 0.
 
         elif action_id == 2:  # deallocate 1 server
-            if diff.n != -1 and to_state.n != 0:
+            if diff.n != -1:  # and to_state.n != 0:
                 return 0.
 
         return transition_probability
