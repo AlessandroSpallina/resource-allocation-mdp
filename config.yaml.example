@@ -1,36 +1,48 @@
 # arrivals histogram
 # [X, Y] means P(in 0 jobs) = X; P(in 1 jobs) = Y
 arrivals_histogram:
-  - 0.5
-  - 0.4
+  - 0.1
+  - 0.15
+  - 0.25
+  - 0.25
+  - 0.15
   - 0.1
 
 # departures histogram
 # [X, Y] means P(out 0 jobs) = X; P(out 1 jobs) = Y
 departures_histogram:
-  - 0.6
-  - 0.4
+  - 0.
+  - 1.
 
 # queue size is the max number of jobs waiting in the queue
-queue_size: 1
+queue_size: 10
 
 # server max cap represent the max cap of servers allocated in the slice
-server_max_cap: 1
+server_max_cap: 10
 
-# alpha is the parameter responsible for the cost normalization
-alpha: 0.5
+# alpha is a parameter responsible for the cost normalization
+alpha: 1.
+
+# beta is a parameter responsible for the cost normalization
+beta: 1.
+
+# gamma is a parameter responsible for the cost normalization
+gamma: 1.
 
 # c server is the cost to have a vm turned on in a time slot
-c_server: 1
+c_server: 5
+
+# c job is the cost to have a job in the queue in a time slot
+c_job: 5
 
 # c lost is the cost to lost a job due to queue full
 c_lost: 10
 
 # simulations represent the number of sim to be done in order to get the average for the plots
-simulations: 10
+simulations: 5
 
 # simulation time (in timeslots) indicates timing for each simulation done
-simulation_time: 1000
+simulation_time: 10000
 
 # random policy attempts represent the number of attempts to generate a random policy
 random_policy_attempts: 5

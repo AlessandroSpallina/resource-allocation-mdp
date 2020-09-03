@@ -28,7 +28,10 @@ if __name__ == '__main__':
     QUEUE_SIZE = conf['queue_size']
     SERVER_MAX_CAP = conf['server_max_cap']
     ALPHA = conf['alpha']
+    BETA = conf['beta']
+    GAMMA = conf['gamma']
     C_SERVER = conf['c_server']
+    C_JOB = conf['c_job']
     C_LOST = conf['c_lost']
 
     SIMULATIONS = conf['simulations']
@@ -50,7 +53,8 @@ if __name__ == '__main__':
     best_mdp_policy = None
     best_discount_factor = None
 
-    slice_mdp = SliceMDP(ARRIVALS, DEPARTURES, QUEUE_SIZE, SERVER_MAX_CAP, alpha=ALPHA, c_server=C_SERVER, c_lost=C_LOST, verbose=False)
+    slice_mdp = SliceMDP(ARRIVALS, DEPARTURES, QUEUE_SIZE, SERVER_MAX_CAP, alpha=ALPHA, beta=BETA, gamma=GAMMA,
+                         c_server=C_SERVER, c_job=C_JOB, c_lost=C_LOST, verbose=False)
 
     while tmp_discount_factor <= 1.:
         mdp_stats_tmp = []
@@ -58,8 +62,8 @@ if __name__ == '__main__':
 
         for j in range(SIMULATIONS):
             slice_simulator = SliceSimulator(ARRIVALS, DEPARTURES, queue_size=QUEUE_SIZE, max_server_num=SERVER_MAX_CAP,
-                                             alpha=ALPHA, c_server=C_SERVER, c_lost=C_LOST,
-                                             simulation_time=SIMULATION_TIME, verbose=False)
+                                             alpha=ALPHA, beta=BETA, gamma=GAMMA, c_server=C_SERVER, c_job=C_JOB,
+                                             c_lost=C_LOST, simulation_time=SIMULATION_TIME, verbose=False)
             mdp_agent = Agent(slice_mdp.states, policy, slice_simulator)
             mdp_stats_tmp.append(mdp_agent.control_environment())
 
@@ -97,8 +101,9 @@ if __name__ == '__main__':
 
         for j in range(SIMULATIONS):
             random_simulation = SliceSimulator(ARRIVALS, DEPARTURES, queue_size=QUEUE_SIZE,
-                                               max_server_num=SERVER_MAX_CAP, alpha=ALPHA, c_server=C_SERVER,
-                                               c_lost=C_LOST, simulation_time=SIMULATION_TIME, verbose=False)
+                                               max_server_num=SERVER_MAX_CAP, alpha=ALPHA, beta=BETA, gamma=GAMMA,
+                                               c_server=C_SERVER, c_job=C_JOB, c_lost=C_LOST,
+                                               simulation_time=SIMULATION_TIME, verbose=False)
             random_agent = Agent(slice_mdp.states, random_policy, random_simulation)
             random_stats_tmp.append(random_agent.control_environment())
 

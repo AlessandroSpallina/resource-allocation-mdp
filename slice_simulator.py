@@ -38,7 +38,7 @@ class Job:
 
 class SliceSimulator:
     def __init__(self, arrivals_histogram, departures_histogram, queue_size=2, simulation_time=100, max_server_num=1,
-                 c_job=1, c_server=1, c_lost=1, alpha=0.5, verbose=False):
+                 c_job=1, c_server=1, c_lost=1, alpha=1, beta=1, gamma=1, verbose=False):
 
         self._verbose = verbose
 
@@ -51,6 +51,8 @@ class SliceSimulator:
         self._c_server = c_server
         self._c_lost = c_lost
         self._alpha = alpha
+        self._beta = beta
+        self._gamma = gamma
 
         self._current_state = State(0, 0)
         self._h_p = self._generate_h_p()
@@ -77,9 +79,10 @@ class SliceSimulator:
         return self._simulation_time
 
     def _calculate_timeslot_costs(self, current_state, lost_jobs):
-        # C = alpha * C_k * num of jobs + (1 - alpha) * C_n * num of server + C_l * num of lost jobs
-        return self._alpha * (self._c_job * current_state.k + self._c_lost * lost_jobs) + \
-               (1 - self._alpha) * self._c_server * current_state.n
+        # C = alpha * C_k * num of jobs + beta * C_n * num of server + gamma * C_l * num of lost jobs
+        return self._alpha * self._c_job * current_state.k + \
+               self._beta * self._c_server * current_state.n + \
+               self._gamma * self._c_lost * lost_jobs
 
     def _generate_h_p(self):
         h_p = []

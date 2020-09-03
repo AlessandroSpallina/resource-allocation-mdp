@@ -6,7 +6,7 @@ from state import State
 
 class SliceMDP:
     def __init__(self, arrivals_histogram, departures_histogram, queue_size, max_server_num,
-                 c_job=1, c_server=1, c_lost=1, alpha=0.5, verbose=False):
+                 c_job=1, c_server=1, c_lost=1, alpha=1, beta=1, gamma=1, verbose=False):
 
         self._verbose = verbose
 
@@ -24,6 +24,8 @@ class SliceMDP:
         self._c_server = c_server
         self._c_lost = c_lost
         self._alpha = alpha
+        self._beta = beta
+        self._gamma = gamma
         self._reward_matrix = self._generate_reward_matrix()
 
     @property
@@ -224,16 +226,17 @@ class SliceMDP:
     def _calculate_transition_reward(self, to_state):
         # utilizzo approccio "costo di stare nello stato", mi serve solo lo stato di arrivo
         # costs are mapped into the reward matrix
-        # C = alpha * C_k * num of jobs + (1 - alpha) * C_n * num of server
+        # C = alpha * C_k * num of jobs + beta * C_n * num of server + gamma * C_l * E(num of lost jobs)
         cost1 = self._c_job * to_state.k
         cost2 = self._c_server * to_state.n
+        cost3 = 0
 
         # expected value of lost packets
         for i in range(len(self._arrivals_histogram)):
             if to_state.k + i > self._queue_size:
-                cost1 += self._arrivals_histogram[i] * i * self._c_lost
+                cost3 += self._arrivals_histogram[i] * i * self._c_lost
 
-        return - (self._alpha * cost1 + (1 - self._alpha) * cost2)
+        return - (self._alpha * cost1 + self._beta * cost2 + self._gamma * cost3)
 
     # def _calculate_transition_reward2(self, from_state, to_state):
     #     # utilizzo approccio "costo del passaggio"
