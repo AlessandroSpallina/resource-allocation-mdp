@@ -138,5 +138,7 @@ if __name__ == '__main__':
     # plot generation and export on file system
     plotter.plot_markov_chain(slice_mdp.states, slice_mdp.transition_matrix, slice_mdp.reward_matrix,
                               projectname="mdp-toy", view=False)
-    utils.easy_plot("mdp-toy", "Policy {}".format(best_mdp_policy), mdp_stats, False)
-    utils.easy_plot("random-toy", "Policy {}".format(best_random_policy), random_stats, False)
+    # utils.easy_plot("mdp-toy", "Policy {}".format(best_mdp_policy), mdp_stats, False)
+    # utils.easy_plot("random-toy", "Policy {}".format(best_random_policy), random_stats, False)
+    utils.easy_plot("mdp-toy", "", mdp_stats, False)
+    utils.easy_plot("random-toy", "", random_stats, False)
