@@ -38,6 +38,7 @@ if __name__ == '__main__':
     SIMULATION_TIME = conf['simulation_time']
     RANDOM_POLICY_ATTEMPT = conf['random_policy_attempts']
     MDP_DISCOUNT_INCREMENT = conf['mdp_discount_increment']
+    DISCOUNT_END_VALUE = conf['mdp_discount_end_value']
 
     tmp_discount_factor = conf['mdp_discount_start_value']
 
@@ -56,7 +57,7 @@ if __name__ == '__main__':
     slice_mdp = SliceMDP(ARRIVALS, DEPARTURES, QUEUE_SIZE, SERVER_MAX_CAP, alpha=ALPHA, beta=BETA, gamma=GAMMA,
                          c_server=C_SERVER, c_job=C_JOB, c_lost=C_LOST, verbose=False)
 
-    while tmp_discount_factor <= 1.:
+    while tmp_discount_factor <= DISCOUNT_END_VALUE:
         mdp_stats_tmp = []
         policy = slice_mdp.run_value_iteration(tmp_discount_factor)
 
@@ -87,7 +88,7 @@ if __name__ == '__main__':
                          'lost_jobs_per_timeslot': utils.get_mean_lost_jobs(mdp_stats_tmp)['mean'],
                          'wait_time_per_job': utils.get_mean_wait_time(mdp_stats_tmp)['mean']}
 
-        tmp_discount_factor += MDP_DISCOUNT_INCREMENT
+        tmp_discount_factor = round(tmp_discount_factor + MDP_DISCOUNT_INCREMENT, 2)
 
     # random agent
     best_random_costs = None

@@ -50,5 +50,8 @@ random_policy_attempts: 5
 # mdp discount start value indicates the default value for the discount discovery routine
 mdp_discount_start_value: 0.5
 
+# mdp discount end value indicates the end value for the discount discovery routine
+mdp_discount_end_value: 1.
+
 # mdp discount increment represent the delta used for the discount discovery routine
 mdp_discount_increment: 0.1
