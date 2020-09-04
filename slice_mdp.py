@@ -69,9 +69,12 @@ class SliceMDP:
         # in caso di server_num > 0, H_p per il sistema = H_p convuluto H_p nel caso di due server
         # perchè H_p_nserver = [P(s1:0)*P(s2:0), P(s1:0)*P(s2:1) + P(s1:1)*P(s2:0), P(s1:1)*P(s2:1)]
         # NB: la convoluzione è associativa, quindi farla a due a due per n volte è ok
-        h_d = self._departures_histogram
-        for i in range(1, state.n):
-            h_d = np.convolve(h_d, self._departures_histogram)
+
+        h_d = [1.]  # default H_d value for S = 0
+        if state.n > 0:
+            h_d = self._departures_histogram
+            for i in range(1, state.n):
+                h_d = np.convolve(h_d, self._departures_histogram)
         return h_d
 
     def _calculate_transition_probability(self, from_state, to_state, action_id):
@@ -79,114 +82,46 @@ class SliceMDP:
         transition_probability = 0
         diff = to_state - from_state
 
-        # prima valuto le transizioni "orizzontali"
-        if from_state.n == 0:  # if s = 0
-            if diff.k >= 0:
-                if to_state.k <= from_state.k + (len(self._arrivals_histogram) - 1):
-                    if to_state.k < self._queue_size:
-                        try:
-                            transition_probability = self._arrivals_histogram[diff.k]
-                        except IndexError:
-                            pass
-                    elif to_state.k == self._queue_size:
-                        for x in range(diff.k, len(self._arrivals_histogram)):
-                            transition_probability += self._arrivals_histogram[x]
-        else:  # if s > 0
-            if diff.k >= 0:
-                # print(f"P({from_state} -> {to_state}) - Diff.k >= 0")
-                tmp = 0
-                tmp2 = 0
+        tmp = 0
+        tmp2 = 0
 
-                for x in range(diff.k, self._queue_size - from_state.k + 1):
-                    p_proc = 0
+        for x in range(max(0, diff.k), self._queue_size - from_state.k + 1):
+            p_proc = 0
 
-                    try:
-                        p_arr = self._arrivals_histogram[x]
-                        # p_proc = h_d[from_state.k + x - to_state.k]
-                    except IndexError:
-                        p_arr = 0
-                        # p_proc = 0
+            try:
+                p_arr = self._arrivals_histogram[x]
+            except IndexError:
+                p_arr = 0
 
-                    if from_state.k + x - to_state.k >= from_state.k + x:
-                        p_proc = sum(h_d[from_state.k + x - to_state.k:])
-                    else:
-                        try:
-                            p_proc = h_d[from_state.k + x - to_state.k]
-                        except IndexError:
-                            pass
+            if from_state.k + x - to_state.k >= from_state.k + x:
+                p_proc = sum(h_d[from_state.k + x - to_state.k:])
+            else:
+                try:
+                    p_proc = h_d[from_state.k + x - to_state.k]
+                except IndexError:
+                    pass
 
-                    tmp += p_arr * p_proc
+            tmp += p_arr * p_proc
 
-                for x in range(self._queue_size - from_state.k + 1, len(self._arrivals_histogram) + 1):  # davvero ci vuole questo +1?
-                    p_proc = 0
+        for x in range(self._queue_size - from_state.k + 1, len(self._arrivals_histogram) + 1):
+            p_proc = 0
 
-                    try:
-                        p_arr = self._arrivals_histogram[x]
-                        # p_proc = h_d[self._queue_size - to_state.k]
-                    except IndexError:
-                        p_arr = 0
-                        # p_proc = 0
+            try:
+                p_arr = self._arrivals_histogram[x]
+            except IndexError:
+                p_arr = 0
 
-                    if self._queue_size - to_state.k >= self._queue_size:
-                        p_proc = sum(h_d[self._queue_size - to_state.k:])
-                    else:
-                        try:
-                            p_proc = h_d[self._queue_size - to_state.k]
-                        except IndexError:
-                            pass
+            if self._queue_size - to_state.k >= self._queue_size:
+                p_proc = sum(h_d[self._queue_size - to_state.k:])
+            else:
+                try:
+                    p_proc = h_d[self._queue_size - to_state.k]
+                except IndexError:
+                    pass
 
-                    tmp2 += p_arr * p_proc
+            tmp2 += p_arr * p_proc
 
-                # print(f" P({from_state} -> {to_state}) - TMP {tmp} e TMP2 {tmp2}")
-
-                transition_probability = tmp + tmp2
-
-            elif diff.k < 0:
-                # print(f" P({from_state} -> {to_state}) - Diff.k < 0")
-                tmp = 0
-                tmp2 = 0
-
-                for x in range(0, self._queue_size - from_state.k + 1):
-                    p_proc = 0
-
-                    try:
-                        p_arr = self._arrivals_histogram[x]
-                        # p_proc = h_d[from_state.k + x - to_state.k]
-                    except IndexError:
-                        p_arr = 0
-
-                    if from_state.k + x - to_state.k >= from_state.k + x:
-                        p_proc = sum(h_d[from_state.k + x - to_state.k:])
-                    else:
-                        try:
-                            p_proc = h_d[from_state.k + x - to_state.k]
-                        except IndexError:
-                            pass
-
-                    tmp += p_arr * p_proc
-
-                for x in range(self._queue_size - from_state.k + 1, len(self._arrivals_histogram) + 1):  # davvero ci vuole questo +1?
-                    p_proc = 0
-
-                    try:
-                        p_arr = self._arrivals_histogram[x]
-                        # p_proc = h_d[self._queue_size - to_state.k]
-                    except IndexError:
-                        p_arr = 0
-
-                    if self._queue_size - to_state.k >= self._queue_size:
-                        p_proc = sum(h_d[self._queue_size - to_state.k:])
-                    else:
-                        try:
-                            p_proc = h_d[self._queue_size - to_state.k]
-                        except IndexError:
-                            pass
-
-                    tmp2 += p_arr * p_proc
-
-                # print(f" P({from_state} -> {to_state}) - TMP {tmp} e TMP2 {tmp2}")
-
-                transition_probability = tmp + tmp2
+        transition_probability = tmp + tmp2
 
         # adesso valuto le eventuali transizioni "verticali"
         if action_id == 0 \
@@ -211,7 +146,6 @@ class SliceMDP:
     Q[1] -> transition matrix related action 0 (allocate 1)
     Q[2] -> transition matrix related action 0 (deallocate 1)
     """
-
     def _generate_transition_matrix(self):
         transition_matrix = np.zeros((3, len(self._states), len(self._states)))
 
