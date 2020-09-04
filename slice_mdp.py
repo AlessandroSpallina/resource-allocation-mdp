@@ -51,7 +51,6 @@ class SliceMDP:
     S4: (1,1)
     S5: (2,1)
     """
-
     def _generate_states(self):
         states = []  # state at pos 0 -> S0, etc..
         for i in range(self._max_server_num + 1):

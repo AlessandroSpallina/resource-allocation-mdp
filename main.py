@@ -126,7 +126,6 @@ if __name__ == '__main__':
                             'processed_jobs_per_timeslot': utils.get_mean_processed_jobs(random_stats_tmp)['mean'],
                             'lost_jobs_per_timeslot': utils.get_mean_lost_jobs(random_stats_tmp)['mean'],
                             'wait_time_per_job': utils.get_mean_wait_time(random_stats_tmp)['mean']}
-            # print(f"BEST RANDOM HERE {random_stats['wait_time_per_job']}")
 
     logging.info(f"* Best mdp policy found is {best_mdp_policy} with costs {best_mdp_costs} "
                  f"and processed {best_mdp_processed} and lost jobs {best_mdp_lost} "
@@ -141,10 +140,18 @@ if __name__ == '__main__':
     shutil.copyfile("./config.yaml", f"{STORAGE_PATH}config.yaml")
     os.chdir(STORAGE_PATH)
 
-    # plot generation and export on file system
+    # plot generation and export on filesystem
     plotter.plot_markov_chain(slice_mdp.states, slice_mdp.transition_matrix, slice_mdp.reward_matrix,
-                              projectname="mdp-toy", view=False)
+                              projectname="mdp-agent", view=False)
     # utils.easy_plot("mdp-toy", "Policy {}".format(best_mdp_policy), mdp_stats, False)
     # utils.easy_plot("random-toy", "Policy {}".format(best_random_policy), random_stats, False)
-    utils.easy_plot("mdp-toy", "", mdp_stats, False)
-    utils.easy_plot("random-toy", "", random_stats, False)
+    utils.easy_plot("mdp-agent", mdp_stats)
+    utils.easy_plot("random-agent", random_stats)
+
+    plotter.bar({"arrivals": ARRIVALS}, projectname="common", title="Arrivals Histogram",
+                xlabel="job", ylabel="arrival probability")
+    plotter.bar({"departures": DEPARTURES}, projectname="common", title="Departures Histogram",
+                xlabel="job", ylabel="departure probability")
+
+    utils.comparison_plot("common", {"mdp": mdp_stats, "random": random_stats})
+

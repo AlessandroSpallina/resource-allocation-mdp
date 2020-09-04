@@ -72,7 +72,7 @@ def generate_random_policy(states_num, action_num):
     return tuple(rpolicy)
 
 
-def easy_plot(projectname, comment, stats, view):
+def easy_plot(projectname, stats, comment="", view=False):
     plotter.plot_cumulative({"costs": stats['costs_per_timeslot'],
                              "processed jobs": stats['processed_jobs_per_timeslot'],
                              "lost jobs": stats['lost_jobs_per_timeslot']},
@@ -90,3 +90,26 @@ def easy_plot(projectname, comment, stats, view):
                 xlabel="timeslot", ylabel="percentage of wait time",
                 title=f"[{projectname}] Mean Job Total Time ({comment})",
                 projectname=projectname, view=view)
+
+
+def comparison_plot(projectname, comparison_stats, comment="", view=False):
+    plotter.plot_cumulative({"mdp": comparison_stats['mdp']['costs_per_timeslot'],
+                             "random": comparison_stats['random']['costs_per_timeslot']},
+                            xlabel="timeslot", title=f"[{projectname}] Mean Cumulative Costs ({comment})",
+                            projectname=projectname, view=view)
+
+    plotter.plot_cumulative({"mdp": comparison_stats['mdp']['processed_jobs_per_timeslot'],
+                             "random": comparison_stats['random']['processed_jobs_per_timeslot']}, ylabel="job",
+                            xlabel="timeslot", title=f"[{projectname}] Mean Cumulative Processed Jobs ({comment})",
+                            projectname=projectname, view=view)
+
+    plotter.plot_cumulative({"mdp": comparison_stats['mdp']['lost_jobs_per_timeslot'],
+                             "random": comparison_stats['random']['lost_jobs_per_timeslot']}, ylabel="job",
+                            xlabel="timeslot", title=f"[{projectname}] Mean Cumulative Lost Jobs ({comment})",
+                            projectname=projectname, view=view)
+
+    plotter.scatter({"mdp": comparison_stats['mdp']['wait_time_per_job'],
+                     "random": comparison_stats['random']['wait_time_per_job']},
+                     xlabel="timeslot", ylabel="percentage of wait time",
+                     title=f"[{projectname}] Mean Job Total Time ({comment})",
+                     projectname=projectname, view=view)
