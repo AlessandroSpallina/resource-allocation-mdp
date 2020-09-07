@@ -132,7 +132,7 @@ if __name__ == '__main__':
                             'active_servers_per_timeslot': utils.get_mean_active_servers(random_stats_tmp)['mean']}
 
     logging.info(f"* Best mdp policy found is {best_mdp_policy} with costs {best_mdp_costs} "
-                 f"and processed {best_mdp_processed} and lost jobs {best_mdp_lost} "
+                 f"and processed {best_mdp_processed} and lost jobs {best_mdp_lost}, "
                  f"cost per processed {best_mdp_costs / best_mdp_processed}")
 
     logging.info(f"* Best random policy found is {best_random_policy} with costs {best_random_costs} "

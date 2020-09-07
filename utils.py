@@ -116,7 +116,7 @@ def easy_plot(projectname, stats, comment="", view=False):
 
     plotter.plot_two_scales(stats['jobs_in_queue_per_timeslot'], stats['active_servers_per_timeslot'],
                             ylabel1="jobs in queue", ylabel2="active servers", xlabel="timeslot",
-                            title="Mean Queue and Servers", projectname=projectname, view=view)
+                            title=f"[{projectname}] Mean Queue and Servers", projectname=projectname, view=view)
 
 
 def comparison_plot(projectname, comparison_stats, comment="", view=False):
@@ -136,7 +136,6 @@ def comparison_plot(projectname, comparison_stats, comment="", view=False):
                             projectname=projectname, view=view)
 
     plotter.scatter({"mdp": comparison_stats['mdp']['wait_time_per_job'],
-                     "random": comparison_stats['random']['wait_time_per_job']},
-                     xlabel="timeslot", ylabel="percentage of wait time",
-                     title=f"[{projectname}] Mean Job Total Time ({comment})",
-                     projectname=projectname, view=view)
+                     "random": comparison_stats['random']['wait_time_per_job']}, xlabel="timeslot",
+                    ylabel="percentage of wait time", title=f"[{projectname}] Mean Job Total Time ({comment})",
+                    projectname=projectname, view=view)
