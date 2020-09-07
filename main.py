@@ -86,7 +86,9 @@ if __name__ == '__main__':
             mdp_stats = {'costs_per_timeslot': utils.get_mean_costs(mdp_stats_tmp)['mean'],
                          'processed_jobs_per_timeslot': utils.get_mean_processed_jobs(mdp_stats_tmp)['mean'],
                          'lost_jobs_per_timeslot': utils.get_mean_lost_jobs(mdp_stats_tmp)['mean'],
-                         'wait_time_per_job': utils.get_mean_wait_time(mdp_stats_tmp)['mean']}
+                         'wait_time_per_job': utils.get_mean_wait_time(mdp_stats_tmp)['mean'],
+                         'jobs_in_queue_per_timeslot': utils.get_mean_jobs_in_queue(mdp_stats_tmp)['mean'],
+                         'active_servers_per_timeslot': utils.get_mean_active_servers(mdp_stats_tmp)['mean']}
 
         tmp_discount_factor = round(tmp_discount_factor + MDP_DISCOUNT_INCREMENT, 2)
 
@@ -125,7 +127,9 @@ if __name__ == '__main__':
             random_stats = {'costs_per_timeslot': utils.get_mean_costs(random_stats_tmp)['mean'],
                             'processed_jobs_per_timeslot': utils.get_mean_processed_jobs(random_stats_tmp)['mean'],
                             'lost_jobs_per_timeslot': utils.get_mean_lost_jobs(random_stats_tmp)['mean'],
-                            'wait_time_per_job': utils.get_mean_wait_time(random_stats_tmp)['mean']}
+                            'wait_time_per_job': utils.get_mean_wait_time(random_stats_tmp)['mean'],
+                            'jobs_in_queue_per_timeslot': utils.get_mean_jobs_in_queue(random_stats_tmp)['mean'],
+                            'active_servers_per_timeslot': utils.get_mean_active_servers(random_stats_tmp)['mean']}
 
     logging.info(f"* Best mdp policy found is {best_mdp_policy} with costs {best_mdp_costs} "
                  f"and processed {best_mdp_processed} and lost jobs {best_mdp_lost} "

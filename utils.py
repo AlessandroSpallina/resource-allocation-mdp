@@ -7,6 +7,7 @@ import numpy as np
 import yaml
 
 import plotter
+from state import State
 
 
 def get_last_commit_link():
@@ -64,6 +65,28 @@ def get_mean_wait_time(raw_stats):
     }
 
 
+def get_mean_jobs_in_queue(raw_stats):
+    raw_jiq = [d['state_sequence'] for d in raw_stats]
+
+    jiq = np.array([[d.k for d in simulation] for simulation in raw_jiq])
+
+    return {
+        "mean": jiq.mean(axis=0),
+        "var": jiq.var(axis=0)
+    }
+
+
+def get_mean_active_servers(raw_stats):
+    raw_as = [d['state_sequence'] for d in raw_stats]
+
+    asr = np.array([[d.n for d in simulation] for simulation in raw_as])
+
+    return {
+        "mean": asr.mean(axis=0),
+        "var": asr.var(axis=0)
+    }
+
+
 # 3 azioni (0,1,2) e 6 stati
 def generate_random_policy(states_num, action_num):
     rpolicy = []
@@ -90,6 +113,10 @@ def easy_plot(projectname, stats, comment="", view=False):
                 xlabel="timeslot", ylabel="percentage of wait time",
                 title=f"[{projectname}] Mean Job Total Time ({comment})",
                 projectname=projectname, view=view)
+
+    plotter.plot_two_scales(stats['jobs_in_queue_per_timeslot'], stats['active_servers_per_timeslot'],
+                            ylabel1="jobs in queue", ylabel2="active servers", xlabel="timeslot",
+                            title="Mean Queue and Servers", projectname=projectname, view=view)
 
 
 def comparison_plot(projectname, comparison_stats, comment="", view=False):

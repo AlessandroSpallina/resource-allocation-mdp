@@ -1,33 +1,22 @@
 from slice_mdp import SliceMDP
 import plotter
 
+
 if __name__ == '__main__':
-    slice_mdp = SliceMDP([0.5, 0.5], [0., 1.], 1, 2, c_lost=10)
 
-    plotter.plot_markov_chain(slice_mdp.states, slice_mdp.transition_matrix, slice_mdp.reward_matrix,
-                              projectname="res/exported/debug", view=True)
+    data1 = [0,1,3,5,3,2,1,4]
+    data2 = [1,1,1,1,1,1,1,1]
 
-
-    print(slice_mdp.transition_matrix)
-    r = slice_mdp.run_value_iteration(0.8)
-    print(r)
-    # e = mdptoolbox.mdp.ValueIteration(matrix, mdp.reward_matrix, 0.8)
-    # e.run()
-    # print(e.policy)
+    plotter.plot_two_scales(data1, data2, ylabel1="jobs in queue", ylabel2="active servers", xlabel="timeslot",
+                            projectname="res/exported/debug", view=True, title="ciao")
 
 
-    # queue size = 1
-    # H_a = [0.1, 0.4, 0.4, 0.1]
-    # H_p = [0, 1]
+    # slice_mdp = SliceMDP([0.5, 0.5], [0., 1.], 1, 2, c_lost=10)
     #
-    # Q(0,1 -> 0,1) = P(0) + P(1)P(1) + P(2)P(1) + P(3)P(1) = 1.
-    # Q(0,1 -> 1,1) = 0
-
-    # ------------
-
-    # queue size = 1
-    # H_a = [0.5, 0.5]
-    # H_p = [0.6, 0.2, 0.2]
+    # plotter.plot_markov_chain(slice_mdp.states, slice_mdp.transition_matrix, slice_mdp.reward_matrix,
+    #                           projectname="res/exported/debug", view=True)
     #
-    # Q(0,1 -> 0,1) = P(0) + P(1)P(1) = 0.6
-    # Q(0,1 -> 1,1) = P(1)P(0) = 0.3
+    #
+    # print(slice_mdp.transition_matrix)
+    # r = slice_mdp.run_value_iteration(0.8)
+    # print(r)
