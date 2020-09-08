@@ -102,7 +102,7 @@ def average_plot_points(data, average_window):
     chunks = np.split(data, average_window)
     averaged = [chunk.mean() for chunk in chunks]
 
-    return np.arange(len(data), step=average_window), averaged
+    return np.arange(len(data)/average_window, step=average_window), averaged
 
 
 def easy_plot(projectname, stats, max_points_in_plot, view=False):
