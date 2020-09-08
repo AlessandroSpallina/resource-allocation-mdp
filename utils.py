@@ -102,59 +102,82 @@ def average_plot_points(data, average_window):
     chunks = np.split(data, average_window)
     averaged = [chunk.mean() for chunk in chunks]
 
-    # to_ret = []
-    # for i in averaged:
-    #     for j in range(len(chunks[0])):
-    #         to_ret.append(i)
-
-    return [i for i in averaged for j in range(len(chunks[0]))]
+    return np.arange(len(data), step=average_window), averaged
 
 
-def easy_plot(projectname, stats, view=False):
+def easy_plot(projectname, stats, max_points_in_plot, view=False):
+
+    cost_per_ts = average_plot_points(stats['costs_per_timeslot'], max_points_in_plot)
+    processed_per_ts = average_plot_points(stats['processed_jobs_per_timeslot'], max_points_in_plot)
+    lost_per_ts = average_plot_points(stats['lost_jobs_per_timeslot'], max_points_in_plot)
+    jobs_in_queue_per_ts = average_plot_points(stats['lost_jobs_per_timeslot'], max_points_in_plot)
+    active_server_per_ts = average_plot_points(stats['active_servers_per_timeslot'], max_points_in_plot)
+
     plotter.table([f'{i} jobs' for i in range(len(stats['policy']))],
                   [f'{i} servers' for i in range(len(stats['policy'][0]))],
                   stats['policy'], title=f"[{projectname}] Policy", projectname=projectname, view=view)
 
-    plotter.plot_cumulative({"costs": stats['costs_per_timeslot'],
-                             "processed jobs": stats['processed_jobs_per_timeslot'],
-                             "lost jobs": stats['lost_jobs_per_timeslot']},
-                            xlabel="timeslot", title=f"[{projectname}] Mean Cumulative",
+    plotter.plot_cumulative(ydata={"costs": cost_per_ts[1],
+                                   "processed jobs": processed_per_ts[1],
+                                   "lost jobs": lost_per_ts[1]},
+                            xdata=cost_per_ts[0], xlabel="timeslot", title=f"[{projectname}] Mean Cumulative",
                             projectname=projectname, view=view)
 
-    plotter.plot({"costs per ts": stats['costs_per_timeslot'],
-                  "processed jobs per ts": stats['processed_jobs_per_timeslot'],
-                  "lost jobs per ts": stats['lost_jobs_per_timeslot']},
-                 xlabel="timeslot", title=f"[{projectname}] Mean per Timeslot",
+    plotter.plot(ydata={"costs per ts": cost_per_ts[1],
+                        "processed jobs per ts": processed_per_ts[1],
+                        "lost jobs per ts": lost_per_ts[1]},
+                 xdata=cost_per_ts[0], xlabel="timeslot", title=f"[{projectname}] Mean per Timeslot",
                  projectname=projectname, view=view)
 
     # total time is wait time in the system
-    plotter.bar({"job wait time": stats['wait_time_per_job']},
+    plotter.bar(ydata={"job wait time": stats['wait_time_per_job']},
                 xlabel="timeslot", ylabel="percentage of wait time",
-                title=f"[{projectname}] Mean Job Total Time",
+                title=f"[{projectname}] Mean Job Total Time (wait time in the system)",
                 projectname=projectname, view=view)
 
-    plotter.plot_two_scales(stats['jobs_in_queue_per_timeslot'], stats['active_servers_per_timeslot'],
+    plotter.plot_two_scales(jobs_in_queue_per_ts[1], active_server_per_ts[1], xdata=jobs_in_queue_per_ts[0],
                             ylabel1="jobs in queue", ylabel2="active servers", xlabel="timeslot",
                             title=f"[{projectname}] Mean Queue and Servers", projectname=projectname, view=view)
 
 
-def comparison_plot(projectname, comparison_stats, view=False):
-    plotter.plot_cumulative({"mdp": comparison_stats['mdp']['costs_per_timeslot'],
-                             "random": comparison_stats['random']['costs_per_timeslot']},
+def comparison_plot(projectname, comparison_stats, max_points_in_plot, view=False):
+
+    mdp_cost_per_ts = average_plot_points(comparison_stats['mdp']['costs_per_timeslot'], max_points_in_plot)
+    mdp_processed_per_ts = average_plot_points(comparison_stats['mdp']['processed_jobs_per_timeslot'], max_points_in_plot)
+    mdp_lost_per_ts = average_plot_points(comparison_stats['mdp']['lost_jobs_per_timeslot'], max_points_in_plot)
+    mdp_jobs_in_queue_per_ts = average_plot_points(comparison_stats['mdp']['lost_jobs_per_timeslot'], max_points_in_plot)
+    mdp_active_server_per_ts = average_plot_points(comparison_stats['mdp']['active_servers_per_timeslot'], max_points_in_plot)
+
+    random_cost_per_ts = average_plot_points(comparison_stats['random']['costs_per_timeslot'], max_points_in_plot)
+    random_processed_per_ts = average_plot_points(comparison_stats['random']['processed_jobs_per_timeslot'], max_points_in_plot)
+    random_lost_per_ts = average_plot_points(comparison_stats['random']['lost_jobs_per_timeslot'], max_points_in_plot)
+    random_jobs_in_queue_per_ts = average_plot_points(comparison_stats['random']['lost_jobs_per_timeslot'], max_points_in_plot)
+    random_active_server_per_ts = average_plot_points(comparison_stats['random']['active_servers_per_timeslot'], max_points_in_plot)
+
+    plotter.plot_cumulative(ydata={"mdp": mdp_cost_per_ts[1],
+                                   "random": random_cost_per_ts[1]}, xdata=mdp_cost_per_ts[0],
                             xlabel="timeslot", title=f"[{projectname}] Mean Cumulative Costs",
                             projectname=projectname, view=view)
 
-    plotter.plot_cumulative({"mdp": comparison_stats['mdp']['processed_jobs_per_timeslot'],
-                             "random": comparison_stats['random']['processed_jobs_per_timeslot']}, ylabel="job",
+    plotter.plot_cumulative({"mdp": mdp_processed_per_ts[1],
+                             "random": random_processed_per_ts[1]}, ylabel="job", xdata=mdp_processed_per_ts[0],
                             xlabel="timeslot", title=f"[{projectname}] Mean Cumulative Processed Jobs",
                             projectname=projectname, view=view)
 
-    plotter.plot_cumulative({"mdp": comparison_stats['mdp']['lost_jobs_per_timeslot'],
-                             "random": comparison_stats['random']['lost_jobs_per_timeslot']}, ylabel="job",
+    plotter.plot_cumulative({"mdp": mdp_lost_per_ts[1],
+                             "random": random_lost_per_ts[1]}, ylabel="job", xdata=mdp_lost_per_ts[0],
                             xlabel="timeslot", title=f"[{projectname}] Mean Cumulative Lost Jobs",
                             projectname=projectname, view=view)
 
-    plotter.scatter({"mdp": comparison_stats['mdp']['wait_time_per_job'],
-                     "random": comparison_stats['random']['wait_time_per_job']}, xlabel="timeslot",
-                    ylabel="percentage of wait time", title=f"[{projectname}] Mean Job Total Time",
-                    projectname=projectname, view=view)
+    plotter.plot(ydata={"mdp": comparison_stats['mdp']['wait_time_per_job'],
+                        "random": comparison_stats['random']['wait_time_per_job']}, xlabel="timeslot",
+                 ylabel="percentage of wait time", title=f"[{projectname}] Mean Job Total Time (wait time in the system)",
+                 projectname=projectname, view=view)
+
+    plotter.plot(ydata={"mdp": mdp_jobs_in_queue_per_ts[1], "random": random_jobs_in_queue_per_ts[1]},
+                 xdata=mdp_jobs_in_queue_per_ts[0], xlabel="timeslot",
+                 title=f"[{projectname}] Jobs in queue per Timeslot", projectname=projectname, view=view)
+
+    plotter.plot(ydata={"mdp": mdp_active_server_per_ts[1], "random": random_active_server_per_ts[1]},
+                 xdata=mdp_active_server_per_ts[0], xlabel="timeslot",
+                 title=f"[{projectname}] Active server per Timeslot", projectname=projectname, view=view)

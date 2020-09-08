@@ -25,20 +25,20 @@ def plot_markov_chain(states, transition_matrix, reward_matrix=None, projectname
         dot.render(projectname + "/" + f"action{a}", view=view)
 
 
-def plot_cumulative(stuff, title="", xlabel="", ylabel="", projectname="", view=False):
+def plot_cumulative(ydata, xdata=[], title="", xlabel="", ylabel="", projectname="", view=False):
     fig, ax = plt.subplots(figsize=(15, 10))
     ax.grid(True)
     ax.minorticks_on()
-    for k in stuff:
+    for k in ydata:
         cumulative_buf = []
 
-        for i in range(len(stuff[k])):
+        for i in range(len(ydata[k])):
             if i > 0:
-                cumulative_buf.append(cumulative_buf[i - 1] + stuff[k][i])
+                cumulative_buf.append(cumulative_buf[i - 1] + ydata[k][i])
             else:
-                cumulative_buf.append(stuff[k][0])
+                cumulative_buf.append(ydata[k][0])
 
-        ax.plot(list(range(len(stuff[k]))), cumulative_buf, label=k)
+        ax.plot(xdata if len(xdata) else list(range(len(ydata[k]))), cumulative_buf, label=k)
 
     ax.set_title(title)
     ax.set_xlabel(xlabel)
@@ -51,12 +51,12 @@ def plot_cumulative(stuff, title="", xlabel="", ylabel="", projectname="", view=
         plt.show()
 
 
-def plot(stuff, title="", xlabel="", ylabel="", projectname="", view=False):
+def plot(ydata, xdata=[], title="", xlabel="", ylabel="", projectname="", view=False):
     fig, ax = plt.subplots(figsize=(15, 10))
     ax.grid(True)
     ax.minorticks_on()
-    for k in stuff:
-        ax.plot(list(range(len(stuff[k]))), stuff[k], label=k)
+    for k in ydata:
+        ax.plot(xdata if len(xdata) else list(range(len(ydata[k]))), ydata[k], label=k)
     ax.set_title(title)
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
@@ -70,12 +70,12 @@ def plot(stuff, title="", xlabel="", ylabel="", projectname="", view=False):
 
 # TODO: bar una accanto all'altra, se vedi il numero di stat (rand, mdp -> n=2) puoi fare width/n
 # https://python-graph-gallery.com/11-grouped-barplot/
-def bar(stuff, title="", xlabel="", ylabel="", projectname="", view=False):
+def bar(ydata, xdata=[], title="", xlabel="", ylabel="", projectname="", view=False):
     fig, ax = plt.subplots(figsize=(15, 10))
     ax.minorticks_on()
     ax.grid(True)
-    for k in stuff:
-        ax.bar(list(range(len(stuff[k]))), stuff[k], label=k)
+    for k in ydata:
+        ax.bar(xdata if len(xdata) else list(range(len(ydata[k]))), ydata[k], label=k)
     ax.set_title(title)
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
@@ -90,12 +90,12 @@ def bar(stuff, title="", xlabel="", ylabel="", projectname="", view=False):
         plt.show()
 
 
-def scatter(stuff, title="", xlabel="", ylabel="", projectname="", view=False):
+def scatter(ydata, xdata=[], title="", xlabel="", ylabel="", projectname="", view=False):
     fig, ax = plt.subplots(figsize=(15, 10))
     ax.minorticks_on()
     ax.grid(True)
-    for k in stuff:
-        ax.scatter(list(range(len(stuff[k]))), stuff[k], label=k)
+    for k in ydata:
+        ax.scatter(xdata if len(xdata) else list(range(len(ydata[k]))), ydata[k], label=k)
     ax.set_title(title)
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
@@ -110,7 +110,7 @@ def scatter(stuff, title="", xlabel="", ylabel="", projectname="", view=False):
         plt.show()
 
 
-def plot_two_scales(data1, data2, ylabel1="", ylabel2="", xlabel="", title="", projectname="", view=False):
+def plot_two_scales(data1, data2, xdata=[], ylabel1="", ylabel2="", xlabel="", title="", projectname="", view=False):
     fig, ax1 = plt.subplots(figsize=(15, 10))
     ax1.minorticks_on()
     ax1.grid(True)
@@ -121,14 +121,14 @@ def plot_two_scales(data1, data2, ylabel1="", ylabel2="", xlabel="", title="", p
     color = 'tab:red'
     ax1.set_xlabel(xlabel)
     ax1.set_ylabel(ylabel1, color=color)
-    p1 = ax1.plot(t, data1, color=color, label=ylabel1)
+    p1 = ax1.plot(xdata if len(xdata) else t, data1, color=color, label=ylabel1)
     ax1.tick_params(axis='y', labelcolor=color)
 
     ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
 
     color = 'tab:blue'
     ax2.set_ylabel(ylabel2, color=color)  # we already handled the x-label with ax1
-    p2 = ax2.plot(t, data2, color=color, label=ylabel2)
+    p2 = ax2.plot(xdata if len(xdata) else t, data2, color=color, label=ylabel2)
     ax2.tick_params(axis='y', labelcolor=color)
 
     p = p1 + p2

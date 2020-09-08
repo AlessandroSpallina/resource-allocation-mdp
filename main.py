@@ -85,12 +85,12 @@ if __name__ == '__main__':
             best_mdp_policy = policy
             best_discount_factor = tmp_discount_factor
             # N.B. random_stats contain the stats of the best policy simulated!
-            mdp_stats = {'costs_per_timeslot': utils.average_plot_points(utils.get_mean_costs(mdp_stats_tmp)['mean'], MAX_POINTS_IN_PLOT),
-                         'processed_jobs_per_timeslot': utils.average_plot_points(utils.get_mean_processed_jobs(mdp_stats_tmp)['mean'], MAX_POINTS_IN_PLOT),
-                         'lost_jobs_per_timeslot': utils.average_plot_points(utils.get_mean_lost_jobs(mdp_stats_tmp)['mean'], MAX_POINTS_IN_PLOT),
+            mdp_stats = {'costs_per_timeslot': utils.get_mean_costs(mdp_stats_tmp)['mean'],
+                         'processed_jobs_per_timeslot': utils.get_mean_processed_jobs(mdp_stats_tmp)['mean'],
+                         'lost_jobs_per_timeslot': utils.get_mean_lost_jobs(mdp_stats_tmp)['mean'],
                          'wait_time_per_job': utils.get_mean_wait_time(mdp_stats_tmp)['mean'],
-                         'jobs_in_queue_per_timeslot': utils.average_plot_points(utils.get_mean_jobs_in_queue(mdp_stats_tmp)['mean'], MAX_POINTS_IN_PLOT),
-                         'active_servers_per_timeslot': utils.average_plot_points(utils.get_mean_active_servers(mdp_stats_tmp)['mean'], MAX_POINTS_IN_PLOT),
+                         'jobs_in_queue_per_timeslot': utils.get_mean_jobs_in_queue(mdp_stats_tmp)['mean'],
+                         'active_servers_per_timeslot': utils.get_mean_active_servers(mdp_stats_tmp)['mean'],
                          'policy': utils.get_matrix_policy(best_mdp_policy, SERVER_MAX_CAP)}
 
         tmp_discount_factor = round(tmp_discount_factor + MDP_DISCOUNT_INCREMENT, 2)
@@ -127,12 +127,12 @@ if __name__ == '__main__':
             best_random_lost = tmp_lost
             best_random_policy = random_policy
             # N.B. random_stats contain the stats of the best policy simulated!
-            random_stats = {'costs_per_timeslot': utils.average_plot_points(utils.get_mean_costs(random_stats_tmp)['mean'], MAX_POINTS_IN_PLOT),
-                            'processed_jobs_per_timeslot': utils.average_plot_points(utils.get_mean_processed_jobs(random_stats_tmp)['mean'], MAX_POINTS_IN_PLOT),
-                            'lost_jobs_per_timeslot': utils.average_plot_points(utils.get_mean_lost_jobs(random_stats_tmp)['mean'], MAX_POINTS_IN_PLOT),
+            random_stats = {'costs_per_timeslot': utils.get_mean_costs(random_stats_tmp)['mean'],
+                            'processed_jobs_per_timeslot': utils.get_mean_processed_jobs(random_stats_tmp)['mean'],
+                            'lost_jobs_per_timeslot': utils.get_mean_lost_jobs(random_stats_tmp)['mean'],
                             'wait_time_per_job': utils.get_mean_wait_time(random_stats_tmp)['mean'],
-                            'jobs_in_queue_per_timeslot': utils.average_plot_points(utils.get_mean_jobs_in_queue(random_stats_tmp)['mean'], MAX_POINTS_IN_PLOT),
-                            'active_servers_per_timeslot': utils.average_plot_points(utils.get_mean_active_servers(random_stats_tmp)['mean'], MAX_POINTS_IN_PLOT),
+                            'jobs_in_queue_per_timeslot': utils.get_mean_jobs_in_queue(random_stats_tmp)['mean'],
+                            'active_servers_per_timeslot': utils.get_mean_active_servers(random_stats_tmp)['mean'],
                             'policy': utils.get_matrix_policy(best_random_policy, SERVER_MAX_CAP)}
 
     logging.info(f"* Best mdp policy found is {best_mdp_policy} with costs {best_mdp_costs} "
@@ -152,13 +152,13 @@ if __name__ == '__main__':
     # plotter.plot_markov_chain(slice_mdp.states, slice_mdp.transition_matrix, slice_mdp.reward_matrix,
     #                           projectname="mdp-agent", view=False)
 
-    utils.easy_plot("mdp-agent", mdp_stats)
-    utils.easy_plot("random-agent", random_stats)
+    utils.easy_plot("mdp-agent", mdp_stats, MAX_POINTS_IN_PLOT)
+    utils.easy_plot("random-agent", random_stats, MAX_POINTS_IN_PLOT)
 
-    plotter.bar({"arrivals": ARRIVALS}, projectname="common", title="Arrivals Histogram",
+    plotter.bar(ydata={"arrivals": ARRIVALS}, projectname="common", title="Arrivals Histogram",
                 xlabel="job", ylabel="arrival probability")
-    plotter.bar({"departures": DEPARTURES}, projectname="common", title="Departures Histogram",
+    plotter.bar(ydata={"departures": DEPARTURES}, projectname="common", title="Departures Histogram",
                 xlabel="job", ylabel="departure probability")
 
-    utils.comparison_plot("common", {"mdp": mdp_stats, "random": random_stats})
+    utils.comparison_plot("common", {"mdp": mdp_stats, "random": random_stats}, MAX_POINTS_IN_PLOT)
 
