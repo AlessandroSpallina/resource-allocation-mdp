@@ -40,6 +40,8 @@ if __name__ == '__main__':
     MDP_DISCOUNT_INCREMENT = conf['mdp_discount_increment']
     DISCOUNT_END_VALUE = conf['mdp_discount_end_value']
 
+    MAX_POINTS_IN_PLOT = conf['max_points_in_plot']
+
     tmp_discount_factor = conf['mdp_discount_start_value']
 
     mdp_stats = []
@@ -83,12 +85,13 @@ if __name__ == '__main__':
             best_mdp_policy = policy
             best_discount_factor = tmp_discount_factor
             # N.B. random_stats contain the stats of the best policy simulated!
-            mdp_stats = {'costs_per_timeslot': utils.get_mean_costs(mdp_stats_tmp)['mean'],
-                         'processed_jobs_per_timeslot': utils.get_mean_processed_jobs(mdp_stats_tmp)['mean'],
-                         'lost_jobs_per_timeslot': utils.get_mean_lost_jobs(mdp_stats_tmp)['mean'],
+            mdp_stats = {'costs_per_timeslot': utils.average_plot_points(utils.get_mean_costs(mdp_stats_tmp)['mean'], MAX_POINTS_IN_PLOT),
+                         'processed_jobs_per_timeslot': utils.average_plot_points(utils.get_mean_processed_jobs(mdp_stats_tmp)['mean'], MAX_POINTS_IN_PLOT),
+                         'lost_jobs_per_timeslot': utils.average_plot_points(utils.get_mean_lost_jobs(mdp_stats_tmp)['mean'], MAX_POINTS_IN_PLOT),
                          'wait_time_per_job': utils.get_mean_wait_time(mdp_stats_tmp)['mean'],
-                         'jobs_in_queue_per_timeslot': utils.get_mean_jobs_in_queue(mdp_stats_tmp)['mean'],
-                         'active_servers_per_timeslot': utils.get_mean_active_servers(mdp_stats_tmp)['mean']}
+                         'jobs_in_queue_per_timeslot': utils.average_plot_points(utils.get_mean_jobs_in_queue(mdp_stats_tmp)['mean'], MAX_POINTS_IN_PLOT),
+                         'active_servers_per_timeslot': utils.average_plot_points(utils.get_mean_active_servers(mdp_stats_tmp)['mean'], MAX_POINTS_IN_PLOT),
+                         'policy': utils.get_matrix_policy(best_mdp_policy, SERVER_MAX_CAP)}
 
         tmp_discount_factor = round(tmp_discount_factor + MDP_DISCOUNT_INCREMENT, 2)
 
@@ -124,12 +127,13 @@ if __name__ == '__main__':
             best_random_lost = tmp_lost
             best_random_policy = random_policy
             # N.B. random_stats contain the stats of the best policy simulated!
-            random_stats = {'costs_per_timeslot': utils.get_mean_costs(random_stats_tmp)['mean'],
-                            'processed_jobs_per_timeslot': utils.get_mean_processed_jobs(random_stats_tmp)['mean'],
-                            'lost_jobs_per_timeslot': utils.get_mean_lost_jobs(random_stats_tmp)['mean'],
+            random_stats = {'costs_per_timeslot': utils.average_plot_points(utils.get_mean_costs(random_stats_tmp)['mean'], MAX_POINTS_IN_PLOT),
+                            'processed_jobs_per_timeslot': utils.average_plot_points(utils.get_mean_processed_jobs(random_stats_tmp)['mean'], MAX_POINTS_IN_PLOT),
+                            'lost_jobs_per_timeslot': utils.average_plot_points(utils.get_mean_lost_jobs(random_stats_tmp)['mean'], MAX_POINTS_IN_PLOT),
                             'wait_time_per_job': utils.get_mean_wait_time(random_stats_tmp)['mean'],
-                            'jobs_in_queue_per_timeslot': utils.get_mean_jobs_in_queue(random_stats_tmp)['mean'],
-                            'active_servers_per_timeslot': utils.get_mean_active_servers(random_stats_tmp)['mean']}
+                            'jobs_in_queue_per_timeslot': utils.average_plot_points(utils.get_mean_jobs_in_queue(random_stats_tmp)['mean'], MAX_POINTS_IN_PLOT),
+                            'active_servers_per_timeslot': utils.average_plot_points(utils.get_mean_active_servers(random_stats_tmp)['mean'], MAX_POINTS_IN_PLOT),
+                            'policy': utils.get_matrix_policy(best_random_policy, SERVER_MAX_CAP)}
 
     logging.info(f"* Best mdp policy found is {best_mdp_policy} with costs {best_mdp_costs} "
                  f"and processed {best_mdp_processed} and lost jobs {best_mdp_lost}, "
@@ -145,10 +149,9 @@ if __name__ == '__main__':
     os.chdir(STORAGE_PATH)
 
     # plot generation and export on filesystem
-    plotter.plot_markov_chain(slice_mdp.states, slice_mdp.transition_matrix, slice_mdp.reward_matrix,
-                              projectname="mdp-agent", view=False)
-    # utils.easy_plot("mdp-toy", "Policy {}".format(best_mdp_policy), mdp_stats, False)
-    # utils.easy_plot("random-toy", "Policy {}".format(best_random_policy), random_stats, False)
+    # plotter.plot_markov_chain(slice_mdp.states, slice_mdp.transition_matrix, slice_mdp.reward_matrix,
+    #                           projectname="mdp-agent", view=False)
+
     utils.easy_plot("mdp-agent", mdp_stats)
     utils.easy_plot("random-agent", random_stats)
 

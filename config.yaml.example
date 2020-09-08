@@ -55,3 +55,6 @@ mdp_discount_end_value: 1.
 
 # mdp discount increment represent the delta used for the discount discovery routine
 mdp_discount_increment: 0.1
+
+# max points in plot is useful when we have plot unreadable due the high number of sample to plot
+max_points_in_plot: 500
