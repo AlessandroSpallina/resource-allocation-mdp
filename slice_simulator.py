@@ -172,12 +172,6 @@ class SliceSimulator:
             if self._current_state.n > 0 and self._queue.qsize() > 0:  # allora c'è processamento
                 processed_jobs = self._calculate_processed_jobs()
 
-                # statistics
-                self._processed_jobs_per_timeslot.append(processed_jobs)
-
-                if self._verbose:
-                    print(f"[TS{self._current_timeslot}] Processed {processed_jobs} jobs")
-
                 for i in range(processed_jobs):
                     try:
                         job = self._queue.get(False)
@@ -186,7 +180,17 @@ class SliceSimulator:
                         # statistics
                         self._wait_time_per_job.append(self._current_timeslot - job.arrival_timeslot)
                     except queue.Empty:
-                        pass
+                        # se entro qui posso processare più job di quanti ne ho in coda ->
+                        # la stat deve essere relativa al reale processato!!!!
+                        processed_jobs -= 1
+                        print(f"PROCESSED {processed_jobs}")
+
+                # statistics
+                self._processed_jobs_per_timeslot.append(processed_jobs)
+
+                if self._verbose:
+                    print(f"[TS{self._current_timeslot}] Processed {processed_jobs} jobs")
+
             else:
                 # statistics
                 self._processed_jobs_per_timeslot.append(0)
