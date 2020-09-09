@@ -128,7 +128,7 @@ def easy_plot(projectname, stats, max_points_in_plot, view=False):
     cost_per_ts = average_plot_points(stats['costs_per_timeslot'], max_points_in_plot)
     processed_per_ts = average_plot_points(stats['processed_jobs_per_timeslot'], max_points_in_plot)
     lost_per_ts = average_plot_points(stats['lost_jobs_per_timeslot'], max_points_in_plot)
-    jobs_in_queue_per_ts = average_plot_points(stats['lost_jobs_per_timeslot'], max_points_in_plot)
+    jobs_in_queue_per_ts = average_plot_points(stats['jobs_in_queue_per_timeslot'], max_points_in_plot)
     active_server_per_ts = average_plot_points(stats['active_servers_per_timeslot'], max_points_in_plot)
 
     plotter.table([f'{i} jobs' for i in range(len(stats['policy']))],
