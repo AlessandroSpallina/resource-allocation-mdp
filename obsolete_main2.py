@@ -1,5 +1,5 @@
 """
-Find the best discount factor and confronts it against the conservative policy
+Find the best discount factor and the best random policy
 """
 import os
 import shutil
@@ -45,6 +45,7 @@ if __name__ == '__main__':
     tmp_discount_factor = conf['mdp_discount_start_value']
 
     mdp_stats = []
+    random_stats = []
     conservative_stats = []
 
     time_start = time.time()
@@ -88,13 +89,54 @@ if __name__ == '__main__':
             mdp_stats = {'costs_per_timeslot': utils.get_mean_costs(mdp_stats_tmp)['mean'],
                          'processed_jobs_per_timeslot': utils.get_mean_processed_jobs(mdp_stats_tmp)['mean'],
                          'lost_jobs_per_timeslot': utils.get_mean_lost_jobs(mdp_stats_tmp)['mean'],
-                         'wait_time_in_the_queue_per_job': utils.get_mean_wait_time_in_the_queue(mdp_stats_tmp)['mean'],
-                         'wait_time_in_the_system_per_job': utils.get_mean_wait_time_in_the_system(mdp_stats_tmp)['mean'],
+                         'wait_time_per_job': utils.get_mean_wait_time(mdp_stats_tmp)['mean'],
                          'jobs_in_queue_per_timeslot': utils.get_mean_jobs_in_queue(mdp_stats_tmp)['mean'],
                          'active_servers_per_timeslot': utils.get_mean_active_servers(mdp_stats_tmp)['mean'],
                          'policy': utils.get_matrix_policy(best_mdp_policy, SERVER_MAX_CAP)}
 
         tmp_discount_factor = round(tmp_discount_factor + MDP_DISCOUNT_INCREMENT, 2)
+
+    # random agent
+    best_random_costs = None
+    best_random_processed = None
+    best_random_lost = None
+    best_random_policy = None
+
+    for i in range(RANDOM_POLICY_ATTEMPT):
+        random_stats_tmp = []
+        random_policy = utils.generate_random_policy(len(slice_mdp.states), 3)
+
+        for j in range(SIMULATIONS):
+            random_simulation = SliceSimulator(ARRIVALS, DEPARTURES, queue_size=QUEUE_SIZE,
+                                               max_server_num=SERVER_MAX_CAP, alpha=ALPHA, beta=BETA, gamma=GAMMA,
+                                               c_server=C_SERVER, c_job=C_JOB, c_lost=C_LOST,
+                                               simulation_time=SIMULATION_TIME, verbose=False)
+            random_agent = Agent(slice_mdp.states, random_policy, random_simulation)
+            random_stats_tmp.append(random_agent.control_environment())
+
+        tmp_costs = utils.get_mean_costs(random_stats_tmp)['mean'].sum()
+        tmp_processed = utils.get_mean_processed_jobs(random_stats_tmp)['mean'].sum()
+        tmp_lost = utils.get_mean_lost_jobs(random_stats_tmp)['mean'].sum()
+
+        logging.info(f"[Random with policy {random_policy}]: Total cumulative costs {tmp_costs}, "
+                     f"total processed {tmp_processed}, total lost jobs {tmp_lost}"
+                     f"cost per processed {tmp_costs / tmp_processed}")
+
+        if best_random_costs is None or tmp_costs < best_random_costs:
+            best_random_costs = tmp_costs
+            best_random_processed = tmp_processed
+            best_random_lost = tmp_lost
+            best_random_policy = random_policy
+            # N.B. random_stats contain the stats of the best policy simulated!
+            random_stats = {'costs_per_timeslot': utils.get_mean_costs(random_stats_tmp)['mean'],
+                            'processed_jobs_per_timeslot': utils.get_mean_processed_jobs(random_stats_tmp)['mean'],
+                            'lost_jobs_per_timeslot': utils.get_mean_lost_jobs(random_stats_tmp)['mean'],
+                            'wait_time_per_job': utils.get_mean_wait_time(random_stats_tmp)['mean'],
+                            'jobs_in_queue_per_timeslot': utils.get_mean_jobs_in_queue(random_stats_tmp)['mean'],
+                            'active_servers_per_timeslot': utils.get_mean_active_servers(random_stats_tmp)['mean'],
+                            'policy': utils.get_matrix_policy(best_random_policy, SERVER_MAX_CAP)}
+
+    # -------------------------------------
 
     # conservative agent
     best_conservative_costs = None
@@ -131,8 +173,7 @@ if __name__ == '__main__':
                 'costs_per_timeslot': utils.get_mean_costs(conservative_stats_tmp)['mean'],
                 'processed_jobs_per_timeslot': utils.get_mean_processed_jobs(conservative_stats_tmp)['mean'],
                 'lost_jobs_per_timeslot': utils.get_mean_lost_jobs(conservative_stats_tmp)['mean'],
-                'wait_time_in_the_queue_per_job': utils.get_mean_wait_time_in_the_queue(conservative_stats_tmp)['mean'],
-                'wait_time_in_the_system_per_job': utils.get_mean_wait_time_in_the_system(conservative_stats_tmp)['mean'],
+                'wait_time_per_job': utils.get_mean_wait_time(conservative_stats_tmp)['mean'],
                 'jobs_in_queue_per_timeslot': utils.get_mean_jobs_in_queue(conservative_stats_tmp)['mean'],
                 'active_servers_per_timeslot': utils.get_mean_active_servers(conservative_stats_tmp)['mean'],
                 'policy': utils.get_matrix_policy(best_conservative_policy, SERVER_MAX_CAP)
@@ -143,6 +184,10 @@ if __name__ == '__main__':
     logging.info(f"* Best mdp policy found is {best_mdp_policy} with costs {best_mdp_costs} "
                  f"and processed {best_mdp_processed} and lost jobs {best_mdp_lost}, "
                  f"cost per processed {best_mdp_costs / best_mdp_processed}")
+
+    logging.info(f"* Best random policy found is {best_random_policy} with costs {best_random_costs} "
+                 f"and processed {best_random_processed} and lost jobs {best_random_lost}, "
+                 f"cost per processed {best_random_costs / best_random_processed}")
 
     logging.info(f"* Best conservative policy found is {best_conservative_policy} with costs {best_conservative_costs} "
                  f"and processed {best_conservative_processed} and lost jobs {best_conservative_lost}, "
@@ -158,12 +203,15 @@ if __name__ == '__main__':
     #                           projectname="mdp-agent", view=False)
 
     utils.easy_plot("mdp-agent", mdp_stats, MAX_POINTS_IN_PLOT)
+    utils.easy_plot("random-agent", random_stats, MAX_POINTS_IN_PLOT)
     utils.easy_plot("conservative-agent", conservative_stats, MAX_POINTS_IN_PLOT)
 
     plotter.bar(ydata={"arrivals": ARRIVALS}, projectname="common", title="Arrivals Histogram",
                 xlabel="job", ylabel="arrival probability")
-    plotter.bar(ydata={"departures": DEPARTURES}, projectname="common",
-                title="Server Capacity Histogram (Departures Histogram)", xlabel="job", ylabel="departure probability")
+    plotter.bar(ydata={"departures": DEPARTURES}, projectname="common", title="Departures Histogram",
+                xlabel="job", ylabel="departure probability")
 
-    utils.comparison_plot("common", {"mdp": mdp_stats, "conservative": conservative_stats}, MAX_POINTS_IN_PLOT)
+    utils.comparison_plot("common",
+                          {"mdp": mdp_stats, "random": random_stats, "conservative": conservative_stats},
+                          MAX_POINTS_IN_PLOT)
 

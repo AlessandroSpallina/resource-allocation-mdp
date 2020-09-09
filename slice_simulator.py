@@ -61,13 +61,15 @@ class SliceSimulator:
         # incoming jobs: index i represents timeslot i, value[i] represents the number of jobs
         self._incoming_jobs = self._generate_incoming_jobs()
 
-        self._queue = queue.Queue(queue_size)
+        self._queue = queue.Queue(queue_size)  # in this queue we put the incoming jobs, not selected by a server
+        self._servers_internal_queue = queue.Queue(max_server_num)
 
         # statistics
         self._costs_per_timeslot = []
         self._lost_jobs_per_timeslot = []
         self._processed_jobs_per_timeslot = []
-        self._wait_time_per_job = []
+        self._wait_time_in_the_queue_per_job = []
+        self._wait_time_in_the_system_per_job = []
         self._state_sequence = []
 
     @property
@@ -136,6 +138,26 @@ class SliceSimulator:
         else:
             self._current_state.n -= count
 
+    # moves jobs from the queue to the internal servers cache
+    def _refill_server_internal_queue(self):
+        refill_counter = 0
+
+        for i in range(self._current_state.n - self._servers_internal_queue.qsize()):
+            # estraggo dalla coda e metto in cache
+            try:
+                job = self._queue.get(False)
+                self._current_state.k -= 1
+
+                self._servers_internal_queue.put(job, False)
+                refill_counter += 1
+
+                # statistics
+                self._wait_time_in_the_queue_per_job.append(self._current_timeslot - job.arrival_timeslot)
+            except queue.Empty:
+                pass
+
+        return refill_counter
+
     # returns the current state
     def simulate_timeslot(self, action_id):
         if self._verbose:
@@ -169,57 +191,75 @@ class SliceSimulator:
             if self._verbose:
                 print(f"[TS{self._current_timeslot}] The queue has {self._queue.qsize()} pending job")
 
-            if self._current_state.n > 0 and self._queue.qsize() > 0:  # allora c'è processamento
-                processed_jobs = self._calculate_processed_jobs()
+        processed_jobs = 0
+        if self._current_state.n > 0:  # allora c'è processamento
+            # estrazione dei job dalla coda e inserimento in cache server (sono in run)
+            # poi, processo i job che sono in cache
+            # se all'interno dello stesso timeslot posso processare più dei job in cache, refillo la cache
 
-                for i in range(processed_jobs):
-                    try:
-                        job = self._queue.get(False)
-                        self._current_state.k -= 1
+            self._refill_server_internal_queue()
 
-                        # statistics
-                        self._wait_time_per_job.append(self._current_timeslot - job.arrival_timeslot)
-                    except queue.Empty:
+            processed_jobs = self._calculate_processed_jobs()
+
+            for i in range(processed_jobs):
+                try:
+                    job = self._servers_internal_queue.get(False)
+
+                    # statistics
+                    self._wait_time_in_the_system_per_job.append(self._current_timeslot - job.arrival_timeslot)
+                except queue.Empty:
+                    refill_counter = self._refill_server_internal_queue()
+                    if refill_counter == 0:
                         # se entro qui posso processare più job di quanti ne ho in coda ->
                         # la stat deve essere relativa al reale processato!!!!
                         processed_jobs -= 1
-                        print(f"PROCESSED {processed_jobs}")
 
-                # statistics
-                self._processed_jobs_per_timeslot.append(processed_jobs)
+        # statistics
+        self._processed_jobs_per_timeslot.append(processed_jobs)
 
-                if self._verbose:
-                    print(f"[TS{self._current_timeslot}] Processed {processed_jobs} jobs")
+        if self._verbose:
+            print(f"[TS{self._current_timeslot}] Processed {processed_jobs} jobs")
 
-            else:
-                # statistics
-                self._processed_jobs_per_timeslot.append(0)
+        if action_id == 1:
+            self._allocate_server()
+        elif action_id == 2:
+            self._deallocate_server()
 
-            if action_id == 1:
-                self._allocate_server()
-            elif action_id == 2:
-                self._deallocate_server()
-
-            self._current_timeslot += 1
+        self._current_timeslot += 1
 
         to_return = copy(self._current_state)
         return to_return
 
     def _convert_wait_time_in_percentage(self):
-        percentage_wait_time = []
-        tot_job = len(self._wait_time_per_job)
+        percentage_queue_wait_time = []
+        tot_job = len(self._wait_time_in_the_queue_per_job)
         try:
-            max_wait_time = max(self._wait_time_per_job)
+            max_wait_time = max(self._wait_time_in_the_queue_per_job)
         except ValueError:
             max_wait_time = 0
         for i in range(max_wait_time + 1):
-            tmp = np.array(self._wait_time_per_job)
+            tmp = np.array(self._wait_time_in_the_queue_per_job)
             indexes = np.where(tmp == i)
             if tot_job > 0:
-                percentage_wait_time.append(len(indexes[0]) / tot_job)
+                percentage_queue_wait_time.append(len(indexes[0]) / tot_job)
             else:
-                percentage_wait_time.append(0)
-        self._wait_time_per_job = percentage_wait_time
+                percentage_queue_wait_time.append(0)
+        self._wait_time_in_the_queue_per_job = percentage_queue_wait_time
+
+        percentage_system_wait_time = []
+        tot_job = len(self._wait_time_in_the_system_per_job)
+        try:
+            max_wait_time = max(self._wait_time_in_the_system_per_job)
+        except ValueError:
+            max_wait_time = 0
+        for i in range(max_wait_time + 1):
+            tmp = np.array(self._wait_time_in_the_system_per_job)
+            indexes = np.where(tmp == i)
+            if tot_job > 0:
+                percentage_system_wait_time.append(len(indexes[0]) / tot_job)
+            else:
+                percentage_system_wait_time.append(0)
+        self._wait_time_in_the_system_per_job = percentage_system_wait_time
 
     def get_statistics(self):
         self._convert_wait_time_in_percentage()
@@ -228,6 +268,7 @@ class SliceSimulator:
             "costs_per_timeslot": self._costs_per_timeslot,
             "lost_jobs_per_timeslot": self._lost_jobs_per_timeslot,
             "processed_jobs_per_timeslot": self._processed_jobs_per_timeslot,
-            "wait_time_per_job": self._wait_time_per_job,
+            "wait_time_in_the_queue_per_job": self._wait_time_in_the_queue_per_job,
+            "wait_time_in_the_system_per_job": self._wait_time_in_the_system_per_job,
             "state_sequence": self._state_sequence
         }

@@ -50,8 +50,22 @@ def get_mean_lost_jobs(raw_stats):
     }
 
 
-def get_mean_wait_time(raw_stats):
-    raw_wt = [d['wait_time_per_job'] for d in raw_stats]
+def get_mean_wait_time_in_the_queue(raw_stats):
+    raw_wt = [d['wait_time_in_the_queue_per_job'] for d in raw_stats]
+
+    max_len = max(len(x) for x in raw_wt)
+    wt = []
+    for simulation in raw_wt:
+        wt.append(simulation + [0] * (max_len - len(simulation)))
+    wt = np.array(wt)
+    return {
+        "mean": wt.mean(axis=0),
+        "var": wt.var(axis=0)
+    }
+
+
+def get_mean_wait_time_in_the_system(raw_stats):
+    raw_wt = [d['wait_time_in_the_system_per_job'] for d in raw_stats]
 
     max_len = max(len(x) for x in raw_wt)
     wt = []
@@ -134,9 +148,14 @@ def easy_plot(projectname, stats, max_points_in_plot, view=False):
                  projectname=projectname, view=view)
 
     # total time is wait time in the system
-    plotter.bar(ydata={"job wait time": stats['wait_time_per_job']},
-                xlabel="timeslot", ylabel="percentage of wait time",
-                title=f"[{projectname}] Mean Job Total Time (wait time in the system)",
+    plotter.bar(ydata={"job wait time": stats['wait_time_in_the_system_per_job']},
+                xlabel="timeslot", ylabel="% of jobs",
+                title=f"[{projectname}] Mean Job Wait Time in the System (Total Time)",
+                projectname=projectname, view=view)
+
+    plotter.bar(ydata={"job wait time": stats['wait_time_in_the_queue_per_job']},
+                xlabel="timeslot", ylabel="% of jobs",
+                title=f"[{projectname}] Mean Job Wait Time in the Queue",
                 projectname=projectname, view=view)
 
     plotter.plot_two_scales(jobs_in_queue_per_ts[1], active_server_per_ts[1], xdata=jobs_in_queue_per_ts[0],
@@ -149,54 +168,49 @@ def comparison_plot(projectname, comparison_stats, max_points_in_plot, view=Fals
     mdp_cost_per_ts = average_plot_points(comparison_stats['mdp']['costs_per_timeslot'], max_points_in_plot)
     mdp_processed_per_ts = average_plot_points(comparison_stats['mdp']['processed_jobs_per_timeslot'], max_points_in_plot)
     mdp_lost_per_ts = average_plot_points(comparison_stats['mdp']['lost_jobs_per_timeslot'], max_points_in_plot)
-    mdp_jobs_in_queue_per_ts = average_plot_points(comparison_stats['mdp']['lost_jobs_per_timeslot'], max_points_in_plot)
+    mdp_jobs_in_queue_per_ts = average_plot_points(comparison_stats['mdp']['jobs_in_queue_per_timeslot'], max_points_in_plot)
     mdp_active_server_per_ts = average_plot_points(comparison_stats['mdp']['active_servers_per_timeslot'], max_points_in_plot)
-
-    random_cost_per_ts = average_plot_points(comparison_stats['random']['costs_per_timeslot'], max_points_in_plot)
-    random_processed_per_ts = average_plot_points(comparison_stats['random']['processed_jobs_per_timeslot'], max_points_in_plot)
-    random_lost_per_ts = average_plot_points(comparison_stats['random']['lost_jobs_per_timeslot'], max_points_in_plot)
-    random_jobs_in_queue_per_ts = average_plot_points(comparison_stats['random']['lost_jobs_per_timeslot'], max_points_in_plot)
-    random_active_server_per_ts = average_plot_points(comparison_stats['random']['active_servers_per_timeslot'], max_points_in_plot)
 
     conservative_cost_per_ts = average_plot_points(comparison_stats['conservative']['costs_per_timeslot'], max_points_in_plot)
     conservative_processed_per_ts = average_plot_points(comparison_stats['conservative']['processed_jobs_per_timeslot'], max_points_in_plot)
     conservative_lost_per_ts = average_plot_points(comparison_stats['conservative']['lost_jobs_per_timeslot'], max_points_in_plot)
-    conservative_jobs_in_queue_per_ts = average_plot_points(comparison_stats['conservative']['lost_jobs_per_timeslot'], max_points_in_plot)
+    conservative_jobs_in_queue_per_ts = average_plot_points(comparison_stats['conservative']['jobs_in_queue_per_timeslot'], max_points_in_plot)
     conservative_active_server_per_ts = average_plot_points(comparison_stats['conservative']['active_servers_per_timeslot'], max_points_in_plot)
 
     plotter.plot_cumulative(ydata={"mdp": mdp_cost_per_ts[1],
-                                   "random": random_cost_per_ts[1],
                                    "conservative": conservative_cost_per_ts[1]
                                    }, xdata=mdp_cost_per_ts[0],
                             xlabel="timeslot", title=f"[{projectname}] Mean Cumulative Costs",
                             projectname=projectname, view=view)
 
     plotter.plot_cumulative({"mdp": mdp_processed_per_ts[1],
-                             "random": random_processed_per_ts[1],
                              "conservative": conservative_processed_per_ts[1]}, ylabel="job", xdata=mdp_processed_per_ts[0],
                             xlabel="timeslot", title=f"[{projectname}] Mean Cumulative Processed Jobs",
                             projectname=projectname, view=view)
 
     plotter.plot_cumulative({"mdp": mdp_lost_per_ts[1],
-                             "random": random_lost_per_ts[1],
                              "conservative": conservative_lost_per_ts[1]}, ylabel="job", xdata=mdp_lost_per_ts[0],
                             xlabel="timeslot", title=f"[{projectname}] Mean Cumulative Lost Jobs",
                             projectname=projectname, view=view)
 
-    plotter.plot(ydata={"mdp": comparison_stats['mdp']['wait_time_per_job'],
-                        "random": comparison_stats['random']['wait_time_per_job'],
-                        "conservative": comparison_stats['conservative']['wait_time_per_job']}, xlabel="timeslot",
-                 ylabel="percentage of wait time", title=f"[{projectname}] Mean Job Total Time (wait time in the system)",
+    plotter.plot(ydata={"mdp": comparison_stats['mdp']['wait_time_in_the_queue_per_job'],
+                        "conservative": comparison_stats['conservative']['wait_time_in_the_queue_per_job']},
+                 xlabel="timeslot",
+                 ylabel="% of jobs", title=f"[{projectname}] Mean Job Wait Time in the Queue",
+                 projectname=projectname, view=view)
+
+    plotter.plot(ydata={"mdp": comparison_stats['mdp']['wait_time_in_the_system_per_job'],
+                        "conservative": comparison_stats['conservative']['wait_time_in_the_system_per_job']},
+                 xlabel="timeslot",
+                 ylabel="% of jobs", title=f"[{projectname}] Mean Job Wait Time in the System (Total Time)",
                  projectname=projectname, view=view)
 
     plotter.plot(ydata={"mdp": mdp_jobs_in_queue_per_ts[1],
-                        "random": random_jobs_in_queue_per_ts[1],
                         "conservative": conservative_jobs_in_queue_per_ts[1]},
                  xdata=mdp_jobs_in_queue_per_ts[0], xlabel="timeslot",
                  title=f"[{projectname}] Jobs in queue per Timeslot", projectname=projectname, view=view)
 
     plotter.plot(ydata={"mdp": mdp_active_server_per_ts[1],
-                        "random": random_active_server_per_ts[1],
                         "conservative": conservative_active_server_per_ts[1]},
                  xdata=mdp_active_server_per_ts[0], xlabel="timeslot",
                  title=f"[{projectname}] Active server per Timeslot", projectname=projectname, view=view)
