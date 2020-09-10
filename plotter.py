@@ -166,7 +166,7 @@ def table(row_headers, column_headers, data, title="", projectname="", view=Fals
                edgecolor=fig_border,
                facecolor=fig_background_color,
                tight_layout={'pad': 1},
-               figsize=(len(column_headers), len(row_headers)/2)
+               figsize=(len(column_headers), len(row_headers)/2.5)
                )
 
     # Add a table at the bottom of the axes
