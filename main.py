@@ -27,9 +27,13 @@ if __name__ == '__main__':
     DEPARTURES = conf['departures_histogram']
     QUEUE_SIZE = conf['queue_size']
     SERVER_MAX_CAP = conf['server_max_cap']
-    ALPHA = conf['alpha']
-    BETA = conf['beta']
-    GAMMA = conf['gamma']
+
+    # normalize alpha, beta and gamma
+    ALPHA = conf['alpha'] / (conf['alpha'] + conf['beta'] + conf['gamma'])
+    BETA = conf['beta'] / (conf['alpha'] + conf['beta'] + conf['gamma'])
+    GAMMA = conf['gamma'] / (conf['alpha'] + conf['beta'] + conf['gamma'])
+    logging.info(f"Normalized alpha {ALPHA}, beta {BETA} and gamma {GAMMA}")
+
     C_SERVER = conf['c_server']
     C_JOB = conf['c_job']
     C_LOST = conf['c_lost']
