@@ -52,8 +52,9 @@ simulations: 1
 # simulation time (in timeslots) indicates timing for each simulation done
 simulation_time: 10000
 
+# --- deprecated ---
 # random policy attempts represent the number of attempts to generate a random policy
-random_policy_attempts: 5
+# random_policy_attempts: 5
 
 # mdp discount start value indicates the default value for the discount discovery routine
 mdp_discount_start_value: 0.8

@@ -40,7 +40,6 @@ if __name__ == '__main__':
 
     SIMULATIONS = conf['simulations']
     SIMULATION_TIME = conf['simulation_time']
-    RANDOM_POLICY_ATTEMPT = conf['random_policy_attempts']
     MDP_DISCOUNT_INCREMENT = conf['mdp_discount_increment']
     DISCOUNT_END_VALUE = conf['mdp_discount_end_value']
 
