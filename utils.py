@@ -116,6 +116,7 @@ def generate_conservative_policy(states_num):
     return tuple([1] * states_num)
 
 
+# old average, this hides some information
 def average_plot_points(data, average_window):
     chunks = np.split(data, average_window)
     averaged = [chunk.mean() for chunk in chunks]
@@ -123,13 +124,18 @@ def average_plot_points(data, average_window):
     return np.arange(len(data), step=len(data)/average_window), averaged
 
 
+def moving_average(data, average_window):
+    averaged = np.convolve(data, np.ones((average_window,))/average_window, mode='valid')
+    return np.arange(len(data), step=len(data)/averaged.size), averaged
+
+
 def easy_plot(projectname, stats, max_points_in_plot, view=False):
 
-    cost_per_ts = average_plot_points(stats['costs_per_timeslot'], max_points_in_plot)
-    processed_per_ts = average_plot_points(stats['processed_jobs_per_timeslot'], max_points_in_plot)
-    lost_per_ts = average_plot_points(stats['lost_jobs_per_timeslot'], max_points_in_plot)
-    jobs_in_queue_per_ts = average_plot_points(stats['jobs_in_queue_per_timeslot'], max_points_in_plot)
-    active_server_per_ts = average_plot_points(stats['active_servers_per_timeslot'], max_points_in_plot)
+    cost_per_ts = moving_average(stats['costs_per_timeslot'], max_points_in_plot)
+    processed_per_ts = moving_average(stats['processed_jobs_per_timeslot'], max_points_in_plot)
+    lost_per_ts = moving_average(stats['lost_jobs_per_timeslot'], max_points_in_plot)
+    jobs_in_queue_per_ts = moving_average(stats['jobs_in_queue_per_timeslot'], max_points_in_plot)
+    active_server_per_ts = moving_average(stats['active_servers_per_timeslot'], max_points_in_plot)
 
     plotter.table([f'{i} jobs' for i in range(len(stats['policy']))],
                   [f'{i} servers' for i in range(len(stats['policy'][0]))],
@@ -165,17 +171,17 @@ def easy_plot(projectname, stats, max_points_in_plot, view=False):
 
 def comparison_plot(projectname, comparison_stats, max_points_in_plot, view=False):
 
-    mdp_cost_per_ts = average_plot_points(comparison_stats['mdp']['costs_per_timeslot'], max_points_in_plot)
-    mdp_processed_per_ts = average_plot_points(comparison_stats['mdp']['processed_jobs_per_timeslot'], max_points_in_plot)
-    mdp_lost_per_ts = average_plot_points(comparison_stats['mdp']['lost_jobs_per_timeslot'], max_points_in_plot)
-    mdp_jobs_in_queue_per_ts = average_plot_points(comparison_stats['mdp']['jobs_in_queue_per_timeslot'], max_points_in_plot)
-    mdp_active_server_per_ts = average_plot_points(comparison_stats['mdp']['active_servers_per_timeslot'], max_points_in_plot)
+    mdp_cost_per_ts = moving_average(comparison_stats['mdp']['costs_per_timeslot'], max_points_in_plot)
+    mdp_processed_per_ts = moving_average(comparison_stats['mdp']['processed_jobs_per_timeslot'], max_points_in_plot)
+    mdp_lost_per_ts = moving_average(comparison_stats['mdp']['lost_jobs_per_timeslot'], max_points_in_plot)
+    mdp_jobs_in_queue_per_ts = moving_average(comparison_stats['mdp']['jobs_in_queue_per_timeslot'], max_points_in_plot)
+    mdp_active_server_per_ts = moving_average(comparison_stats['mdp']['active_servers_per_timeslot'], max_points_in_plot)
 
-    conservative_cost_per_ts = average_plot_points(comparison_stats['conservative']['costs_per_timeslot'], max_points_in_plot)
-    conservative_processed_per_ts = average_plot_points(comparison_stats['conservative']['processed_jobs_per_timeslot'], max_points_in_plot)
-    conservative_lost_per_ts = average_plot_points(comparison_stats['conservative']['lost_jobs_per_timeslot'], max_points_in_plot)
-    conservative_jobs_in_queue_per_ts = average_plot_points(comparison_stats['conservative']['jobs_in_queue_per_timeslot'], max_points_in_plot)
-    conservative_active_server_per_ts = average_plot_points(comparison_stats['conservative']['active_servers_per_timeslot'], max_points_in_plot)
+    conservative_cost_per_ts = moving_average(comparison_stats['conservative']['costs_per_timeslot'], max_points_in_plot)
+    conservative_processed_per_ts = moving_average(comparison_stats['conservative']['processed_jobs_per_timeslot'], max_points_in_plot)
+    conservative_lost_per_ts = moving_average(comparison_stats['conservative']['lost_jobs_per_timeslot'], max_points_in_plot)
+    conservative_jobs_in_queue_per_ts = moving_average(comparison_stats['conservative']['jobs_in_queue_per_timeslot'], max_points_in_plot)
+    conservative_active_server_per_ts = moving_average(comparison_stats['conservative']['active_servers_per_timeslot'], max_points_in_plot)
 
     plotter.plot_cumulative(ydata={"mdp": mdp_cost_per_ts[1],
                                    "conservative": conservative_cost_per_ts[1]
