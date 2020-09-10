@@ -97,7 +97,8 @@ if __name__ == '__main__':
                          'active_servers_per_timeslot': utils.get_mean_active_servers(mdp_stats_tmp)['mean'],
                          'policy': utils.get_matrix_policy(best_mdp_policy, SERVER_MAX_CAP)}
 
-        tmp_discount_factor = round(tmp_discount_factor + MDP_DISCOUNT_INCREMENT, 2)
+        # tmp_discount_factor = round(tmp_discount_factor + MDP_DISCOUNT_INCREMENT, 2)
+        tmp_discount_factor = tmp_discount_factor + MDP_DISCOUNT_INCREMENT - 1e-10
 
     # conservative agent
     best_conservative_costs = None
