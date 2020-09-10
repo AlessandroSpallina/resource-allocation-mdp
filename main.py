@@ -49,6 +49,7 @@ if __name__ == '__main__':
 
     mdp_stats = []
     conservative_stats = []
+    smart_conservative_stats = []
 
     time_start = time.time()
 
@@ -100,6 +101,7 @@ if __name__ == '__main__':
         # tmp_discount_factor = round(tmp_discount_factor + MDP_DISCOUNT_INCREMENT, 2)
         tmp_discount_factor = tmp_discount_factor + MDP_DISCOUNT_INCREMENT - 1e-10
 
+    # -------------------------------
     # conservative agent
     best_conservative_costs = None
     best_conservative_processed = None
@@ -141,8 +143,49 @@ if __name__ == '__main__':
                 'active_servers_per_timeslot': utils.get_mean_active_servers(conservative_stats_tmp)['mean'],
                 'policy': utils.get_matrix_policy(best_conservative_policy, SERVER_MAX_CAP)
             }
-
     # -------------------------------------
+
+    # smart conservative agent
+    best_smart_conservative_costs = None
+    best_smart_conservative_processed = None
+    best_smart_conservative_lost = None
+    best_smart_conservative_policy = None
+
+    smart_conservative_stats_tmp = []
+    smart_conservative_policy = utils.generate_smart_conservative_policy(slice_mdp.states)
+
+    for j in range(SIMULATIONS):
+        smart_conservative_simulation = SliceSimulator(ARRIVALS, DEPARTURES, queue_size=QUEUE_SIZE,
+                                                       max_server_num=SERVER_MAX_CAP, alpha=ALPHA, beta=BETA, gamma=GAMMA,
+                                                       c_server=C_SERVER, c_job=C_JOB, c_lost=C_LOST,
+                                                       simulation_time=SIMULATION_TIME, verbose=False)
+        smart_conservative_agent = Agent(slice_mdp.states, smart_conservative_policy, smart_conservative_simulation)
+        smart_conservative_stats_tmp.append(smart_conservative_agent.control_environment())
+
+        tmp_costs = utils.get_mean_costs(smart_conservative_stats_tmp)['mean'].sum()
+        tmp_processed = utils.get_mean_processed_jobs(smart_conservative_stats_tmp)['mean'].sum()
+        tmp_lost = utils.get_mean_lost_jobs(smart_conservative_stats_tmp)['mean'].sum()
+
+        logging.info(f"[Smart Conservative with policy {smart_conservative_policy}]: Total cumulative costs {tmp_costs}, "
+                     f"total processed {tmp_processed}, total lost jobs {tmp_lost}"
+                     f"cost per processed {tmp_costs / tmp_processed}")
+
+        if best_smart_conservative_costs is None or tmp_costs < best_smart_conservative_costs:
+            best_smart_conservative_costs = tmp_costs
+            best_smart_conservative_processed = tmp_processed
+            best_smart_conservative_lost = tmp_lost
+            best_smart_conservative_policy = smart_conservative_policy
+
+            smart_conservative_stats = {
+                'costs_per_timeslot': utils.get_mean_costs(smart_conservative_stats_tmp)['mean'],
+                'processed_jobs_per_timeslot': utils.get_mean_processed_jobs(smart_conservative_stats_tmp)['mean'],
+                'lost_jobs_per_timeslot': utils.get_mean_lost_jobs(smart_conservative_stats_tmp)['mean'],
+                'wait_time_in_the_queue_per_job': utils.get_mean_wait_time_in_the_queue(smart_conservative_stats_tmp)['mean'],
+                'wait_time_in_the_system_per_job': utils.get_mean_wait_time_in_the_system(smart_conservative_stats_tmp)['mean'],
+                'jobs_in_queue_per_timeslot': utils.get_mean_jobs_in_queue(smart_conservative_stats_tmp)['mean'],
+                'active_servers_per_timeslot': utils.get_mean_active_servers(smart_conservative_stats_tmp)['mean'],
+                'policy': utils.get_matrix_policy(best_smart_conservative_policy, SERVER_MAX_CAP)
+            }
 
     logging.info(f"* Best mdp policy found is {best_mdp_policy} with costs {best_mdp_costs} "
                  f"and processed {best_mdp_processed} and lost jobs {best_mdp_lost}, "
@@ -151,6 +194,10 @@ if __name__ == '__main__':
     logging.info(f"* Best conservative policy found is {best_conservative_policy} with costs {best_conservative_costs} "
                  f"and processed {best_conservative_processed} and lost jobs {best_conservative_lost}, "
                  f"cost per processed {best_conservative_costs / best_conservative_processed}")
+
+    logging.info(f"* Best smart conservative policy found is {best_smart_conservative_policy} with costs {best_smart_conservative_costs} "
+                 f"and processed {best_smart_conservative_processed} and lost jobs {best_smart_conservative_lost}, "
+                 f"cost per processed {best_smart_conservative_costs / best_smart_conservative_processed}")
 
     logging.info(f"*** Simulation done in {(time.time() - time_start) / 60} minutes ***")
 
@@ -163,11 +210,14 @@ if __name__ == '__main__':
 
     utils.easy_plot("mdp-agent", mdp_stats, MAX_POINTS_IN_PLOT)
     utils.easy_plot("conservative-agent", conservative_stats, MAX_POINTS_IN_PLOT)
+    utils.easy_plot("smart-conservative-agent", smart_conservative_stats, MAX_POINTS_IN_PLOT)
 
     plotter.bar(ydata={"arrivals": ARRIVALS}, projectname="common", title="Arrivals Histogram",
                 xlabel="job", ylabel="arrival probability")
     plotter.bar(ydata={"departures": DEPARTURES}, projectname="common",
                 title="Server Capacity Histogram (Departures Histogram)", xlabel="job", ylabel="departure probability")
 
-    utils.comparison_plot("common", {"mdp": mdp_stats, "conservative": conservative_stats}, MAX_POINTS_IN_PLOT)
+    utils.comparison_plot("common", {"mdp": mdp_stats,
+                                     "conservative": conservative_stats,
+                                     "smart conservative": smart_conservative_stats}, MAX_POINTS_IN_PLOT)
 
