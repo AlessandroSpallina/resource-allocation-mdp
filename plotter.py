@@ -1,7 +1,15 @@
 import os
 
 import matplotlib.pyplot as plt
+import mpld3
 from graphviz import Digraph
+
+
+# def _save_fig_html(fig, filename):
+#     text = mpld3.fig_to_html(fig)
+#
+#     with open(filename, 'w') as f:
+#         f.write(text)
 
 
 # Export to file a graph representing the markov chain related to an action
@@ -47,6 +55,7 @@ def plot_cumulative(ydata, xdata=[], title="", xlabel="", ylabel="", projectname
     if not os.path.exists(projectname + "/"):
         os.makedirs(projectname + "/")
     plt.savefig(projectname + "/" + title)
+    # _save_fig_html(fig, f"{projectname}/0_{title}.html")
     if view:
         plt.show()
 
@@ -64,6 +73,7 @@ def plot(ydata, xdata=[], title="", xlabel="", ylabel="", projectname="", view=F
     if not os.path.exists(projectname + "/"):
         os.makedirs(projectname + "/")
     plt.savefig(projectname + "/" + title)
+    # _save_fig_html(fig, f"{projectname}/0_{title}.html")
     if view:
         plt.show()
 
@@ -84,8 +94,10 @@ def bar(ydata, xdata=[], title="", xlabel="", ylabel="", projectname="", view=Fa
         os.makedirs(projectname + "/")
     if len(projectname) > 0:
         plt.savefig(projectname + "/" + title)
+        # _save_fig_html(fig, f"{projectname}/0_{title}.html")
     else:
         plt.savefig(title)
+        # _save_fig_html(fig, f"0_{title}.html")
     if view:
         plt.show()
 
@@ -104,8 +116,10 @@ def scatter(ydata, xdata=[], title="", xlabel="", ylabel="", projectname="", vie
         os.makedirs(projectname + "/")
     if len(projectname) > 0:
         plt.savefig(projectname + "/" + title)
+        # _save_fig_html(fig, f"{projectname}/0_{title}.html")
     else:
         plt.savefig(title)
+        # _save_fig_html(fig, f"0_{title}.html")
     if view:
         plt.show()
 
@@ -141,8 +155,10 @@ def plot_two_scales(data1, data2, xdata=[], ylabel1="", ylabel2="", xlabel="", t
         os.makedirs(projectname + "/")
     if len(projectname) > 0:
         plt.savefig(projectname + "/" + title)
+        # _save_fig_html(fig, f"{projectname}/0_{title}.html")
     else:
         plt.savefig(title)
+        # _save_fig_html(fig, f"0_{title}.html")
     if view:
         plt.show()
 
@@ -202,7 +218,7 @@ def table(row_headers, column_headers, data, title="", projectname="", view=Fals
     if len(projectname) > 0:
         plt.savefig(projectname + "/" + title)
     else:
-        plt.savefig(f"{title}.pdf")
+        plt.savefig(f"{title}")
     if not view:
         plt.close()
 
