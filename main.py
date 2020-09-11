@@ -90,6 +90,7 @@ if __name__ == '__main__':
             best_discount_factor = tmp_discount_factor
             # N.B. random_stats contain the stats of the best policy simulated!
             mdp_stats = {'costs_per_timeslot': utils.get_mean_costs(mdp_stats_tmp)['mean'],
+                         'component_costs_per_timeslot': utils.get_mean_component_costs(mdp_stats_tmp)['mean'],
                          'processed_jobs_per_timeslot': utils.get_mean_processed_jobs(mdp_stats_tmp)['mean'],
                          'lost_jobs_per_timeslot': utils.get_mean_lost_jobs(mdp_stats_tmp)['mean'],
                          'wait_time_in_the_queue_per_job': utils.get_mean_wait_time_in_the_queue(mdp_stats_tmp)['mean'],
@@ -135,6 +136,7 @@ if __name__ == '__main__':
 
             conservative_stats = {
                 'costs_per_timeslot': utils.get_mean_costs(conservative_stats_tmp)['mean'],
+                'component_costs_per_timeslot': utils.get_mean_component_costs(conservative_stats_tmp)['mean'],
                 'processed_jobs_per_timeslot': utils.get_mean_processed_jobs(conservative_stats_tmp)['mean'],
                 'lost_jobs_per_timeslot': utils.get_mean_lost_jobs(conservative_stats_tmp)['mean'],
                 'wait_time_in_the_queue_per_job': utils.get_mean_wait_time_in_the_queue(conservative_stats_tmp)['mean'],
@@ -178,6 +180,7 @@ if __name__ == '__main__':
 
             smart_conservative_stats = {
                 'costs_per_timeslot': utils.get_mean_costs(smart_conservative_stats_tmp)['mean'],
+                'component_costs_per_timeslot': utils.get_mean_component_costs(smart_conservative_stats_tmp)['mean'],
                 'processed_jobs_per_timeslot': utils.get_mean_processed_jobs(smart_conservative_stats_tmp)['mean'],
                 'lost_jobs_per_timeslot': utils.get_mean_lost_jobs(smart_conservative_stats_tmp)['mean'],
                 'wait_time_in_the_queue_per_job': utils.get_mean_wait_time_in_the_queue(smart_conservative_stats_tmp)['mean'],

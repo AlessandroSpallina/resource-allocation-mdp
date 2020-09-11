@@ -34,6 +34,14 @@ def get_mean_costs(raw_stats):
     }
 
 
+def get_mean_component_costs(raw_stats):
+    cps = np.array([d['component_costs_per_timeslot'] for d in raw_stats])
+    return {
+        "mean": cps.mean(axis=0),
+        "var": cps.var(axis=0)
+    }
+
+
 def get_mean_processed_jobs(raw_stats):
     pj = np.array([d['processed_jobs_per_timeslot'] for d in raw_stats])
     return {
@@ -152,6 +160,15 @@ def easy_plot(projectname, stats, max_points_in_plot, view=False):
     jobs_in_queue_per_ts = moving_average(stats['jobs_in_queue_per_timeslot'], max_points_in_plot)
     active_server_per_ts = moving_average(stats['active_servers_per_timeslot'], max_points_in_plot)
 
+    job_component_costs = moving_average(stats['component_costs_per_timeslot'][:, 0, 1], max_points_in_plot)
+    server_component_costs = moving_average(stats['component_costs_per_timeslot'][:, 1, 1], max_points_in_plot)
+    lost_component_costs = moving_average(stats['component_costs_per_timeslot'][:, 2, 1], max_points_in_plot)
+
+    alpha_job_component_costs = moving_average([np.prod(i) for i in stats['component_costs_per_timeslot'][:, 0]], max_points_in_plot)
+    beta_server_component_costs = moving_average([np.prod(i) for i in stats['component_costs_per_timeslot'][:, 1]], max_points_in_plot)
+    gamma_lost_component_costs = moving_average([np.prod(i) for i in stats['component_costs_per_timeslot'][:, 2]], max_points_in_plot)
+
+
     plotter.table([f'{i} jobs' for i in range(len(stats['policy']))],
                   [f'{i} servers' for i in range(len(stats['policy'][0]))],
                   stats['policy'], title=f"{projectname}", projectname=projectname, view=view)
@@ -167,6 +184,19 @@ def easy_plot(projectname, stats, max_points_in_plot, view=False):
                         "lost jobs per ts": lost_per_ts[1]},
                  xdata=cost_per_ts[0], xlabel="timeslot", title=f"[{projectname}] Mean per Timeslot",
                  projectname=projectname, view=view)
+
+    plotter.plot_cumulative(ydata={"jobs in the queue": job_component_costs[1],
+                                   "servers": server_component_costs[1],
+                                   "lost jobs": lost_component_costs[1]}, xdata=job_component_costs[0],
+                            xlabel="timeslot", title=f"[{projectname}] Mean Cumulative Cost Components",
+                            projectname=projectname, view=view)
+
+    plotter.plot_cumulative(ydata={"jobs in the queue": alpha_job_component_costs[1],
+                                   "servers": beta_server_component_costs[1],
+                                   "lost jobs": gamma_lost_component_costs[1]},
+                            xdata=alpha_job_component_costs[0],
+                            xlabel="timeslot", title=f"[{projectname}] Mean Cumulative Cost Components with alpha,beta,gamma",
+                            projectname=projectname, view=view)
 
     # total time is wait time in the system
     plotter.bar(ydata={"job wait time": stats['wait_time_in_the_system_per_job']},

@@ -1,7 +1,7 @@
 import os
 
 import matplotlib.pyplot as plt
-import mpld3
+# import mpld3
 from graphviz import Digraph
 
 
@@ -46,7 +46,7 @@ def plot_cumulative(ydata, xdata=[], title="", xlabel="", ylabel="", projectname
             else:
                 cumulative_buf.append(ydata[k][0])
 
-        ax.plot(xdata if len(xdata) else list(range(len(ydata[k]))), cumulative_buf, label=k)
+        ax.plot(xdata if len(xdata) else list(range(len(cumulative_buf))), cumulative_buf, label=k)
 
     ax.set_title(title)
     ax.set_xlabel(xlabel)
@@ -58,6 +58,7 @@ def plot_cumulative(ydata, xdata=[], title="", xlabel="", ylabel="", projectname
     # _save_fig_html(fig, f"{projectname}/0_{title}.html")
     if view:
         plt.show()
+    plt.close(fig)
 
 
 def plot(ydata, xdata=[], title="", xlabel="", ylabel="", projectname="", view=False):
@@ -76,6 +77,7 @@ def plot(ydata, xdata=[], title="", xlabel="", ylabel="", projectname="", view=F
     # _save_fig_html(fig, f"{projectname}/0_{title}.html")
     if view:
         plt.show()
+    plt.close(fig)
 
 
 # TODO: bar una accanto all'altra, se vedi il numero di stat (rand, mdp -> n=2) puoi fare width/n
@@ -100,6 +102,7 @@ def bar(ydata, xdata=[], title="", xlabel="", ylabel="", projectname="", view=Fa
         # _save_fig_html(fig, f"0_{title}.html")
     if view:
         plt.show()
+    plt.close(fig)
 
 
 def scatter(ydata, xdata=[], title="", xlabel="", ylabel="", projectname="", view=False):
@@ -122,6 +125,7 @@ def scatter(ydata, xdata=[], title="", xlabel="", ylabel="", projectname="", vie
         # _save_fig_html(fig, f"0_{title}.html")
     if view:
         plt.show()
+    plt.close(fig)
 
 
 def plot_two_scales(data1, data2, xdata=[], ylabel1="", ylabel2="", xlabel="", title="", projectname="", view=False):
@@ -161,6 +165,7 @@ def plot_two_scales(data1, data2, xdata=[], ylabel1="", ylabel2="", xlabel="", t
         # _save_fig_html(fig, f"0_{title}.html")
     if view:
         plt.show()
+    plt.close(fig)
 
 
 # see https://towardsdatascience.com/simple-little-tables-with-matplotlib-9780ef5d0bc4

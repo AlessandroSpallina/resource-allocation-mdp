@@ -80,11 +80,21 @@ class SliceSimulator:
     def simulation_time(self):
         return self._simulation_time
 
+    # this returns the costs components ((alpha, x), (beta, y)) and the final cost
     def _calculate_timeslot_costs(self, current_state, lost_jobs):
         # C = alpha * C_k * num of jobs + beta * C_n * num of server + gamma * C_l * num of lost jobs
-        return self._alpha * self._c_job * current_state.k + \
-               self._beta * self._c_server * current_state.n + \
-               self._gamma * self._c_lost * lost_jobs
+
+        job_cost = self._c_job * current_state.k
+        server_cost = self._c_server * current_state.n
+        lost_cost = self._c_lost * lost_jobs
+
+        #return self._alpha * job_cost + self._beta * server_cost + self._gamma * lost_cost
+        return (
+            (
+                (self._alpha, job_cost), (self._beta, server_cost), (self._gamma, lost_cost)
+            ),
+            self._alpha * job_cost + self._beta * server_cost + self._gamma * lost_cost
+                )
 
     def _generate_h_p(self):
         h_p = []
@@ -265,7 +275,8 @@ class SliceSimulator:
         self._convert_wait_time_in_percentage()
 
         return {
-            "costs_per_timeslot": self._costs_per_timeslot,
+            "costs_per_timeslot": [i[1] for i in self._costs_per_timeslot],
+            "component_costs_per_timeslot": [i[0] for i in self._costs_per_timeslot],
             "lost_jobs_per_timeslot": self._lost_jobs_per_timeslot,
             "processed_jobs_per_timeslot": self._processed_jobs_per_timeslot,
             "wait_time_in_the_queue_per_job": self._wait_time_in_the_queue_per_job,
