@@ -168,7 +168,6 @@ def easy_plot(projectname, stats, max_points_in_plot, view=False):
     beta_server_component_costs = moving_average([np.prod(i) for i in stats['component_costs_per_timeslot'][:, 1]], max_points_in_plot)
     gamma_lost_component_costs = moving_average([np.prod(i) for i in stats['component_costs_per_timeslot'][:, 2]], max_points_in_plot)
 
-
     plotter.table([f'{i} jobs' for i in range(len(stats['policy']))],
                   [f'{i} servers' for i in range(len(stats['policy'][0]))],
                   stats['policy'], title=f"{projectname}", projectname=projectname, view=view)
@@ -216,67 +215,56 @@ def easy_plot(projectname, stats, max_points_in_plot, view=False):
 
 def comparison_plot(projectname, comparison_stats, max_points_in_plot, view=False):
 
-    mdp_cost_per_ts = moving_average(comparison_stats['mdp']['costs_per_timeslot'], max_points_in_plot)
-    mdp_processed_per_ts = moving_average(comparison_stats['mdp']['processed_jobs_per_timeslot'], max_points_in_plot)
-    mdp_lost_per_ts = moving_average(comparison_stats['mdp']['lost_jobs_per_timeslot'], max_points_in_plot)
-    mdp_jobs_in_queue_per_ts = moving_average(comparison_stats['mdp']['jobs_in_queue_per_timeslot'], max_points_in_plot)
-    mdp_active_server_per_ts = moving_average(comparison_stats['mdp']['active_servers_per_timeslot'], max_points_in_plot)
+    cost_per_ts = {}
+    processed_per_ts = {}
+    lost_per_ts = {}
+    jobs_in_queue_per_ts = {}
+    active_server_per_ts = {}
 
-    conservative_cost_per_ts = moving_average(comparison_stats['conservative']['costs_per_timeslot'], max_points_in_plot)
-    conservative_processed_per_ts = moving_average(comparison_stats['conservative']['processed_jobs_per_timeslot'], max_points_in_plot)
-    conservative_lost_per_ts = moving_average(comparison_stats['conservative']['lost_jobs_per_timeslot'], max_points_in_plot)
-    conservative_jobs_in_queue_per_ts = moving_average(comparison_stats['conservative']['jobs_in_queue_per_timeslot'], max_points_in_plot)
-    conservative_active_server_per_ts = moving_average(comparison_stats['conservative']['active_servers_per_timeslot'], max_points_in_plot)
+    wait_time_in_the_queue = {}
+    wait_time_in_the_system = {}
 
-    smart_conservative_cost_per_ts = moving_average(comparison_stats['smart conservative']['costs_per_timeslot'], max_points_in_plot)
-    smart_conservative_processed_per_ts = moving_average(comparison_stats['smart conservative']['processed_jobs_per_timeslot'], max_points_in_plot)
-    smart_conservative_lost_per_ts = moving_average(comparison_stats['smart conservative']['lost_jobs_per_timeslot'], max_points_in_plot)
-    smart_conservative_jobs_in_queue_per_ts = moving_average(comparison_stats['smart conservative']['jobs_in_queue_per_timeslot'], max_points_in_plot)
-    smart_conservative_active_server_per_ts = moving_average(comparison_stats['smart conservative']['active_servers_per_timeslot'], max_points_in_plot)
+    xdata = moving_average(comparison_stats['mdp']['costs_per_timeslot'], max_points_in_plot)[0]
 
-    plotter.plot_cumulative(ydata={"mdp": mdp_cost_per_ts[1],
-                                   "conservative": conservative_cost_per_ts[1],
-                                   "smart conservative": smart_conservative_cost_per_ts[1]
-                                   }, xdata=mdp_cost_per_ts[0],
+    for key in comparison_stats:
+        cost_per_ts[key] = moving_average(comparison_stats[key]['costs_per_timeslot'], max_points_in_plot)[1]
+        processed_per_ts[key] = moving_average(comparison_stats[key]['processed_jobs_per_timeslot'], max_points_in_plot)[1]
+        lost_per_ts[key] = moving_average(comparison_stats[key]['lost_jobs_per_timeslot'], max_points_in_plot)[1]
+        jobs_in_queue_per_ts[key] = moving_average(comparison_stats[key]['jobs_in_queue_per_timeslot'], max_points_in_plot)[1]
+        active_server_per_ts[key] = moving_average(comparison_stats[key]['active_servers_per_timeslot'], max_points_in_plot)[1]
+
+        wait_time_in_the_queue[key] = comparison_stats[key]['wait_time_in_the_queue_per_job']
+        wait_time_in_the_system[key] = comparison_stats[key]['wait_time_in_the_system_per_job']
+
+
+    plotter.plot_cumulative(ydata=cost_per_ts, xdata=xdata,
                             xlabel="timeslot", title=f"[{projectname}] Mean Cumulative Costs",
                             projectname=projectname, view=view)
 
-    plotter.plot_cumulative({"mdp": mdp_processed_per_ts[1],
-                             "conservative": conservative_processed_per_ts[1],
-                             "smart conservative": smart_conservative_processed_per_ts[1]},
-                            ylabel="job", xdata=mdp_processed_per_ts[0],
+    plotter.plot_cumulative(processed_per_ts,
+                            ylabel="job", xdata=xdata,
                             xlabel="timeslot", title=f"[{projectname}] Mean Cumulative Processed Jobs",
                             projectname=projectname, view=view)
 
-    plotter.plot_cumulative({"mdp": mdp_lost_per_ts[1],
-                             "conservative": conservative_lost_per_ts[1],
-                             "smart conservative": smart_conservative_lost_per_ts[1]},
-                            ylabel="job", xdata=mdp_lost_per_ts[0],
+    plotter.plot_cumulative(lost_per_ts,
+                            ylabel="job", xdata=xdata,
                             xlabel="timeslot", title=f"[{projectname}] Mean Cumulative Lost Jobs",
                             projectname=projectname, view=view)
 
-    plotter.plot(ydata={"mdp": comparison_stats['mdp']['wait_time_in_the_queue_per_job'],
-                        "conservative": comparison_stats['conservative']['wait_time_in_the_queue_per_job'],
-                        "smart conservative": comparison_stats['smart conservative']['wait_time_in_the_queue_per_job']},
+    plotter.plot(ydata=wait_time_in_the_queue,
                  xlabel="timeslot",
                  ylabel="% of jobs", title=f"[{projectname}] Mean Job Wait Time in the Queue",
                  projectname=projectname, view=view)
 
-    plotter.plot(ydata={"mdp": comparison_stats['mdp']['wait_time_in_the_system_per_job'],
-                        "conservative": comparison_stats['conservative']['wait_time_in_the_system_per_job'],
-                        "smart conservative": comparison_stats['smart conservative']['wait_time_in_the_system_per_job']},
+    plotter.plot(ydata=wait_time_in_the_system,
                  xlabel="timeslot",
                  ylabel="% of jobs", title=f"[{projectname}] Mean Job Wait Time in the System (Total Time)",
                  projectname=projectname, view=view)
 
-    plotter.plot(ydata={"mdp": mdp_jobs_in_queue_per_ts[1],
-                        "conservative": conservative_jobs_in_queue_per_ts[1],
-                        "smart conservative": smart_conservative_jobs_in_queue_per_ts[1]},
-                 xdata=mdp_jobs_in_queue_per_ts[0], xlabel="timeslot",
+    plotter.plot(ydata=jobs_in_queue_per_ts,
+                 xdata=xdata, xlabel="timeslot",
                  title=f"[{projectname}] Jobs in queue per Timeslot", projectname=projectname, view=view)
 
-    plotter.plot(ydata={"mdp": mdp_active_server_per_ts[1],
-                        "conservative": conservative_active_server_per_ts[1],
-                        "smart conservative": smart_conservative_active_server_per_ts[1]},
-                 xdata=mdp_active_server_per_ts[0], xlabel="timeslot",
+    plotter.plot(ydata=active_server_per_ts,
+                 xdata=xdata, xlabel="timeslot",
                  title=f"[{projectname}] Active server per Timeslot", projectname=projectname, view=view)
