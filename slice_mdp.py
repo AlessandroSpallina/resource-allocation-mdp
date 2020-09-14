@@ -201,6 +201,15 @@ class SliceMDP:
         # which contains actions. At the end of the algorithm, PI  will
         # contain the solution and V(s) will contain the discounted sum of the rewards to be earned
         # (on average) by following that solution from state s.
+
+        if type(discount) == list:
+            to_return = {}
+            for i in discount:
+                vi = mdptoolbox.mdp.ValueIteration(self._transition_matrix, self._reward_matrix, discount)
+                vi.run()
+                to_return[str(i)] = vi.policy
+            return to_return
+
         vi = mdptoolbox.mdp.ValueIteration(self._transition_matrix, self._reward_matrix, discount)
         vi.run()
         return vi.policy
