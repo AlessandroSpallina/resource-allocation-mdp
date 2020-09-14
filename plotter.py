@@ -33,19 +33,19 @@ def plot_markov_chain(states, transition_matrix, reward_matrix=None, projectname
         dot.render(projectname + "/" + f"action{a}", view=view)
 
 
-def plot_cumulative(ydata, xdata=[], title="", xlabel="", ylabel="", projectname="", view=False):
+def plot_cumulative(ydata, xdata=[], title="", xlabel="", ylabel="", projectname="", multiple_plots=False, view=False):
     fig, ax = plt.subplots(figsize=(15, 10))
     ax.grid(True)
     ax.minorticks_on()
+    final_values = []
     for k in ydata:
         cumulative_buf = []
-
         for i in range(len(ydata[k])):
             if i > 0:
                 cumulative_buf.append(cumulative_buf[i - 1] + ydata[k][i])
             else:
                 cumulative_buf.append(ydata[k][0])
-
+        final_values.append((cumulative_buf[-1], k))
         ax.plot(xdata if len(xdata) else list(range(len(cumulative_buf))), cumulative_buf, label=k)
 
     ax.set_title(title)
@@ -59,6 +59,26 @@ def plot_cumulative(ydata, xdata=[], title="", xlabel="", ylabel="", projectname
     if view:
         plt.show()
     plt.close(fig)
+
+    # find subgroup of observations by the final value and avoid overplotting (a plot unreadable due to different scales)
+    if multiple_plots:
+        groups = []
+        final_values.sort()
+        for value in final_values:
+            for i in range(len(groups)):
+                # print(f"value[0] {value[0]}, {type(value[0])} -- groups[i][0] {groups[i][0]}, {type(groups[i][0])}")
+                if (value[0] / groups[i][0][0]) <= 5:  # magic number: if the ratio is more than 5 then is a different group!
+                    groups[i].append(value)
+                    break
+            else:
+                groups.append([value])
+        if len(groups) > 1:
+            for i in range(len(groups)):
+                to_plot = {}
+                for e in groups[i]:
+                    to_plot[e[1]] = ydata[e[1]]
+                plot_cumulative(to_plot, xdata=xdata, title=f"{title} ({i+1}of{len(groups)})", xlabel=xlabel,
+                                ylabel=ylabel, projectname=projectname, view=view)
 
 
 def plot(ydata, xdata=[], title="", xlabel="", ylabel="", projectname="", view=False):

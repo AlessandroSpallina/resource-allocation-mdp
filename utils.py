@@ -238,7 +238,7 @@ def comparison_plot(projectname, comparison_stats, max_points_in_plot, view=Fals
 
     plotter.plot_cumulative(ydata=cost_per_ts, xdata=xdata,
                             xlabel="timeslot", title=f"[{projectname}] Mean Cumulative Costs",
-                            projectname=projectname, view=view)
+                            projectname=projectname, view=view, multiple_plots=True)
 
     plotter.plot_cumulative(processed_per_ts,
                             ylabel="job", xdata=xdata,
