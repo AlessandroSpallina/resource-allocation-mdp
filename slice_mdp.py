@@ -205,9 +205,9 @@ class SliceMDP:
         if type(discount) == list:
             to_return = {}
             for i in discount:
-                vi = mdptoolbox.mdp.ValueIteration(self._transition_matrix, self._reward_matrix, discount)
+                vi = mdptoolbox.mdp.ValueIteration(self._transition_matrix, self._reward_matrix, i)
                 vi.run()
-                to_return[str(i)] = vi.policy
+                to_return[f"mdp({str(round(i, 1)).replace('.', ',')})"] = vi.policy
             return to_return
 
         vi = mdptoolbox.mdp.ValueIteration(self._transition_matrix, self._reward_matrix, discount)

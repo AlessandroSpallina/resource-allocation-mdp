@@ -224,7 +224,7 @@ def comparison_plot(projectname, comparison_stats, max_points_in_plot, view=Fals
     wait_time_in_the_queue = {}
     wait_time_in_the_system = {}
 
-    xdata = moving_average(comparison_stats['mdp']['costs_per_timeslot'], max_points_in_plot)[0]
+    xdata = moving_average(comparison_stats[next(iter(comparison_stats))]['costs_per_timeslot'], max_points_in_plot)[0]
 
     for key in comparison_stats:
         cost_per_ts[key] = moving_average(comparison_stats[key]['costs_per_timeslot'], max_points_in_plot)[1]
@@ -235,7 +235,6 @@ def comparison_plot(projectname, comparison_stats, max_points_in_plot, view=Fals
 
         wait_time_in_the_queue[key] = comparison_stats[key]['wait_time_in_the_queue_per_job']
         wait_time_in_the_system[key] = comparison_stats[key]['wait_time_in_the_system_per_job']
-
 
     plotter.plot_cumulative(ydata=cost_per_ts, xdata=xdata,
                             xlabel="timeslot", title=f"[{projectname}] Mean Cumulative Costs",
