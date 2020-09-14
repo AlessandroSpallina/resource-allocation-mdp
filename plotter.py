@@ -66,8 +66,7 @@ def plot_cumulative(ydata, xdata=[], title="", xlabel="", ylabel="", projectname
         final_values.sort()
         for value in final_values:
             for i in range(len(groups)):
-                # print(f"value[0] {value[0]}, {type(value[0])} -- groups[i][0] {groups[i][0]}, {type(groups[i][0])}")
-                if (value[0] / groups[i][0][0]) <= 5:  # magic number: if the ratio is more than 5 then is a different group!
+                if (value[0] / groups[i][0][0]) <= 1.3:  # magic number: if the ratio is more than 30% then is a different group!
                     groups[i].append(value)
                     break
             else:
