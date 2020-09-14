@@ -1,5 +1,5 @@
 """
-Find the best discount factor and confronts it against the conservative policy
+Simulate and plot different mdp policy (different gamma) and other policies like conservative or smart conservative
 """
 import os
 import shutil
