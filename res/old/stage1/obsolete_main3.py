@@ -204,7 +204,7 @@ if __name__ == '__main__':
 
     logging.info(f"*** Simulation done in {(time.time() - time_start) / 60} minutes ***")
 
-    shutil.copyfile("./config.yaml", f"{STORAGE_PATH}config.yaml")
+    shutil.copyfile("../../../config.yaml", f"{STORAGE_PATH}config.yaml")
     os.chdir(STORAGE_PATH)
 
     # plot generation and export on filesystem

@@ -1,6 +1,6 @@
 import numpy as np
 
-from res.old.state import State
+from res.old.stage0.state import State
 
 """
 Design and return the grid world
