@@ -173,19 +173,6 @@ class SliceMDP:
 
         return - (self._alpha * cost1 + self._beta * cost2 + self._gamma * cost3)
 
-    # def _calculate_transition_reward2(self, from_state, to_state):
-    #     # utilizzo approccio "costo del passaggio"
-    #     costs_from = self._alpha * self._c_job * from_state.k + (1 - self._alpha) * self._c_server * from_state.n
-    #     costs_to = self._alpha * self._c_job * to_state.k + (1 - self._alpha) * self._c_server * to_state.n
-    #
-    #     # expected value of lost packets
-    #     for i in range(len(self._arrivals_histogram)):
-    #         if to_state.k + i > self._queue_size:
-    #             #print(to_state)
-    #             costs_to += self._arrivals_histogram[i] * i * self._c_lost
-    #
-    #     return costs_from - costs_to
-
     def _generate_reward_matrix(self):
         reward_matrix = np.zeros((3, len(self._states), len(self._states)))
 
@@ -224,7 +211,7 @@ class SliceMDP:
                 to_return[f"mdp({str(round(i, 1)).replace('.', ',')})"] = vi.policy
             return to_return
 
-        vi = mdptoolbox.mdp.FiniteHorizon(self._transition_matrix, self._reward_matrix, discount)
+        vi = mdptoolbox.mdp.FiniteHorizon(self._transition_matrix, self._reward_matrix, discount, self._periods)
         vi.run()
         return vi.policy
 
