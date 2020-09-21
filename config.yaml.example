@@ -52,10 +52,6 @@ simulations: 1
 # simulation time (in timeslots) indicates timing for each simulation done
 simulation_time: 10000
 
-# --- deprecated ---
-# random policy attempts represent the number of attempts to generate a random policy
-# random_policy_attempts: 5
-
 # mdp discount start value indicates the default value for the discount discovery routine
 mdp_discount_start_value: 0.8
 
@@ -66,4 +62,5 @@ mdp_discount_end_value: 0.9
 mdp_discount_increment: 0.1
 
 # max points in plot is useful when we have plot unreadable due the high number of sample to plot
+# this option define the window of the average window tecnique
 max_points_in_plot: 400
