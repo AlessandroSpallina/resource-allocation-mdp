@@ -45,6 +45,8 @@ if __name__ == '__main__':
     DISCOUNT_END_VALUE = conf['mdp_discount_end_value']
     MDP_ALGORITHM = conf['mdp_algorithm']
 
+    DELAYED_ACTION = conf['delayed_action']
+
     MAX_POINTS_IN_PLOT = conf['max_points_in_plot']
 
     stats = {}
@@ -54,7 +56,7 @@ if __name__ == '__main__':
     # policy generations
     slice_mdp = SliceMDP(ARRIVALS, DEPARTURES, QUEUE_SIZE, SERVER_MAX_CAP, alpha=ALPHA, beta=BETA, gamma=GAMMA,
                          c_server=C_SERVER, c_job=C_JOB, c_lost=C_LOST, algorithm=MDP_ALGORITHM,
-                         periods=SIMULATION_TIME, verbose=False)
+                         periods=SIMULATION_TIME, delayed_action=DELAYED_ACTION, verbose=False)
 
     policies = slice_mdp.run([(i / 10) - 1e-10 for i in range(round(DISCOUNT_START_VALUE * 10),
                                                               round(DISCOUNT_END_VALUE * 10) + 1,
@@ -72,7 +74,8 @@ if __name__ == '__main__':
         for j in range(SIMULATIONS):
             simulator = SliceSimulator(ARRIVALS, DEPARTURES, queue_size=QUEUE_SIZE, max_server_num=SERVER_MAX_CAP,
                                        alpha=ALPHA, beta=BETA, gamma=GAMMA, c_server=C_SERVER, c_job=C_JOB,
-                                       c_lost=C_LOST, simulation_time=SIMULATION_TIME, verbose=False)
+                                       c_lost=C_LOST, simulation_time=SIMULATION_TIME, delayed_action=DELAYED_ACTION,
+                                       verbose=False)
             agent = Agent(slice_mdp.states, policies[i], simulator)
             stats_tmp.append(agent.control_environment())
         stats[i] = {'costs_per_timeslot': utils.get_mean_costs(stats_tmp)['mean'],

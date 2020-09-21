@@ -60,6 +60,9 @@ mdp_discount_increment: 0.1
 # available: 'vi' for value iteration; 'fh' for finite horizon
 mdp_algorithm: fh
 
+# delayed action effect the behaviour of the mdp formulation and of the simulator too
+delayed_action: True
+
 # max points in plot is useful when we have plot unreadable due the high number of sample to plot
 # this option define the window of the average window technique
 max_points_in_plot: 200

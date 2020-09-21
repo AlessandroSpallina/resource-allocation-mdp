@@ -6,9 +6,12 @@ from state import State
 
 class SliceMDP:
     def __init__(self, arrivals_histogram, departures_histogram, queue_size, max_server_num, algorithm='vi',
-                 periods=1000, c_job=1, c_server=1, c_lost=1, alpha=1, beta=1, gamma=1, verbose=False):
+                 periods=1000, c_job=1, c_server=1, c_lost=1, alpha=1, beta=1, gamma=1, delayed_action=True,
+                 verbose=False):
 
         self._verbose = verbose
+
+        self._delayed_action = delayed_action
 
         self._arrivals_histogram = arrivals_histogram
         self._departures_histogram = departures_histogram
@@ -79,8 +82,11 @@ class SliceMDP:
         return h_d
 
     def _calculate_transition_probability(self, from_state, to_state, action_id):
-        h_d = self._calculate_h_d(from_state)
-        # transition_probability = 0
+        if self._delayed_action:
+            h_d = self._calculate_h_d(from_state)
+        else:
+            h_d = self._calculate_h_d(to_state)
+
         diff = to_state - from_state
 
         tmp = 0

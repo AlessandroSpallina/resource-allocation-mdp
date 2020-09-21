@@ -38,9 +38,11 @@ class Job:
 
 class SliceSimulator:
     def __init__(self, arrivals_histogram, departures_histogram, queue_size=2, simulation_time=100, max_server_num=1,
-                 c_job=1, c_server=1, c_lost=1, alpha=1, beta=1, gamma=1, verbose=False):
+                 c_job=1, c_server=1, c_lost=1, alpha=1, beta=1, gamma=1, delayed_action=True, verbose=False):
 
         self._verbose = verbose
+
+        self._delayed_action = delayed_action
 
         self._arrivals_histogram = arrivals_histogram
         self._departures_histogram = departures_histogram
@@ -88,7 +90,7 @@ class SliceSimulator:
         server_cost = self._c_server * current_state.n
         lost_cost = self._c_lost * lost_jobs
 
-        #return self._alpha * job_cost + self._beta * server_cost + self._gamma * lost_cost
+        # return self._alpha * job_cost + self._beta * server_cost + self._gamma * lost_cost
         return (
             (
                 (self._alpha, job_cost), (self._beta, server_cost), (self._gamma, lost_cost)
@@ -173,6 +175,12 @@ class SliceSimulator:
         if self._verbose:
             print(f"[TS{self._current_timeslot}] Current state: {self._current_state}")
 
+        if not self._delayed_action:
+            if action_id == 1:
+                self._allocate_server()
+            elif action_id == 2:
+                self._deallocate_server()
+
         # statistics
         initial_state = copy(self._current_state)
         self._state_sequence.append(initial_state)
@@ -230,10 +238,11 @@ class SliceSimulator:
         if self._verbose:
             print(f"[TS{self._current_timeslot}] Processed {processed_jobs} jobs")
 
-        if action_id == 1:
-            self._allocate_server()
-        elif action_id == 2:
-            self._deallocate_server()
+        if self._delayed_action:
+            if action_id == 1:
+                self._allocate_server()
+            elif action_id == 2:
+                self._deallocate_server()
 
         self._current_timeslot += 1
 
