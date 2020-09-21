@@ -120,11 +120,11 @@ def get_matrix_policy(policy, server_max_cap):
 #     return tuple(rpolicy)
 
 
-def generate_conservative_policy(states_num):
+def generate_all_on_policy(states_num):
     return tuple([1] * states_num)
 
 
-def generate_smart_conservative_policy(states):
+def generate_conservative_policy(states):
     smpolicy = []
     # if the queue len is bigger than the number of allocated servers -> allocate
     # if the queue len is lower than the number of allocated servers -> deallocate

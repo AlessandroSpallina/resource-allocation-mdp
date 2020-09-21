@@ -59,8 +59,8 @@ if __name__ == '__main__':
                                                     round(DISCOUNT_END_VALUE * 10) + 1,
                                                     round(MDP_DISCOUNT_INCREMENT * 10))])
 
-    policies['conservative'] = utils.generate_conservative_policy(len(slice_mdp.states))
-    policies['smart-conservative'] = utils.generate_smart_conservative_policy(slice_mdp.states)
+    policies['all-on'] = utils.generate_all_on_policy(len(slice_mdp.states))
+    policies['conservative'] = utils.generate_conservative_policy(slice_mdp.states)
 
     logging.info(f"*** Generated {len(policies)} policies in {(time.time() - time_start) / 60} minutes ***")
     time_start = time.time()
