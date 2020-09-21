@@ -80,7 +80,7 @@ class SliceMDP:
 
     def _calculate_transition_probability(self, from_state, to_state, action_id):
         h_d = self._calculate_h_d(from_state)
-        transition_probability = 0
+        # transition_probability = 0
         diff = to_state - from_state
 
         tmp = 0

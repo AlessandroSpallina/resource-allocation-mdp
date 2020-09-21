@@ -3,17 +3,12 @@
 arrivals_histogram:
 #  - 0.5
 #  - 0.5
-  - 0.
+  - 0.15
   - 0.1
   - 0.2
   - 0.25
   - 0.2
   - 0.1
-  - 0.05
-  - 0.04
-  - 0.03
-  - 0.02
-  - 0.01
 
 
 # departures histogram
@@ -23,19 +18,19 @@ departures_histogram:
   - 1.
 
 # queue size is the max number of jobs waiting in the queue
-queue_size: 100
+queue_size: 10
 
 # server max cap represent the max cap of servers allocated in the slice
-server_max_cap: 5
+server_max_cap: 10
 
 # alpha is a parameter responsible for the cost normalization [job in queue]
-alpha: 0.333
+alpha: 1
 
 # beta is a parameter responsible for the cost normalization [server]
-beta: 0.333
+beta: 1
 
 # gamma is a parameter responsible for the cost normalization [lost]
-gamma: 0.333
+gamma: 1
 
 # c server is the cost to have a vm turned on in a time slot
 c_server: 1
@@ -50,21 +45,21 @@ c_lost: 1
 simulations: 1
 
 # simulation time (in timeslots) indicates timing for each simulation done
-simulation_time: 10000
+simulation_time: 1000
 
 # mdp discount start value indicates the default value for the discount discovery routine
 mdp_discount_start_value: 0.8
 
 # mdp discount end value indicates the end value for the discount discovery routine
-mdp_discount_end_value: 0.9
+mdp_discount_end_value: 1.
 
 # mdp discount increment represent the delta used for the discount discovery routine
 mdp_discount_increment: 0.1
 
 # mdp algo is useful to impose a specific algorithm for the policy calculation in mdp
 # available: 'vi' for value iteration; 'fh' for finite horizon
-mdp_algorithm: vi
+mdp_algorithm: fh
 
 # max points in plot is useful when we have plot unreadable due the high number of sample to plot
 # this option define the window of the average window technique
-max_points_in_plot: 400
+max_points_in_plot: 200
