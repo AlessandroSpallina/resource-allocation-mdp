@@ -115,15 +115,8 @@ def get_matrix_policy(policy, server_max_cap):
             to_return.append(get_matrix_policy(i, server_max_cap))
         return to_return
 
+    # qui fa .tolist() ma è come se non funzionasse, controlla agent.control_environment e utils.easy_plot
     return np.array(np.split(np.array(policy), server_max_cap + 1)).transpose().tolist()
-
-
-# # 3 azioni (0,1,2) e 6 stati
-# def generate_random_policy(states_num, action_num):
-#     rpolicy = []
-#     for s in range(states_num):
-#         rpolicy.append(random.randint(0, action_num - 1))
-#     return tuple(rpolicy)
 
 
 def generate_all_on_policy(states_num):
@@ -174,9 +167,19 @@ def easy_plot(projectname, stats, max_points_in_plot, view=False):
     beta_server_component_costs = moving_average([np.prod(i) for i in stats['component_costs_per_timeslot'][:, 1]], max_points_in_plot)
     gamma_lost_component_costs = moving_average([np.prod(i) for i in stats['component_costs_per_timeslot'][:, 2]], max_points_in_plot)
 
-    # plotter.table([f'{i} jobs' for i in range(len(stats['policy']))],
-    #               [f'{i} servers' for i in range(len(stats['policy'][0]))],
-    #               stats['policy'], title=f"{projectname}", projectname=projectname, view=view)
+    try:
+        if len(stats['policy'][0]) > 0:  # if we are here the policy is a matrix (fh)
+            previous_policy = []
+            for i in range(len(stats['policy'])):
+                if stats['policy'][i] != previous_policy:
+                    previous_policy = stats['policy'][i]
+                    plotter.table([f'{i} jobs' for i in range(len(previous_policy))],
+                                  [f'{i} servers' for i in range(len(previous_policy[0]))],
+                                  previous_policy, title=f"{projectname} (ts {i})", projectname=projectname, view=view)
+    except TypeError:
+        plotter.table([f'{i} jobs' for i in range(len(stats['policy']))],
+                      [f'{i} servers' for i in range(len(stats['policy'][0]))],
+                      stats['policy'], title=f"{projectname}", projectname=projectname, view=view)
 
     plotter.plot_cumulative(ydata={"costs": cost_per_ts[1],
                                    "processed jobs": processed_per_ts[1],
