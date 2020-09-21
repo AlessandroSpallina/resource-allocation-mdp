@@ -61,6 +61,10 @@ mdp_discount_end_value: 0.9
 # mdp discount increment represent the delta used for the discount discovery routine
 mdp_discount_increment: 0.1
 
+# mdp algo is useful to impose a specific algorithm for the policy calculation in mdp
+# available: 'vi' for value iteration; 'fh' for finite horizon
+mdp_algorithm: vi
+
 # max points in plot is useful when we have plot unreadable due the high number of sample to plot
-# this option define the window of the average window tecnique
+# this option define the window of the average window technique
 max_points_in_plot: 400
