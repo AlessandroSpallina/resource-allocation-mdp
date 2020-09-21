@@ -5,8 +5,8 @@ from state import State
 
 
 class SliceMDP:
-    def __init__(self, arrivals_histogram, departures_histogram, queue_size, max_server_num,
-                 c_job=1, c_server=1, c_lost=1, alpha=1, beta=1, gamma=1, verbose=False):
+    def __init__(self, arrivals_histogram, departures_histogram, queue_size, max_server_num, algorithm='vi',
+                 periods=1000, c_job=1, c_server=1, c_lost=1, alpha=1, beta=1, gamma=1, verbose=False):
 
         self._verbose = verbose
 
@@ -14,6 +14,8 @@ class SliceMDP:
         self._departures_histogram = departures_histogram
         self._queue_size = queue_size
         self._max_server_num = max_server_num
+        self._algorithm = algorithm
+        self._periods = periods
 
         # trans matrix stuff
         self._states = self._generate_states()
@@ -195,13 +197,12 @@ class SliceMDP:
                         reward_matrix[a][i][j] = self._calculate_transition_reward(self._states[j])
         return reward_matrix
 
-    def run_value_iteration(self, discount):
+    def _run_value_iteration(self, discount):
         # The standard family of algorithms to calculate optimal policies for finite state and action MDPs requires
         # storage for two arrays indexed by state: value V, which contains real values, and policy PI,
         # which contains actions. At the end of the algorithm, PI  will
         # contain the solution and V(s) will contain the discounted sum of the rewards to be earned
         # (on average) by following that solution from state s.
-
         if type(discount) == list:
             to_return = {}
             for i in discount:
@@ -213,3 +214,22 @@ class SliceMDP:
         vi = mdptoolbox.mdp.ValueIteration(self._transition_matrix, self._reward_matrix, discount)
         vi.run()
         return vi.policy
+
+    def _run_finite_horizon(self, discount):
+        if type(discount) == list:
+            to_return = {}
+            for i in discount:
+                vi = mdptoolbox.mdp.FiniteHorizon(self._transition_matrix, self._reward_matrix, i, self._periods)
+                vi.run()
+                to_return[f"mdp({str(round(i, 1)).replace('.', ',')})"] = vi.policy
+            return to_return
+
+        vi = mdptoolbox.mdp.FiniteHorizon(self._transition_matrix, self._reward_matrix, discount)
+        vi.run()
+        return vi.policy
+
+    def run(self, discount):
+        if self._algorithm == 'vi':
+            return self._run_value_iteration(discount)
+        if self._algorithm == 'fh':
+            return self._run_finite_horizon(discount)

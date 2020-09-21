@@ -109,6 +109,12 @@ def get_mean_active_servers(raw_stats):
 
 
 def get_matrix_policy(policy, server_max_cap):
+    if type(policy[0]) == list:  # if we are here the policy is a matrix (fh)
+        to_return = []
+        for i in policy:
+            to_return.append(get_matrix_policy(i, server_max_cap))
+        return to_return
+
     return np.array(np.split(np.array(policy), server_max_cap + 1)).transpose().tolist()
 
 
@@ -168,9 +174,9 @@ def easy_plot(projectname, stats, max_points_in_plot, view=False):
     beta_server_component_costs = moving_average([np.prod(i) for i in stats['component_costs_per_timeslot'][:, 1]], max_points_in_plot)
     gamma_lost_component_costs = moving_average([np.prod(i) for i in stats['component_costs_per_timeslot'][:, 2]], max_points_in_plot)
 
-    plotter.table([f'{i} jobs' for i in range(len(stats['policy']))],
-                  [f'{i} servers' for i in range(len(stats['policy'][0]))],
-                  stats['policy'], title=f"{projectname}", projectname=projectname, view=view)
+    # plotter.table([f'{i} jobs' for i in range(len(stats['policy']))],
+    #               [f'{i} servers' for i in range(len(stats['policy'][0]))],
+    #               stats['policy'], title=f"{projectname}", projectname=projectname, view=view)
 
     plotter.plot_cumulative(ydata={"costs": cost_per_ts[1],
                                    "processed jobs": processed_per_ts[1],

@@ -43,6 +43,7 @@ if __name__ == '__main__':
     MDP_DISCOUNT_INCREMENT = conf['mdp_discount_increment']
     DISCOUNT_START_VALUE = conf['mdp_discount_start_value']
     DISCOUNT_END_VALUE = conf['mdp_discount_end_value']
+    MDP_ALGORITHM = conf['mdp_algorithm']
 
     MAX_POINTS_IN_PLOT = conf['max_points_in_plot']
 
@@ -52,12 +53,12 @@ if __name__ == '__main__':
 
     # policy generations
     slice_mdp = SliceMDP(ARRIVALS, DEPARTURES, QUEUE_SIZE, SERVER_MAX_CAP, alpha=ALPHA, beta=BETA, gamma=GAMMA,
-                         c_server=C_SERVER, c_job=C_JOB, c_lost=C_LOST, verbose=False)
+                         c_server=C_SERVER, c_job=C_JOB, c_lost=C_LOST, algorithm=MDP_ALGORITHM,
+                         periods=SIMULATION_TIME, verbose=False)
 
-    policies = slice_mdp.run_value_iteration([(i / 10) - 1e-10 for i in
-                                              range(round(DISCOUNT_START_VALUE * 10),
-                                                    round(DISCOUNT_END_VALUE * 10) + 1,
-                                                    round(MDP_DISCOUNT_INCREMENT * 10))])
+    policies = slice_mdp.run([(i / 10) - 1e-10 for i in range(round(DISCOUNT_START_VALUE * 10),
+                                                              round(DISCOUNT_END_VALUE * 10) + 1,
+                                                              round(MDP_DISCOUNT_INCREMENT * 10))])
 
     policies['all-on'] = utils.generate_all_on_policy(len(slice_mdp.states))
     policies['conservative'] = utils.generate_conservative_policy(slice_mdp.states)
