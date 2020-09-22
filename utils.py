@@ -1,8 +1,6 @@
-import random
 import logging
 import subprocess
 
-import colorama as color
 import numpy as np
 import yaml
 
@@ -20,10 +18,6 @@ def read_config(verbose=False):
     if verbose:
         logging.info(f"CONF: {data}")
     return data
-
-
-def print_blue(message):
-    print(f"{color.Fore.BLUE}{message}{color.Style.RESET_ALL}")
 
 
 def get_mean_costs(raw_stats):

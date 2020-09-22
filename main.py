@@ -14,7 +14,8 @@ from slice_simulator import SliceSimulator
 
 STORAGE_PATH = "./res/exported/{}/".format(int(time.time()))
 
-if __name__ == '__main__':
+
+def main():
     if not os.path.exists(STORAGE_PATH):
         os.makedirs(STORAGE_PATH)
     logging.basicConfig(filename=f"{STORAGE_PATH}report.log", level=logging.INFO)
@@ -109,3 +110,7 @@ if __name__ == '__main__':
     utils.comparison_plot("common", stats, MAX_POINTS_IN_PLOT)
 
     logging.info(f"*** Plotting done in {(time.time() - time_start) / 60} minutes ***")
+
+
+if __name__ == '__main__':
+    main()

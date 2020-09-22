@@ -1,6 +1,7 @@
 import mdptoolbox
 import numpy as np
 
+from memory_profiler import profile
 from state import State
 
 
@@ -221,6 +222,7 @@ class SliceMDP:
         vi.run()
         return vi.policy
 
+    @profile
     def run(self, discount):
         if self._algorithm == 'vi':
             return self._run_value_iteration(discount)
