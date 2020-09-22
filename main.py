@@ -22,6 +22,9 @@ def main():
 
     logging.info(f"Latest commit available at {utils.get_last_commit_link()}")
 
+    shutil.copyfile("./config.yaml", f"{STORAGE_PATH}config.yaml")
+    os.chdir(STORAGE_PATH)
+
     conf = utils.read_config(True)
 
     ARRIVALS = conf['arrivals_histogram']
@@ -92,8 +95,8 @@ def main():
     logging.info(f"*** Simulation done in {(time.time() - time_start) / 60} minutes ***")
     time_start = time.time()
 
-    shutil.copyfile("./config.yaml", f"{STORAGE_PATH}config.yaml")
-    os.chdir(STORAGE_PATH)
+    # shutil.copyfile("./config.yaml", f"{STORAGE_PATH}config.yaml")
+    # os.chdir(STORAGE_PATH)
 
     # plot generation and export on filesystem
     # plotter.plot_markov_chain(slice_mdp.states, slice_mdp.transition_matrix, slice_mdp.reward_matrix,
