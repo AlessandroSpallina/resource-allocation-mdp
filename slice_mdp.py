@@ -222,7 +222,7 @@ class SliceMDP:
         vi.run()
         return vi.policy
 
-    @profile
+    # @profile
     def run(self, discount):
         if self._algorithm == 'vi':
             return self._run_value_iteration(discount)

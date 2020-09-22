@@ -20,7 +20,7 @@ class Agent:
         except TypeError:
             return self._policy[self._states.index(self._current_state)]
 
-    @profile
+    # @profile
     def control_environment(self):
         for i in range(1, self._environment.simulation_time):
             self._current_timeslot = i
