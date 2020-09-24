@@ -10,21 +10,48 @@ from src.slicing_core.agent import Agent
 from src.slicing_core.slice_mdp import SliceMDP
 from src.slicing_core.slice_simulator import SliceSimulator
 import os
+import getopt
+import sys
 
-STORAGE_PATH = "../../res/exported/{}/".format(int(time.time()))
+# STORAGE_PATH = "../../res/exported/{}/".format(int(time.time()))
 
 
-def main():
+def cli_handler(argv):
+    USAGE = "sc_main.py -c <configPath> -n <simulationName>"
+    to_return = {}
+    try:
+        # help, config (path), name (directory name of the results)
+        opts, args = getopt.getopt(argv, "hc:n:", ["config=", "name="])
+    except getopt.GetoptError:
+        print(USAGE)
+        sys.exit(2)
+    for opt, arg in opts:
+        if opt == '-h':
+            print(USAGE)
+            sys.exit()
+        elif opt in ('-c', '--config'):
+            to_return['config'] = arg
+        elif opt in ('-n', '--name'):
+            to_return['name'] = arg
+
+    return to_return
+
+
+def main(argv):
+    cli_args = cli_handler(argv)
+    STORAGE_PATH = f"../../res/exported/{cli_args['name'] if 'name' in cli_args else int(time.time())}/"
+    CONFIG_PATH = cli_args['config'] if 'config' in cli_args else "config.yaml"
+
     if not os.path.exists(STORAGE_PATH):
         os.makedirs(STORAGE_PATH)
     logging.basicConfig(filename=f"{STORAGE_PATH}report.log", level=logging.INFO)
 
     logging.info(f"Latest commit available at {utils.get_last_commit_link()}")
 
-    shutil.copyfile("config.yaml", f"{STORAGE_PATH}config.yaml")
+    shutil.copyfile(CONFIG_PATH, f"{STORAGE_PATH}config.yaml")
     os.chdir(STORAGE_PATH)
 
-    conf = utils.read_config(True)
+    conf = utils.read_config(path=CONFIG_PATH, verbose=True)
 
     ARRIVALS = conf['arrivals_histogram']
     DEPARTURES = conf['departures_histogram']
@@ -115,4 +142,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv[1:])

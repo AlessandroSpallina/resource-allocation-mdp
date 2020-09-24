@@ -12,8 +12,8 @@ def get_last_commit_link():
     return f"https://github.com/AlessandroSpallina/Slicing-5G-MDP/commit/{commit_hash[:-1].decode('utf-8')}"
 
 
-def read_config(verbose=False):
-    with open('config.yaml') as f:
+def read_config(path="config.yaml", verbose=False):
+    with open(path) as f:
         data = yaml.load(f, Loader=yaml.FullLoader)
     if verbose:
         logging.info(f"CONF: {data}")
