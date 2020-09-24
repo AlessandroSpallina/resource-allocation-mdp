@@ -6,11 +6,10 @@ import shutil
 import time
 import logging
 
-import plotter
-import utils
-from agent import Agent
-from slice_mdp import SliceMDP
-from slice_simulator import SliceSimulator
+from src.slicing_core import utils, plotter
+from src.slicing_core.agent import Agent
+from src.slicing_core.slice_mdp import SliceMDP
+from src.slicing_core.slice_simulator import SliceSimulator
 
 STORAGE_PATH = "./res/exported/{}/".format(int(time.time()))
 
@@ -195,7 +194,7 @@ if __name__ == '__main__':
 
     logging.info(f"*** Simulation done in {(time.time() - time_start) / 60} minutes ***")
 
-    shutil.copyfile("../../../config.yaml", f"{STORAGE_PATH}config.yaml")
+    shutil.copyfile("../../../src/slicing_core/config.yaml", f"{STORAGE_PATH}config.yaml")
     os.chdir(STORAGE_PATH)
 
     # plot generation and export on filesystem

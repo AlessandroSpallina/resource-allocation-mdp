@@ -8,7 +8,7 @@ from copy import copy
 
 import numpy as np
 
-from state import State
+from src.slicing_core.state import State
 
 
 class Error(Exception):

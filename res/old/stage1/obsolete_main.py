@@ -3,11 +3,10 @@ Confront MPD policy based agent (discount 0.8) vs the average of N random policy
 """
 import time
 
-import plotter
-import utils
-from agent import Agent
-from slice_mdp import SliceMDP
-from slice_simulator import SliceSimulator
+from src.slicing_core import utils, plotter
+from src.slicing_core.agent import Agent
+from src.slicing_core.slice_mdp import SliceMDP
+from src.slicing_core.slice_simulator import SliceSimulator
 
 SIMULATIONS = 100
 SIMULATION_TIME = 1000

@@ -1,5 +1,5 @@
-from state import State
-from memory_profiler import profile
+from src.slicing_core.state import State
+
 
 class Agent:
     def __init__(self, states, policy, environment):

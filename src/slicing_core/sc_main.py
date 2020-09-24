@@ -1,18 +1,17 @@
 """
 Simulate and plot different mdp policy (different gamma) and other policies like conservative or smart conservative
 """
-import os
 import shutil
 import time
 import logging
 
-import plotter
-import utils
-from agent import Agent
-from slice_mdp import SliceMDP
-from slice_simulator import SliceSimulator
+from src.slicing_core import utils, plotter
+from src.slicing_core.agent import Agent
+from src.slicing_core.slice_mdp import SliceMDP
+from src.slicing_core.slice_simulator import SliceSimulator
+import os
 
-STORAGE_PATH = "./res/exported/{}/".format(int(time.time()))
+STORAGE_PATH = "../../res/exported/{}/".format(int(time.time()))
 
 
 def main():
@@ -22,7 +21,7 @@ def main():
 
     logging.info(f"Latest commit available at {utils.get_last_commit_link()}")
 
-    shutil.copyfile("./config.yaml", f"{STORAGE_PATH}config.yaml")
+    shutil.copyfile("config.yaml", f"{STORAGE_PATH}config.yaml")
     os.chdir(STORAGE_PATH)
 
     conf = utils.read_config(True)
