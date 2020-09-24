@@ -62,9 +62,9 @@ def main():
                          c_server=C_SERVER, c_job=C_JOB, c_lost=C_LOST, algorithm=MDP_ALGORITHM,
                          periods=SIMULATION_TIME, delayed_action=DELAYED_ACTION, verbose=False)
 
-    policies = slice_mdp.run([(i / 10) - 1e-10 for i in range(round(DISCOUNT_START_VALUE * 10),
-                                                              round(DISCOUNT_END_VALUE * 10) + 1,
-                                                              round(MDP_DISCOUNT_INCREMENT * 10))])
+    policies = slice_mdp.run([(i / 10) for i in range(round(DISCOUNT_START_VALUE * 10),
+                                                      round(DISCOUNT_END_VALUE * 10) + 1,
+                                                      round(MDP_DISCOUNT_INCREMENT * 10))])
 
     policies['all-on'] = utils.generate_all_on_policy(len(slice_mdp.states))
     policies['conservative'] = utils.generate_conservative_policy(slice_mdp.states)

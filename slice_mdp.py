@@ -200,12 +200,12 @@ class SliceMDP:
         if type(discount) == list:
             to_return = {}
             for i in discount:
-                vi = mdptoolbox.mdp.ValueIteration(self._transition_matrix, self._reward_matrix, i)
+                vi = mdptoolbox.mdp.ValueIteration(self._transition_matrix, self._reward_matrix, i - 0.001)
                 vi.run()
                 to_return[f"mdp({str(round(i, 1)).replace('.', ',')})"] = vi.policy
             return to_return
 
-        vi = mdptoolbox.mdp.ValueIteration(self._transition_matrix, self._reward_matrix, discount)
+        vi = mdptoolbox.mdp.ValueIteration(self._transition_matrix, self._reward_matrix, discount - 0.001)
         vi.run()
         return vi.policy
 
@@ -213,12 +213,12 @@ class SliceMDP:
         if type(discount) == list:
             to_return = {}
             for i in discount:
-                vi = mdptoolbox.mdp.FiniteHorizon(self._transition_matrix, self._reward_matrix, i, self._periods)
+                vi = mdptoolbox.mdp.FiniteHorizon(self._transition_matrix, self._reward_matrix, i - 1e-10, self._periods)
                 vi.run()
                 to_return[f"mdp({str(round(i, 1)).replace('.', ',')})"] = vi.policy
             return to_return
 
-        vi = mdptoolbox.mdp.FiniteHorizon(self._transition_matrix, self._reward_matrix, discount, self._periods)
+        vi = mdptoolbox.mdp.FiniteHorizon(self._transition_matrix, self._reward_matrix, discount - 1e-10, self._periods)
         vi.run()
         return vi.policy
 
