@@ -1,4 +1,4 @@
-from src.slicing_core.state import State
+from state import State
 
 
 class Agent:

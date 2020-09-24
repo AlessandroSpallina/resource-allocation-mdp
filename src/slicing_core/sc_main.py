@@ -5,10 +5,11 @@ import shutil
 import time
 import logging
 
-from src.slicing_core import utils, plotter
-from src.slicing_core.agent import Agent
-from src.slicing_core.slice_mdp import SliceMDP
-from src.slicing_core.slice_simulator import SliceSimulator
+import utils
+import plotter
+from agent import Agent
+from slice_mdp import SliceMDP
+from slice_simulator import SliceSimulator
 import os
 import getopt
 import sys

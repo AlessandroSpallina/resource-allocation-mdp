@@ -2,7 +2,7 @@ import mdptoolbox
 import numpy as np
 
 # from memory_profiler import profile
-from src.slicing_core.state import State
+from state import State
 
 
 class SliceMDP:

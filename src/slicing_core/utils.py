@@ -4,7 +4,7 @@ import subprocess
 import numpy as np
 import yaml
 
-from src.slicing_core import plotter
+import plotter
 
 
 def get_last_commit_link():
