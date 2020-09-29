@@ -8,9 +8,11 @@ from state import State
 class IncrementalSliceMDP:  # mdp policy with incremental actions (+1 / -1 / do nothing)
     def __init__(self, arrivals_histogram, departures_histogram, queue_size, max_server_num, algorithm='vi',
                  periods=1000, c_job=1, c_server=1, c_lost=1, alpha=1, beta=1, gamma=1, delayed_action=True,
-                 verbose=False):
+                 label="", verbose=False):
 
         self._verbose = verbose
+
+        self._label = label
 
         self._delayed_action = delayed_action
 
@@ -207,7 +209,7 @@ class IncrementalSliceMDP:  # mdp policy with incremental actions (+1 / -1 / do 
             for i in discount:
                 vi = mdptoolbox.mdp.ValueIteration(self._transition_matrix, self._reward_matrix, i - 0.001)
                 vi.run()
-                to_return[f"mdp({str(round(i, 1)).replace('.', ',')})"] = vi.policy
+                to_return[f"{self._label}-mdp({str(round(i, 1)).replace('.', ',')})"] = vi.policy
             return to_return
 
         vi = mdptoolbox.mdp.ValueIteration(self._transition_matrix, self._reward_matrix, discount - 0.001)
@@ -220,7 +222,7 @@ class IncrementalSliceMDP:  # mdp policy with incremental actions (+1 / -1 / do 
             for i in discount:
                 vi = mdptoolbox.mdp.FiniteHorizon(self._transition_matrix, self._reward_matrix, i - 1e-10, self._periods)
                 vi.run()
-                to_return[f"mdp({str(round(i, 1)).replace('.', ',')})"] = vi.policy
+                to_return[f"{self._label}-mdp({str(round(i, 1)).replace('.', ',')})"] = vi.policy
             return to_return
 
         vi = mdptoolbox.mdp.FiniteHorizon(self._transition_matrix, self._reward_matrix, discount - 1e-10, self._periods)

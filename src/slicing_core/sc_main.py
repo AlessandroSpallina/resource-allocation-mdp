@@ -85,16 +85,26 @@ def main(argv):
     time_start = time.time()
 
     # policy generations
-    slice_mdp = IncrementalSliceMDP(ARRIVALS, DEPARTURES, QUEUE_SIZE, SERVER_MAX_CAP, alpha=ALPHA, beta=BETA, gamma=GAMMA,
-                                    c_server=C_SERVER, c_job=C_JOB, c_lost=C_LOST, algorithm=MDP_ALGORITHM,
-                                    periods=SIMULATION_TIME, delayed_action=DELAYED_ACTION, verbose=False)
+    i_slice_mdp = IncrementalSliceMDP(ARRIVALS, DEPARTURES, QUEUE_SIZE, SERVER_MAX_CAP, alpha=ALPHA, beta=BETA, gamma=GAMMA,
+                                      c_server=C_SERVER, c_job=C_JOB, c_lost=C_LOST, algorithm=MDP_ALGORITHM,
+                                      periods=SIMULATION_TIME, delayed_action=DELAYED_ACTION, label="i", verbose=False)
 
-    policies = slice_mdp.run([(i / 10) for i in range(round(DISCOUNT_START_VALUE * 10),
-                                                      round(DISCOUNT_END_VALUE * 10) + 1,
-                                                      round(MDP_DISCOUNT_INCREMENT * 10))])
+    i_policies = i_slice_mdp.run([(i / 10) for i in range(round(DISCOUNT_START_VALUE * 10),
+                                                          round(DISCOUNT_END_VALUE * 10) + 1,
+                                                          round(MDP_DISCOUNT_INCREMENT * 10))])
 
-    policies['all-on'] = utils.generate_all_on_policy(len(slice_mdp.states))
-    policies['conservative'] = utils.generate_conservative_policy(slice_mdp.states)
+    a_slice_mdp = AbsoluteSliceMDP(ARRIVALS, DEPARTURES, QUEUE_SIZE, SERVER_MAX_CAP, alpha=ALPHA, beta=BETA, gamma=GAMMA,
+                                   c_server=C_SERVER, c_job=C_JOB, c_lost=C_LOST, algorithm=MDP_ALGORITHM,
+                                   periods=SIMULATION_TIME, delayed_action=DELAYED_ACTION, label="a", verbose=False)
+
+    a_policies = a_slice_mdp.run([(i / 10) for i in range(round(DISCOUNT_START_VALUE * 10),
+                                                          round(DISCOUNT_END_VALUE * 10) + 1,
+                                                          round(MDP_DISCOUNT_INCREMENT * 10))])
+
+    policies = {**i_policies,
+                **a_policies,
+                'all-on': utils.generate_all_on_policy(len(i_slice_mdp.states)),
+                'conservative': utils.generate_conservative_policy(i_slice_mdp.states)}
 
     logging.info(f"*** Generated {len(policies)} policies in {(time.time() - time_start) / 60} minutes ***")
     time_start = time.time()
@@ -107,7 +117,7 @@ def main(argv):
                                        alpha=ALPHA, beta=BETA, gamma=GAMMA, c_server=C_SERVER, c_job=C_JOB,
                                        c_lost=C_LOST, simulation_time=SIMULATION_TIME, delayed_action=DELAYED_ACTION,
                                        verbose=False)
-            agent = Agent(slice_mdp.states, policies[i], simulator)
+            agent = Agent(i_slice_mdp.states, policies[i], simulator)
             stats_tmp.append(agent.control_environment())
         stats[i] = {'costs_per_timeslot': utils.get_mean_costs(stats_tmp)['mean'],
                     'component_costs_per_timeslot': utils.get_mean_component_costs(stats_tmp)['mean'],
