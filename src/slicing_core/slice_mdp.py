@@ -5,7 +5,7 @@ import numpy as np
 from state import State
 
 
-class SliceMDP:
+class IncrementalSliceMDP:  # mdp policy with incremental actions (+1 / -1 / do nothing)
     def __init__(self, arrivals_histogram, departures_histogram, queue_size, max_server_num, algorithm='vi',
                  periods=1000, c_job=1, c_server=1, c_lost=1, alpha=1, beta=1, gamma=1, delayed_action=True,
                  verbose=False):
@@ -82,6 +82,26 @@ class SliceMDP:
                 h_d = np.convolve(h_d, self._departures_histogram)
         return h_d
 
+    def _filter_transition_probability_by_action(self, transition_probability, from_state, to_state, action_id):
+        diff = to_state - from_state
+
+        # adesso valuto le eventuali transizioni "verticali"
+        if action_id == 0 \
+                or (action_id == 1 and diff.n == 0 and from_state.n == self._max_server_num) \
+                or (action_id == 2 and diff.n == 0 and from_state.n == 0):  # do nothing
+            if diff.n != 0:
+                return 0.
+
+        elif action_id == 1:  # allocate 1 server
+            if diff.n != 1:  # and to_state.n != self._max_server_num:
+                return 0.
+
+        elif action_id == 2:  # deallocate 1 server
+            if diff.n != -1:  # and to_state.n != 0:
+                return 0.
+
+        return transition_probability
+
     def _calculate_transition_probability(self, from_state, to_state, action_id):
         if self._delayed_action:
             h_d = self._calculate_h_d(from_state)
@@ -131,22 +151,7 @@ class SliceMDP:
 
         transition_probability = tmp + tmp2
 
-        # adesso valuto le eventuali transizioni "verticali"
-        if action_id == 0 \
-                or (action_id == 1 and diff.n == 0 and from_state.n == self._max_server_num)\
-                or (action_id == 2 and diff.n == 0 and from_state.n == 0):  # do nothing
-            if diff.n != 0:
-                return 0.
-
-        elif action_id == 1:  # allocate 1 server
-            if diff.n != 1:  # and to_state.n != self._max_server_num:
-                return 0.
-
-        elif action_id == 2:  # deallocate 1 server
-            if diff.n != -1:  # and to_state.n != 0:
-                return 0.
-
-        return transition_probability
+        return self._filter_transition_probability_by_action(transition_probability, from_state, to_state, action_id)
 
     """
     The transition matrix is of dim action_num * states_num * states_num
@@ -228,3 +233,25 @@ class SliceMDP:
             return self._run_value_iteration(discount)
         if self._algorithm == 'fh':
             return self._run_finite_horizon(discount)
+
+
+class AbsoluteSliceMDP(IncrementalSliceMDP):  # mdp policy with absolute allocation actions (0, 1, 2, .., N)
+    def _generate_reward_matrix(self):
+        reward_matrix = np.zeros((self._max_server_num + 1, len(self._states), len(self._states)))
+
+        for a in range(len(reward_matrix)):
+            for i in range(len(self._states)):
+                for j in range(len(self._states)):
+                    if self._transition_matrix[a][i][j] > 0:
+                        #  reward_matrix[a][i][j] = self._calculate_transition_reward2(self._states[i], self._states[j])
+                        reward_matrix[a][i][j] = self._calculate_transition_reward(self._states[j])
+        return reward_matrix
+
+    def _filter_transition_probability_by_action(self, transition_probability, from_state, to_state, action_id):
+        diff = to_state - from_state
+
+        # adesso valuto le eventuali transizioni "verticali"
+        if to_state.n != action_id:
+            return 0
+
+        return transition_probability

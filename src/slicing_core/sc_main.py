@@ -8,7 +8,7 @@ import logging
 import utils
 import plotter
 from agent import Agent
-from slice_mdp import SliceMDP
+from slice_mdp import IncrementalSliceMDP, AbsoluteSliceMDP
 from slice_simulator import SliceSimulator
 import os
 import getopt
@@ -85,9 +85,9 @@ def main(argv):
     time_start = time.time()
 
     # policy generations
-    slice_mdp = SliceMDP(ARRIVALS, DEPARTURES, QUEUE_SIZE, SERVER_MAX_CAP, alpha=ALPHA, beta=BETA, gamma=GAMMA,
-                         c_server=C_SERVER, c_job=C_JOB, c_lost=C_LOST, algorithm=MDP_ALGORITHM,
-                         periods=SIMULATION_TIME, delayed_action=DELAYED_ACTION, verbose=False)
+    slice_mdp = IncrementalSliceMDP(ARRIVALS, DEPARTURES, QUEUE_SIZE, SERVER_MAX_CAP, alpha=ALPHA, beta=BETA, gamma=GAMMA,
+                                    c_server=C_SERVER, c_job=C_JOB, c_lost=C_LOST, algorithm=MDP_ALGORITHM,
+                                    periods=SIMULATION_TIME, delayed_action=DELAYED_ACTION, verbose=False)
 
     policies = slice_mdp.run([(i / 10) for i in range(round(DISCOUNT_START_VALUE * 10),
                                                       round(DISCOUNT_END_VALUE * 10) + 1,
