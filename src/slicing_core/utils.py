@@ -113,23 +113,19 @@ def get_matrix_policy(policy, server_max_cap):
     return np.array(np.split(np.array(policy), server_max_cap + 1)).transpose().tolist()
 
 
-def generate_all_on_policy(states_num):
-    return tuple([1] * states_num)
+def generate_all_on_policy(states):
+    return tuple([states[-1].n] * len(states))
 
 
 def generate_conservative_policy(states):
-    smpolicy = []
+    policy = []
     # if the queue len is bigger than the number of allocated servers -> allocate
     # if the queue len is lower than the number of allocated servers -> deallocate
     # otherwise do nothing
     for state in states:
-        if state.k > state.n:
-            smpolicy.append(1)
-        elif state.k < state.n:
-            smpolicy.append(2)
-        else:
-            smpolicy.append(0)
-    return tuple(smpolicy)
+        policy.append(state.k)
+
+    return tuple(policy)
 
 
 # old average, this hides some information

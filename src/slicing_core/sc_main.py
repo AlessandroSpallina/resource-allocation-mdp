@@ -103,7 +103,7 @@ def main(argv):
 
     policies = {**ua_policies,
                 **ma_policies,
-                'all-on': utils.generate_all_on_policy(len(ua_slice_mdp.states)),
+                'all-on': utils.generate_all_on_policy(ua_slice_mdp.states),
                 'conservative': utils.generate_conservative_policy(ua_slice_mdp.states)}
 
     logging.info(f"*** Generated {len(policies)} policies in {(time.time() - time_start) / 60} minutes ***")
