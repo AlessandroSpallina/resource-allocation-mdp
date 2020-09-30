@@ -2,6 +2,7 @@ import mdptoolbox
 import numpy as np
 
 # from memory_profiler import profile
+from copy import copy
 from state import State
 
 
@@ -231,10 +232,48 @@ class IncrementalSliceMDP:  # mdp policy with incremental actions (+1 / -1 / do 
 
     # @profile
     def run(self, discount):
+        delta_policy = []
+        absolute_policy = []
+
         if self._algorithm == 'vi':
-            return self._run_value_iteration(discount)
+            delta_policy = self._run_value_iteration(discount)
+            absolute_policy = copy(delta_policy)
+
+            # porting delta-style policy to absolute-style
+            for key in delta_policy:
+                absolute_policy[key] = list(absolute_policy[key])
+                for i in range(len(delta_policy[key])):
+                    policy_state = self._states[i]
+                    if delta_policy[key][i] == 0:  # do nothing
+                        absolute_policy[key][i] = policy_state.n
+                    elif delta_policy[key][i] == 1:  # allocate 1 server
+                        absolute_policy[key][i] = policy_state.n + 1
+                    elif delta_policy[key][i] == 2:  # deallocate 1 server
+                        absolute_policy[key][i] = policy_state.n - 1
+
         if self._algorithm == 'fh':
-            return self._run_finite_horizon(discount)
+            delta_policy = self._run_finite_horizon(discount)
+            absolute_policy = copy(delta_policy)
+
+            # porting delta-style policy to absolute-style
+            for key in delta_policy:
+                for i in range(len(delta_policy[key])):  # i indicate the state index
+                    for j in range(len(delta_policy[key][i])):  # i j indicate the state in a specific timeslot
+                        policy_state = self._states[i]
+                        if delta_policy[key][i][j] == 0:  # do nothing
+                            absolute_policy[key][i][j] = policy_state.n
+                        elif delta_policy[key][i][j] == 1:  # allocate +1 server
+                            absolute_policy[key][i][j] = policy_state.n + 1
+                        elif delta_policy[key][i][j] == 2:  # deallocate -1 server
+                            absolute_policy[key][i][j] = policy_state.n - 1
+
+        # print(f"prima(0,1,2) {delta_policy} - dopo(absolute) {absolute_policy}")
+        return absolute_policy
+
+
+
+
+
 
 
 class AbsoluteSliceMDP(IncrementalSliceMDP):  # mdp policy with absolute allocation actions (0, 1, 2, .., N)
@@ -257,3 +296,9 @@ class AbsoluteSliceMDP(IncrementalSliceMDP):  # mdp policy with absolute allocat
             return 0
 
         return transition_probability
+
+    def run(self, discount):
+        if self._algorithm == 'vi':
+            return self._run_value_iteration(discount)
+        if self._algorithm == 'fh':
+            return self._run_finite_horizon(discount)
