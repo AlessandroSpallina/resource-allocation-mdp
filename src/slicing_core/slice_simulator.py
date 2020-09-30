@@ -132,23 +132,20 @@ class SliceSimulator:
             else:
                 prob -= self._h_p[self._current_state.n][j]
 
-    def _allocate_server(self, count=1):
-        if self._current_state.n + count > self._max_server_num:
+    # this function allocate server_num servers, this is an absolute number (not a delta)
+    def _allocate_server(self, server_num):
+        if server_num > self._max_server_num:
             if self._verbose:
                 print(f"Max Cap Limit Reached, "
-                      f"Unable to allocate {self._current_state.n + count} servers; "
+                      f"Unable to allocate {server_num} servers; "
                       f"max cap is {self._max_server_num}")
-        else:
-            self._current_state.n += count
-
-    def _deallocate_server(self, count=1):
-        if self._current_state.n - count < 0:
+        elif server_num < 0:
             if self._verbose:
                 print(f"Min Cap Limit Reached, "
-                      f"Unable to deallocate to {self._current_state.n - count} servers; "
+                      f"Unable to deallocate to {server_num} servers; "
                       f"min cap is 0")
         else:
-            self._current_state.n -= count
+            self._current_state.n = server_num
 
     # moves jobs from the queue to the internal servers cache
     def _refill_server_internal_queue(self):
@@ -176,10 +173,7 @@ class SliceSimulator:
             print(f"[TS{self._current_timeslot}] Current state: {self._current_state}")
 
         if not self._delayed_action:
-            if action_id == 1:
-                self._allocate_server()
-            elif action_id == 2:
-                self._deallocate_server()
+            self._allocate_server(action_id)
 
         # statistics
         initial_state = copy(self._current_state)
@@ -239,10 +233,7 @@ class SliceSimulator:
             print(f"[TS{self._current_timeslot}] Processed {processed_jobs} jobs")
 
         if self._delayed_action:
-            if action_id == 1:
-                self._allocate_server()
-            elif action_id == 2:
-                self._deallocate_server()
+            self._allocate_server(action_id)
 
         self._current_timeslot += 1
 
