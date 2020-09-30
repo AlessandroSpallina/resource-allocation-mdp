@@ -6,7 +6,7 @@ from copy import copy
 from state import State
 
 
-class IncrementalSliceMDP:  # mdp policy with incremental actions (+1 / -1 / do nothing)
+class UnitaryAllocationSliceMDP:  # mdp policy with unitary actions, the policy describe the number of server to have in running
     def __init__(self, arrivals_histogram, departures_histogram, queue_size, max_server_num, algorithm='vi',
                  periods=1000, c_job=1, c_server=1, c_lost=1, alpha=1, beta=1, gamma=1, delayed_action=True,
                  label="", verbose=False):
@@ -271,12 +271,7 @@ class IncrementalSliceMDP:  # mdp policy with incremental actions (+1 / -1 / do 
         return absolute_policy
 
 
-
-
-
-
-
-class AbsoluteSliceMDP(IncrementalSliceMDP):  # mdp policy with absolute allocation actions (0, 1, 2, .., N)
+class MultipleAllocationSliceMDP(UnitaryAllocationSliceMDP):  # mdp policy with multiple actions, the policy describe the number of server to have in running
     def _generate_reward_matrix(self):
         reward_matrix = np.zeros((self._max_server_num + 1, len(self._states), len(self._states)))
 

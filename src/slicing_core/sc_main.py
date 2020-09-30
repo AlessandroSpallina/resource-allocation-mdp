@@ -8,7 +8,7 @@ import logging
 import utils
 import plotter
 from agent import Agent
-from slice_mdp import IncrementalSliceMDP, AbsoluteSliceMDP
+from slice_mdp import UnitaryAllocationSliceMDP, MultipleAllocationSliceMDP
 from slice_simulator import SliceSimulator
 import os
 import getopt
@@ -85,24 +85,24 @@ def main(argv):
     time_start = time.time()
 
     # policy generations
-    i_slice_mdp = IncrementalSliceMDP(ARRIVALS, DEPARTURES, QUEUE_SIZE, SERVER_MAX_CAP, alpha=ALPHA, beta=BETA, gamma=GAMMA,
-                                      c_server=C_SERVER, c_job=C_JOB, c_lost=C_LOST, algorithm=MDP_ALGORITHM,
-                                      periods=SIMULATION_TIME, delayed_action=DELAYED_ACTION, label="i", verbose=False)
+    ua_slice_mdp = UnitaryAllocationSliceMDP(ARRIVALS, DEPARTURES, QUEUE_SIZE, SERVER_MAX_CAP, alpha=ALPHA, beta=BETA, gamma=GAMMA,
+                                            c_server=C_SERVER, c_job=C_JOB, c_lost=C_LOST, algorithm=MDP_ALGORITHM,
+                                            periods=SIMULATION_TIME, delayed_action=DELAYED_ACTION, label="ua", verbose=False)
 
-    i_policies = i_slice_mdp.run([(i / 10) for i in range(round(DISCOUNT_START_VALUE * 10),
+    ua_policies = ua_slice_mdp.run([(i / 10) for i in range(round(DISCOUNT_START_VALUE * 10),
                                                           round(DISCOUNT_END_VALUE * 10) + 1,
                                                           round(MDP_DISCOUNT_INCREMENT * 10))])
 
-    a_slice_mdp = AbsoluteSliceMDP(ARRIVALS, DEPARTURES, QUEUE_SIZE, SERVER_MAX_CAP, alpha=ALPHA, beta=BETA, gamma=GAMMA,
-                                   c_server=C_SERVER, c_job=C_JOB, c_lost=C_LOST, algorithm=MDP_ALGORITHM,
-                                   periods=SIMULATION_TIME, delayed_action=DELAYED_ACTION, label="a", verbose=False)
+    ma_slice_mdp = MultipleAllocationSliceMDP(ARRIVALS, DEPARTURES, QUEUE_SIZE, SERVER_MAX_CAP, alpha=ALPHA, beta=BETA, gamma=GAMMA,
+                                             c_server=C_SERVER, c_job=C_JOB, c_lost=C_LOST, algorithm=MDP_ALGORITHM,
+                                             periods=SIMULATION_TIME, delayed_action=DELAYED_ACTION, label="ma", verbose=False)
 
-    a_policies = a_slice_mdp.run([(i / 10) for i in range(round(DISCOUNT_START_VALUE * 10),
+    ma_policies = ma_slice_mdp.run([(i / 10) for i in range(round(DISCOUNT_START_VALUE * 10),
                                                           round(DISCOUNT_END_VALUE * 10) + 1,
                                                           round(MDP_DISCOUNT_INCREMENT * 10))])
 
-    policies = {**i_policies,
-                **a_policies,
+    policies = {**ua_policies,
+                **ma_policies,
                 'all-on': utils.generate_all_on_policy(len(i_slice_mdp.states)),
                 'conservative': utils.generate_conservative_policy(i_slice_mdp.states)}
 
