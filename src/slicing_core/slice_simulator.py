@@ -111,8 +111,8 @@ class SliceSimulator:
 
     # returns an array, each element represent the num of jobs arrived in the timeslot
     def _generate_incoming_jobs(self):
-        incoming_jobs = []
-        for i in range(self._simulation_time):
+        incoming_jobs = [0]
+        for i in range(1, self._simulation_time - 1):
             prob = random.random()  # genera valore random tra [0., 1.[
             for j in range(len(self._arrivals_histogram)):
                 if prob <= self._arrivals_histogram[j]:
