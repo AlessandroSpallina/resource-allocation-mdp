@@ -272,6 +272,17 @@ class UnitaryAllocationSliceMDP:  # mdp policy with unitary actions, the policy 
 
 
 class MultipleAllocationSliceMDP(UnitaryAllocationSliceMDP):  # mdp policy with multiple actions, the policy describe the number of server to have in running
+    def _generate_transition_matrix(self):
+        transition_matrix = np.zeros((self._max_server_num + 1, len(self._states), len(self._states)))
+
+        # lets iterate the trans matrix and fill with correct probabilities
+        for a in range(len(transition_matrix)):
+            for i in range(len(self._states)):
+                for j in range(len(self._states)):
+                    transition_matrix[a][i][j] = self._calculate_transition_probability(self._states[i],
+                                                                                        self._states[j], a)
+        return transition_matrix
+
     def _generate_reward_matrix(self):
         reward_matrix = np.zeros((self._max_server_num + 1, len(self._states), len(self._states)))
 
