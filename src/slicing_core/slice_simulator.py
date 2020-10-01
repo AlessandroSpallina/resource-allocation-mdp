@@ -112,7 +112,7 @@ class SliceSimulator:
     # returns an array, each element represent the num of jobs arrived in the timeslot
     def _generate_incoming_jobs(self):
         incoming_jobs = [0]
-        for i in range(1, self._simulation_time - 1):
+        for i in range(self._simulation_time):
             prob = random.random()  # genera valore random tra [0., 1.[
             for j in range(len(self._arrivals_histogram)):
                 if prob <= self._arrivals_histogram[j]:
@@ -121,6 +121,9 @@ class SliceSimulator:
                     break
                 else:
                     prob -= self._arrivals_histogram[j]
+        # in simulation we use .pop() that give the last inserted item
+        # with a .reverse() we can impose that the first arrive is 0 jobs
+        incoming_jobs.reverse()
         return incoming_jobs
 
     # returns the number of jobs processed in one timeslot
