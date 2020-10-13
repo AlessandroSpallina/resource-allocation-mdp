@@ -131,10 +131,10 @@ departures_histogram:
   - 1.
 
 # queue size is the max number of jobs waiting in the queue
-queue_size: 2
+queue_size: 10
 
 # server max cap represent the max cap of servers allocated in the slice
-server_max_cap: 2
+server_max_cap: 10
 
 # alpha is a parameter responsible for the cost normalization [job in queue]
 alpha: 1
@@ -158,7 +158,7 @@ c_lost: 1
 simulations: 5
 
 # simulation time (in timeslots) indicates timing for each simulation done
-simulation_time: 1000
+simulation_time: 10000
 
 # mdp discount start value indicates the default value for the discount discovery routine
 mdp_discount_start_value: 1.
@@ -176,6 +176,6 @@ mdp_algorithm: fh
 # delayed action effect the behaviour of the mdp formulation and of the simulator too
 delayed_action: False
 
-# max points in plot is useful when we have plot unreadable due the high number of sample to plot
+# average window in plot is useful when we have plot unreadable due the high number of sample to plot
 # this option define the window of the average window technique
-max_points_in_plot: 200
+average_window_in_plot: 200
