@@ -1,27 +1,29 @@
 # arrivals histogram
 # [X, Y] means P(in 0 jobs) = X; P(in 1 jobs) = Y
 arrivals_histogram:
-  - 0.0
-  - 0.027767735393160072
-  - 0.03680778953012132
-  - 0.08841172715233743
-  - 0.03663199554648885
-  - 0.022652624027291776
-  - 0.047648555107974506
-  - 0.11066955504136557
-  - 0.1475090844702287
-  - 0.03604077704713544
-  - 0.029266986613891217
-  - 0.04828721883480547
-  - 0.02088573096288054
-  - 0.03011801537620016
-  - 0.059682535747566635
-  - 0.0439455927255803
-  - 0.04034088546143491
-  - 0.09255172389428679
-  - 0.031596716542014465
-  - 0.024129910235969308
-  - 0.025054840289266626
+  - 0.5
+  - 0.5
+#  - 0.0
+#  - 0.027767735393160072
+#  - 0.03680778953012132
+#  - 0.08841172715233743
+#  - 0.03663199554648885
+#  - 0.022652624027291776
+#  - 0.047648555107974506
+#  - 0.11066955504136557
+#  - 0.1475090844702287
+#  - 0.03604077704713544
+#  - 0.029266986613891217
+#  - 0.04828721883480547
+#  - 0.02088573096288054
+#  - 0.03011801537620016
+#  - 0.059682535747566635
+#  - 0.0439455927255803
+#  - 0.04034088546143491
+#  - 0.09255172389428679
+#  - 0.031596716542014465
+#  - 0.024129910235969308
+#  - 0.025054840289266626
 
 #- 0.0
 #- 0.027767735393160072
@@ -131,10 +133,10 @@ departures_histogram:
   - 1.
 
 # queue size is the max number of jobs waiting in the queue
-queue_size: 10
+queue_size: 2
 
 # server max cap represent the max cap of servers allocated in the slice
-server_max_cap: 10
+server_max_cap: 1
 
 # alpha is a parameter responsible for the cost normalization [job in queue]
 alpha: 1
@@ -181,4 +183,5 @@ delayed_action: False
 average_window_in_plot: 200
 
 # arrival-processing phase is the opposite of processing-arrival phase (exchanged phases)
-arrival_processing_phase: True
+# if False mdp and simulation will consider the processing phase first and then the arrival phase
+arrival_processing_phase: False

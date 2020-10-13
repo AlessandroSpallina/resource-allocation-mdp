@@ -38,9 +38,12 @@ class Job:
 
 class SliceSimulator:
     def __init__(self, arrivals_histogram, departures_histogram, queue_size=2, simulation_time=100, max_server_num=1,
-                 c_job=1, c_server=1, c_lost=1, alpha=1, beta=1, gamma=1, delayed_action=True, verbose=False):
+                 c_job=1, c_server=1, c_lost=1, alpha=1, beta=1, gamma=1, delayed_action=True,
+                 arrival_processing_phase=True, verbose=False):
 
         self._verbose = verbose
+
+        self._arrival_processing_phase = arrival_processing_phase
 
         self._delayed_action = delayed_action
 
@@ -170,18 +173,8 @@ class SliceSimulator:
 
         return refill_counter
 
-    # returns the current state
-    def simulate_timeslot(self, action_id):
-        if self._verbose:
-            print(f"[TS{self._current_timeslot}] Current state: {self._current_state}")
-
-        if not self._delayed_action:
-            self._allocate_server(action_id)
-
-        # statistics
-        initial_state = copy(self._current_state)
-        self._state_sequence.append(initial_state)
-
+    def _simulate_arrival_phase_within_timeslot(self, initial_state):
+        # --- arrival phase (start)
         if len(self._incoming_jobs) > 0:
             arrived_jobs = self._incoming_jobs.pop()
 
@@ -205,7 +198,10 @@ class SliceSimulator:
 
             if self._verbose:
                 print(f"[TS{self._current_timeslot}] The queue has {self._queue.qsize()} pending job")
+        # --- arrival phase (end)
 
+    def _simulate_processing_phase_within_timeslot(self):
+        # --- processing phase (start)
         processed_jobs = 0
         if self._current_state.n > 0:  # allora c'è processamento
             # estrazione dei job dalla coda e inserimento in cache server (sono in run)
@@ -228,12 +224,30 @@ class SliceSimulator:
                         # se entro qui posso processare più job di quanti ne ho in coda ->
                         # la stat deve essere relativa al reale processato!!!!
                         processed_jobs -= 1
-
         # statistics
         self._processed_jobs_per_timeslot.append(processed_jobs)
-
         if self._verbose:
             print(f"[TS{self._current_timeslot}] Processed {processed_jobs} jobs")
+        # --- processing phase (end)
+
+    # returns the current state
+    def simulate_timeslot(self, action_id):
+        if self._verbose:
+            print(f"[TS{self._current_timeslot}] Current state: {self._current_state}")
+
+        if not self._delayed_action:
+            self._allocate_server(action_id)
+
+        # statistics
+        initial_state = copy(self._current_state)
+        self._state_sequence.append(initial_state)
+
+        if self._arrival_processing_phase:
+            self._simulate_arrival_phase_within_timeslot(initial_state)
+            self._simulate_processing_phase_within_timeslot()
+        else:
+            self._simulate_processing_phase_within_timeslot()
+            self._simulate_arrival_phase_within_timeslot(initial_state)
 
         if self._delayed_action:
             self._allocate_server(action_id)

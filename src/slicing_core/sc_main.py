@@ -122,7 +122,7 @@ def main(argv):
             simulator = SliceSimulator(ARRIVALS, DEPARTURES, queue_size=QUEUE_SIZE, max_server_num=SERVER_MAX_CAP,
                                        alpha=ALPHA, beta=BETA, gamma=GAMMA, c_server=C_SERVER, c_job=C_JOB,
                                        c_lost=C_LOST, simulation_time=SIMULATION_TIME, delayed_action=DELAYED_ACTION,
-                                       verbose=False)
+                                       arrival_processing_phase=ARRIVAL_PROCESSING_PHASES, verbose=False)
             agent = Agent(ua_slice_mdp.states, policies[i], simulator)
             stats_tmp.append(agent.control_environment())
         stats[i] = {'costs_per_timeslot': utils.get_mean_costs(stats_tmp)['mean'],
