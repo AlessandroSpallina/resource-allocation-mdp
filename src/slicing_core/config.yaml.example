@@ -179,3 +179,6 @@ delayed_action: False
 # average window in plot is useful when we have plot unreadable due the high number of sample to plot
 # this option define the window of the average window technique
 average_window_in_plot: 200
+
+# arrival-processing phase is the opposite of processing-arrival phase (exchanged phases)
+arrival_processing_phase: True

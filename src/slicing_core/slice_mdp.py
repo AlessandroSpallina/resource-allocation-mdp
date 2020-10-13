@@ -9,13 +9,14 @@ from state import State
 class UnitaryAllocationSliceMDP:  # mdp policy with unitary actions, the policy describe the number of server to have in running
     def __init__(self, arrivals_histogram, departures_histogram, queue_size, max_server_num, algorithm='vi',
                  periods=1000, c_job=1, c_server=1, c_lost=1, alpha=1, beta=1, gamma=1, delayed_action=True,
-                 label="", verbose=False):
+                 label="", arrival_processing_phase=True, verbose=False):
 
         self._verbose = verbose
 
         self._label = label
 
         self._delayed_action = delayed_action
+        self._arrival_processing_phase = arrival_processing_phase
 
         self._arrivals_histogram = arrivals_histogram
         self._departures_histogram = departures_histogram
@@ -124,13 +125,15 @@ class UnitaryAllocationSliceMDP:  # mdp policy with unitary actions, the policy 
             except IndexError:
                 p_arr = 0
 
-            if from_state.k + x - to_state.k >= from_state.k + x:
+            if from_state.k + x - to_state.k == ((from_state.k + x) if self._arrival_processing_phase else from_state.k):
                 p_proc = sum(h_d[from_state.k + x - to_state.k:])
-            else:
+            elif from_state.k + x - to_state.k < ((from_state.k + x) if self._arrival_processing_phase else from_state.k):
                 try:
                     p_proc = h_d[from_state.k + x - to_state.k]
                 except IndexError:
                     pass
+            else:
+                p_proc = 0
 
             tmp += p_arr * p_proc
 
@@ -142,13 +145,15 @@ class UnitaryAllocationSliceMDP:  # mdp policy with unitary actions, the policy 
             except IndexError:
                 p_arr = 0
 
-            if self._queue_size - to_state.k >= self._queue_size:
+            if self._queue_size - to_state.k == self._queue_size:
                 p_proc = sum(h_d[self._queue_size - to_state.k:])
-            else:
+            elif self._queue_size - to_state.k < self._queue_size:
                 try:
                     p_proc = h_d[self._queue_size - to_state.k]
                 except IndexError:
                     pass
+            else:
+                p_proc = 0
 
             tmp2 += p_arr * p_proc
 

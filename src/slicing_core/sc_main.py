@@ -80,22 +80,28 @@ def main(argv):
 
     AVERAGE_WINDOW_IN_PLOT = conf['average_window_in_plot']
 
+    ARRIVAL_PROCESSING_PHASES = conf['arrival_processing_phase']
+
     stats = {}
 
     time_start = time.time()
 
     # policy generations
-    ua_slice_mdp = UnitaryAllocationSliceMDP(ARRIVALS, DEPARTURES, QUEUE_SIZE, SERVER_MAX_CAP, alpha=ALPHA, beta=BETA, gamma=GAMMA,
-                                             c_server=C_SERVER, c_job=C_JOB, c_lost=C_LOST, algorithm=MDP_ALGORITHM,
-                                             periods=SIMULATION_TIME, delayed_action=DELAYED_ACTION, label="ua", verbose=False)
+    ua_slice_mdp = UnitaryAllocationSliceMDP(ARRIVALS, DEPARTURES, QUEUE_SIZE, SERVER_MAX_CAP, alpha=ALPHA, beta=BETA,
+                                             gamma=GAMMA, c_server=C_SERVER, c_job=C_JOB, c_lost=C_LOST,
+                                             algorithm=MDP_ALGORITHM, periods=SIMULATION_TIME,
+                                             delayed_action=DELAYED_ACTION, label="ua",
+                                             arrival_processing_phase=ARRIVAL_PROCESSING_PHASES, verbose=False)
 
     ua_policies = ua_slice_mdp.run([(i / 10) for i in range(round(DISCOUNT_START_VALUE * 10),
                                                             round(DISCOUNT_END_VALUE * 10) + 1,
                                                             round(MDP_DISCOUNT_INCREMENT * 10))])
 
-    ma_slice_mdp = MultipleAllocationSliceMDP(ARRIVALS, DEPARTURES, QUEUE_SIZE, SERVER_MAX_CAP, alpha=ALPHA, beta=BETA, gamma=GAMMA,
-                                              c_server=C_SERVER, c_job=C_JOB, c_lost=C_LOST, algorithm=MDP_ALGORITHM,
-                                              periods=SIMULATION_TIME, delayed_action=DELAYED_ACTION, label="ma", verbose=False)
+    ma_slice_mdp = MultipleAllocationSliceMDP(ARRIVALS, DEPARTURES, QUEUE_SIZE, SERVER_MAX_CAP, alpha=ALPHA, beta=BETA,
+                                              gamma=GAMMA, c_server=C_SERVER, c_job=C_JOB, c_lost=C_LOST,
+                                              algorithm=MDP_ALGORITHM, periods=SIMULATION_TIME,
+                                              delayed_action=DELAYED_ACTION, label="ma",
+                                              arrival_processing_phase=ARRIVAL_PROCESSING_PHASES, verbose=False)
 
     ma_policies = ma_slice_mdp.run([(i / 10) for i in range(round(DISCOUNT_START_VALUE * 10),
                                                             round(DISCOUNT_END_VALUE * 10) + 1,
