@@ -232,7 +232,7 @@ class UnitaryAllocationSliceMDP:  # mdp policy with unitary actions, the policy 
 
     # @profile
     def run(self, discount):
-        delta_policy = []
+        # delta_policy = []
         absolute_policy = []
 
         if self._algorithm == 'vi':

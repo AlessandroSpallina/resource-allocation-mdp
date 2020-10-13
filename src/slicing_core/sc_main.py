@@ -78,7 +78,7 @@ def main(argv):
 
     DELAYED_ACTION = conf['delayed_action']
 
-    MAX_POINTS_IN_PLOT = conf['max_points_in_plot']
+    AVERAGE_WINDOW_IN_PLOT = conf['average_window_in_plot']
 
     stats = {}
 
@@ -140,14 +140,14 @@ def main(argv):
     #                           projectname="mdp-agent", view=False)
 
     for i in stats:
-        utils.easy_plot(i, stats[i], MAX_POINTS_IN_PLOT)
+        utils.easy_plot(i, stats[i], AVERAGE_WINDOW_IN_PLOT)
 
     plotter.bar(ydata={"arrivals": ARRIVALS}, projectname="common", title="Arrivals Histogram",
                 xlabel="job", ylabel="arrival probability")
     plotter.bar(ydata={"departures": DEPARTURES}, projectname="common",
                 title="Server Capacity Histogram (Departures Histogram)", xlabel="job", ylabel="departure probability")
 
-    utils.comparison_plot("common", stats, MAX_POINTS_IN_PLOT)
+    utils.comparison_plot("common", stats, AVERAGE_WINDOW_IN_PLOT)
 
     logging.info(f"*** Plotting done in {(time.time() - time_start) / 60} minutes ***")
 
