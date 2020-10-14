@@ -4,8 +4,8 @@ import random
 
 SAMPLES = 20
 
-gauss = np.random.normal(loc=5, size=100)
-expo = np.random.exponential(10, size=10000)
+gauss = np.random.normal(loc=5, size=10)
+expo = np.random.exponential(10, size=10)
 
 expo = expo + gauss[-1]
 
