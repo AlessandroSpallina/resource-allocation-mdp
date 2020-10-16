@@ -1,0 +1,68 @@
+# arrivals histogram
+# [X, Y] means P(in 0 jobs) = X; P(in 1 jobs) = Y
+arrivals_histogram:
+#  - 0.5
+#  - 0.5
+  - 0.
+  - 0.1
+  - 0.2
+  - 0.25
+  - 0.2
+  - 0.1
+  - 0.05
+  - 0.04
+  - 0.03
+  - 0.02
+  - 0.01
+
+
+# departures histogram
+# [X, Y] means P(out 0 jobs) = X; P(out 1 jobs) = Y
+departures_histogram:
+  - 0.
+  - 1.
+
+# queue size is the max number of jobs waiting in the queue
+queue_size: 100
+
+# server max cap represent the max cap of servers allocated in the slice
+server_max_cap: 5
+
+# alpha is a parameter responsible for the cost normalization [job in queue]
+alpha: 0.1
+
+# beta is a parameter responsible for the cost normalization [server]
+beta: 1.
+
+# gamma is a parameter responsible for the cost normalization [lost]
+gamma: 1.
+
+# c server is the cost to have a vm turned on in a time slot
+c_server: 20
+
+# c job is the cost to have a job in the queue in a time slot
+c_job: 8
+
+# c lost is the cost to lost a job due to queue full
+c_lost: 100
+
+# simulations represent the number of sim to be done in order to get the average for the plots
+simulations: 5
+
+# simulation time (in timeslots) indicates timing for each simulation done
+simulation_time: 10000
+
+# random policy attempts represent the number of attempts to generate a random policy
+random_policy_attempts: 5
+
+# mdp discount start value indicates the default value for the discount discovery routine
+mdp_discount_start_value: 0.8
+
+# mdp discount end value indicates the end value for the discount discovery routine
+mdp_discount_end_value: 0.9
+
+# mdp discount increment represent the delta used for the discount discovery routine
+mdp_discount_increment: 0.1
+
+# max points in plot is useful when we have plot unreadable due the high number of sample to plot
+max_points_in_plot: 400
