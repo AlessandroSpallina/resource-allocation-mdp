@@ -11,7 +11,7 @@ class MultiSliceMDP:
 
         self._states = self._generate_states()
         self._transition_matrix = self._generate_transition_matrix()
-        self._reward_matrix = self._generate_reward_matrix()
+        # self._reward_matrix = self._generate_reward_matrix()
 
     def _generate_states(self):
         # see https://www.kite.com/python/answers/how-to-get-all-element-combinations-of-two-numpy-arrays-in-python
