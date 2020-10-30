@@ -39,6 +39,18 @@ class UnitaryAllocationSliceMDP:  # mdp policy with unitary actions, the policy 
         self._reward_matrix = self._generate_reward_matrix()
 
     @property
+    def arrivals_histogram(self):
+        return self._arrivals_histogram
+
+    @property
+    def queue_size(self):
+        return self._queue_size
+
+    @property
+    def periods(self):
+        return self._periods
+
+    @property
     def transition_matrix(self):
         return self._transition_matrix
 
@@ -49,6 +61,34 @@ class UnitaryAllocationSliceMDP:  # mdp policy with unitary actions, the policy 
     @property
     def states(self):
         return self._states
+
+    @property
+    def c_job(self):
+        return self._c_job
+
+    @property
+    def c_server(self):
+        return self._c_server
+
+    @property
+    def c_lost(self):
+        return self._c_lost
+
+    @property
+    def alpha(self):
+        return self._alpha
+
+    @property
+    def beta(self):
+        return self._beta
+
+    @property
+    def gamma(self):
+        return self._gamma
+
+    # @property
+    # def max_server_num(self):
+    #     return self._states
 
     """
     es. b=2; s=1

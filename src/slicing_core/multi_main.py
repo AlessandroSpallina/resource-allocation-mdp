@@ -86,21 +86,20 @@ def main(argv):
 
     # -------------------
     slices = [
-        UnitaryAllocationSliceMDP(ARRIVALS, DEPARTURES, QUEUE_SIZE, SERVER_MAX_CAP, alpha=ALPHA, beta=BETA,
-                                  gamma=GAMMA, c_server=C_SERVER, c_job=C_JOB, c_lost=C_LOST,
-                                  algorithm=MDP_ALGORITHM, periods=SIMULATION_TIME,
-                                  delayed_action=DELAYED_ACTION, label="ua",
-                                  arrival_processing_phase=ARRIVAL_PROCESSING_PHASES, verbose=False),
-        MultipleAllocationSliceMDP(ARRIVALS, DEPARTURES, QUEUE_SIZE, SERVER_MAX_CAP, alpha=ALPHA, beta=BETA,
+        MultipleAllocationSliceMDP(ARRIVALS, DEPARTURES, QUEUE_SIZE, 3, alpha=ALPHA, beta=BETA,
                                    gamma=GAMMA, c_server=C_SERVER, c_job=C_JOB, c_lost=C_LOST,
                                    algorithm=MDP_ALGORITHM, periods=SIMULATION_TIME,
-                                   delayed_action=DELAYED_ACTION, label="ma",
-                                   arrival_processing_phase=ARRIVAL_PROCESSING_PHASES, verbose=False)
+                                   delayed_action=False, label="ma-0",
+                                   arrival_processing_phase=True, verbose=False),
+        MultipleAllocationSliceMDP([0., 0.6, 0.4], DEPARTURES, 5, 3, alpha=ALPHA, beta=BETA,
+                                   gamma=GAMMA, c_server=C_SERVER, c_job=C_JOB, c_lost=C_LOST,
+                                   algorithm=MDP_ALGORITHM, periods=SIMULATION_TIME,
+                                   delayed_action=False, label="ma-1",
+                                   arrival_processing_phase=True, verbose=False)
     ]
     multi = MultiSliceMDP(slices)
-    debug = multi._generate_states()
-    for d in debug:
-        print(d[0],d[1])
+
+    print(multi.run(1))
 
     # -----------------------
 

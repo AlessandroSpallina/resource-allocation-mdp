@@ -1,23 +1,19 @@
 import numpy as np
+import mdptoolbox
 
 from state import State
 
 
 # multi-slice support for different kind of slices
-# TODO: support for more than two slices (look at _generate_states, fix it!)
+# TODO: support for more than two slices (look at _generate_states and _generate_actions, fix it!)
 class MultiSliceMDP:
     def __init__(self, slices):
         self._slices = slices
 
         self._states = self._generate_states()
+        self._actions = self._generate_actions()
         self._transition_matrix = self._generate_transition_matrix()
-        # self._reward_matrix = self._generate_reward_matrix()
-
-    def _generate_states(self):
-        # see https://www.kite.com/python/answers/how-to-get-all-element-combinations-of-two-numpy-arrays-in-python
-        mesh = np.array(np.meshgrid(self._slices[0].states, self._slices[1].states))
-        to_ret = mesh.T.reshape(-1, 2)
-        return to_ret
+        self._reward_matrix = self._generate_reward_matrix()
 
     @property
     def transition_matrix(self):
@@ -31,86 +27,93 @@ class MultiSliceMDP:
     def states(self):
         return self._states
 
-    # ------------------------------------------
-    def _filter_transition_probability_by_action(self, transition_probability, from_state, to_state, action_id):
-        pass
+    def _generate_states(self):
+        # see https://www.kite.com/python/answers/how-to-get-all-element-combinations-of-two-numpy-arrays-in-python
+        mesh = np.array(np.meshgrid(self._slices[0].states, self._slices[1].states))
+        to_ret = mesh.T.reshape(-1, 2)
+        return to_ret
 
-    def _calculate_transition_probability(self, from_state, to_state, action_id):
-        if self._delayed_action:
-            h_d = self._calculate_h_d(from_state)
-        else:
-            h_d = self._calculate_h_d(to_state)
+    def _generate_actions(self):
+        tmp = []
+        for single_slice_state in self._states[-1]:
+            tmp.append(list(range(single_slice_state.n + 1)))
 
-        diff = to_state - from_state
+        mesh = np.array(np.meshgrid(tmp[0], tmp[1]))
+        to_filter = mesh.T.reshape(-1, 2)
 
-        tmp = 0
-        tmp2 = 0
+        to_ret = []
+        for i in to_filter:
+            if sum(i) <= tmp[0][-1]:
+                to_ret.append(i)
 
-        for x in range(max(0, diff.k), self._queue_size - from_state.k + 1):
-            p_proc = 0
+        return to_ret
 
-            try:
-                p_arr = self._arrivals_histogram[x]
-            except IndexError:
-                p_arr = 0
+    # ---------------------------
 
-            if from_state.k + x - to_state.k == ((from_state.k + x) if self._arrival_processing_phase else from_state.k):
-                p_proc = sum(h_d[from_state.k + x - to_state.k:])
-            elif from_state.k + x - to_state.k < ((from_state.k + x) if self._arrival_processing_phase else from_state.k):
-                try:
-                    p_proc = h_d[from_state.k + x - to_state.k]
-                except IndexError:
-                    pass
-            else:
-                p_proc = 0
+    def _calculate_transition_reward(self, to_state):
+        # utilizzo approccio "costo di stare nello stato", mi serve solo lo stato di arrivo
+        # costs are mapped into the reward matrix
+        # C = alpha * C_k * num of jobs + beta * C_n * num of server + gamma * C_l * E(num of lost jobs)
+        cost1 = [self._slices[0].c_job * to_state[0].k, self._slices[1].c_job * to_state[1].k]
+        cost2 = [self._slices[0].c_server * to_state[0].n, self._slices[1].c_server * to_state[1].n]
+        cost3 = [0, 0]
 
-            tmp += p_arr * p_proc
+        # expected value of lost packets
+        for single_slice_index in range(len(self._slices)):
+            for i in range(len(self._slices[single_slice_index].arrivals_histogram)):
+                if to_state[single_slice_index].k + i > self._slices[single_slice_index].queue_size:
+                    cost3[single_slice_index] += self._slices[single_slice_index].arrivals_histogram[i] * i * self._slices[single_slice_index].c_lost
 
-        for x in range(self._queue_size - from_state.k + 1, len(self._arrivals_histogram) + 1):
-            p_proc = 0
+        return - (
+            (self._slices[0].alpha * cost1[0] + self._slices[0].beta * cost2[0] + self._slices[0].gamma * cost3[0]) +
+            (self._slices[1].alpha * cost1[1] + self._slices[1].beta * cost2[1] + self._slices[1].gamma * cost3[1])
+        )
 
-            try:
-                p_arr = self._arrivals_histogram[x]
-            except IndexError:
-                p_arr = 0
+    def _generate_reward_matrix(self):
+        reward_matrix = np.zeros((len(self._actions), len(self._states), len(self._states)))
 
-            if self._queue_size - to_state.k == self._queue_size:
-                p_proc = sum(h_d[self._queue_size - to_state.k:])
-            elif self._queue_size - to_state.k < self._queue_size:
-                try:
-                    p_proc = h_d[self._queue_size - to_state.k]
-                except IndexError:
-                    pass
-            else:
-                p_proc = 0
+        for a in range(len(reward_matrix)):
+            for i in range(len(self._states)):
+                for j in range(len(self._states)):
+                    if self._transition_matrix[a][i][j] > 0:
+                        reward_matrix[a][i][j] = self._calculate_transition_reward(self._states[j])
+        return reward_matrix
 
-            tmp2 += p_arr * p_proc
+    # ----------------------------
 
-        transition_probability = tmp + tmp2
+    def _calculate_transition_probability(self, from_state, to_state, action):
+        transition_probability = \
+            self._slices[0].transition_matrix[action[0]][self._slices[0].states.index(from_state[0])][self._slices[0].states.index(to_state[0])] \
+            * self._slices[1].transition_matrix[action[1]][self._slices[1].states.index(from_state[1])][self._slices[1].states.index(to_state[1])]
 
-        return self._filter_transition_probability_by_action(transition_probability, from_state, to_state, action_id)
+        return transition_probability
 
-    """
-    The transition matrix is of dim action_num * states_num * states_num
-    Q[0] -> transition matrix related action 0 (do nothing)
-    Q[1] -> transition matrix related action 0 (allocate 1)
-    Q[2] -> transition matrix related action 0 (deallocate 1)
-    """
     def _generate_transition_matrix(self):
-        transition_matrix = np.zeros((3, len(self._states), len(self._states)))
+        transition_matrix = np.zeros((len(self._actions), len(self._states), len(self._states)))
 
         # lets iterate the trans matrix and fill with correct probabilities
         for a in range(len(transition_matrix)):
             for i in range(len(self._states)):
                 for j in range(len(self._states)):
                     transition_matrix[a][i][j] = \
-                        self._calculate_transition_probability(self._states[i], self._states[j], a)
+                        self._calculate_transition_probability(self._states[i], self._states[j], self._actions[a])
         return transition_matrix
-    # ------------------------------------------
 
+    def _run_finite_horizon(self, discount):
+        if type(discount) == list:
+            to_return = {}
+            for i in discount:
+                vi = mdptoolbox.mdp.FiniteHorizon(self._transition_matrix, self._reward_matrix, i - 1e-10, self._slices[0].periods)
+                vi.run()
+                to_return[f"multi-mdp({str(round(i, 1)).replace('.', ',')})"] = vi.policy
+            return to_return
 
-    def _generate_reward_matrix(self):
-        pass
+        vi = mdptoolbox.mdp.FiniteHorizon(self._transition_matrix, self._reward_matrix, discount - 1e-10, self._slices[0].periods)
+        vi.run()
+        return vi.policy
+
+    def run(self, discount):
+        return self._run_finite_horizon(discount)
 
 
 
