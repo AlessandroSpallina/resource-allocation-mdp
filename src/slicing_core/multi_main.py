@@ -103,7 +103,6 @@ def main(argv):
                                                         round(DISCOUNT_END_VALUE * 10) + 1,
                                                         round(MDP_DISCOUNT_INCREMENT * 10))])
 
-
     # -----------------------
 
     policies = {**multi_policies}
@@ -121,35 +120,42 @@ def main(argv):
                        c_lost=C_LOST, simulation_time=SIMULATION_TIME, delayed_action=False,
                        arrival_processing_phase=ARRIVAL_PROCESSING_PHASES, verbose=False)
 
-        ]
+    ]
 
     # simulations with generated policies
     for i in policies:
-        stats_tmp = []
+        stats_tmp_slice0 = []
+        stats_tmp_slice1 = []
         for j in range(SIMULATIONS):
             simulator = MultiSliceSimulator(simulators, multi.actions)
             agent = Agent(multi.states, policies[i], simulator)
-            stats_tmp.append(agent.control_environment()[0])
-            stats_tmp.append(agent.control_environment()[1])
-        print("qui")
-        stats[i+"0"] = {'costs_per_timeslot': stats_tmp[0]['costs_per_timeslot'],
-                        'component_costs_per_timeslot': stats_tmp[0]['component_costs_per_timeslot'],
-                        'processed_jobs_per_timeslot': stats_tmp[0]['processed_jobs_per_timeslot'],
-                        'lost_jobs_per_timeslot': stats_tmp[0]['lost_jobs_per_timeslot'],
-                        # 'wait_time_in_the_queue_per_job': utils.get_mean_wait_time_in_the_queue(stats_tmp)[0]['mean'],
-                        # 'wait_time_in_the_system_per_job': utils.get_mean_wait_time_in_the_system(stats_tmp)[0]['mean'],
-                        # 'jobs_in_queue_per_timeslot': utils.get_mean_jobs_in_queue(stats_tmp[0])['mean'],
-                        # 'active_servers_per_timeslot': utils.get_mean_active_servers(stats_tmp[0])['mean'],
-                        'policy': utils.get_matrix_policy(policies[i], SERVER_MAX_CAP)}
-        stats[i + "1"] = {'costs_per_timeslot': stats_tmp[1]['costs_per_timeslot'],
-                        'component_costs_per_timeslot': stats_tmp[1]['component_costs_per_timeslot'],
-                        'processed_jobs_per_timeslot': stats_tmp[1]['processed_jobs_per_timeslot'],
-                        'lost_jobs_per_timeslot': stats_tmp[1]['lost_jobs_per_timeslot'],
-                          # 'wait_time_in_the_queue_per_job': utils.get_mean_wait_time_in_the_queue(stats_tmp)[1]['mean'],
-                          # 'wait_time_in_the_system_per_job': utils.get_mean_wait_time_in_the_system(stats_tmp)[1]['mean'],
-                          # 'jobs_in_queue_per_timeslot': utils.get_mean_jobs_in_queue(stats_tmp[1])['mean'],
-                          # 'active_servers_per_timeslot': utils.get_mean_active_servers(stats_tmp[1])['mean'],
-                          'policy': utils.get_matrix_policy(policies[i], SERVER_MAX_CAP)}
+            tmp = agent.control_environment()
+            stats_tmp_slice0.append(tmp[0])
+            stats_tmp_slice1.append(tmp[1])
+
+        stats[i + "slice0"] = {'costs_per_timeslot': utils.get_mean_costs(stats_tmp_slice0)['mean'],
+                               'component_costs_per_timeslot': utils.get_mean_component_costs(stats_tmp_slice0)['mean'],
+                               'processed_jobs_per_timeslot': utils.get_mean_processed_jobs(stats_tmp_slice0)['mean'],
+                               'lost_jobs_per_timeslot': utils.get_mean_lost_jobs(stats_tmp_slice0)['mean'],
+                               'wait_time_in_the_queue_per_job': utils.get_mean_wait_time_in_the_queue(stats_tmp_slice0)[
+                                   'mean'],
+                               'wait_time_in_the_system_per_job': utils.get_mean_wait_time_in_the_system(stats_tmp_slice0)[
+                                   'mean'],
+                               'jobs_in_queue_per_timeslot': utils.get_mean_jobs_in_queue(stats_tmp_slice0)['mean'],
+                               'active_servers_per_timeslot': utils.get_mean_active_servers(stats_tmp_slice0)['mean'],
+                               'policy': utils.get_matrix_policy(policies[i], SERVER_MAX_CAP)}
+
+        stats[i + "slice1"] = {'costs_per_timeslot': utils.get_mean_costs(stats_tmp_slice1)['mean'],
+                               'component_costs_per_timeslot': utils.get_mean_component_costs(stats_tmp_slice1)['mean'],
+                               'processed_jobs_per_timeslot': utils.get_mean_processed_jobs(stats_tmp_slice1)['mean'],
+                               'lost_jobs_per_timeslot': utils.get_mean_lost_jobs(stats_tmp_slice1)['mean'],
+                               'wait_time_in_the_queue_per_job': utils.get_mean_wait_time_in_the_queue(stats_tmp_slice1)[
+                                   'mean'],
+                               'wait_time_in_the_system_per_job': utils.get_mean_wait_time_in_the_system(stats_tmp_slice1)[
+                                   'mean'],
+                               'jobs_in_queue_per_timeslot': utils.get_mean_jobs_in_queue(stats_tmp_slice1)['mean'],
+                               'active_servers_per_timeslot': utils.get_mean_active_servers(stats_tmp_slice1)['mean'],
+                               'policy': utils.get_matrix_policy(policies[i], SERVER_MAX_CAP)}
 
     logging.info(f"*** Simulation done in {(time.time() - time_start) / 60} minutes ***")
     time_start = time.time()
@@ -162,7 +168,7 @@ def main(argv):
     plotter.bar(ydata={"departures": DEPARTURES}, projectname="common",
                 title="Server Capacity Histogram (Departures Histogram)", xlabel="job", ylabel="departure probability")
 
-    # utils.comparison_plot("common", stats, AVERAGE_WINDOW_IN_PLOT)
+    utils.comparison_plot("common", stats, AVERAGE_WINDOW_IN_PLOT)
 
     logging.info(f"*** Plotting done in {(time.time() - time_start) / 60} minutes ***")
 
