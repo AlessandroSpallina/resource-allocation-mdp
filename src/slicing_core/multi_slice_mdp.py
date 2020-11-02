@@ -27,11 +27,15 @@ class MultiSliceMDP:
     def states(self):
         return self._states
 
+    @property
+    def actions(self):
+        return self._actions
+
     def _generate_states(self):
         # see https://www.kite.com/python/answers/how-to-get-all-element-combinations-of-two-numpy-arrays-in-python
         mesh = np.array(np.meshgrid(self._slices[0].states, self._slices[1].states))
         to_ret = mesh.T.reshape(-1, 2)
-        return to_ret
+        return to_ret.tolist() # qui fidnme
 
     def _generate_actions(self):
         tmp = []

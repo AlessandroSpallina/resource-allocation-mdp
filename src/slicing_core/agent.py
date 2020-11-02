@@ -9,11 +9,12 @@ class Agent:
 
         # useful for the first timeslot of simulation
         self._current_timeslot = 0
-        self._current_state = State(0, 0)
+        self._current_state = [State(0, 0), State(0, 0)] # ATTENZIONE RESTORARE QUESTO DOPO LA PRESENTAZIONE: @findme
         self._action = self._get_action()
         self._current_state = self._environment.simulate_timeslot(self._action)
 
     def _get_action(self):
+        
         try:
             if len(self._policy[0]) > 0:  # if we are here the policy is a matrix (fh)
                 return self._policy[:, self._current_timeslot][self._states.index(self._current_state)]
@@ -28,3 +29,13 @@ class Agent:
             self._current_state = self._environment.simulate_timeslot(self._action)
 
         return self._environment.get_statistics()
+
+#
+# class MultiSliceAgent(Agent):
+#     def control_environment(self):
+#         for i in range(1, self._environment.simulation_time):
+#             self._current_timeslot = i
+#             self._action = self._get_action()
+#             self._current_state = self._environment.simulate_timeslot(self._action)
+#
+#         return self._environment.get_statistics()
