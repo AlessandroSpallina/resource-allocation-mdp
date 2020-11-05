@@ -1,6 +1,7 @@
 import abc
 import numpy as np
 import mdptoolbox
+import math
 
 from refactoring.state import SingleSliceState
 
@@ -199,22 +200,145 @@ class MultiSliceMdpPolicy(Policy):
     def __init__(self, policy_config):
         self._config = policy_config
 
-    def calculate_policy(self):
-        pass
+        self._init_slices()
+        self._generate_states()
+        self._generate_actions()
+        self._generate_transition_matrix()
+        self._generate_reward_matrix()
 
-    def get_action_from_policy(self, current_state):
-        pass
+    def calculate_policy(self):
+        if self._config.algorithm == 'vi':
+            self._policy = self._run_value_iteration(self._config.discount_factors)
+        elif self._config.algorithm == 'fh':
+            self._policy = self._run_finite_horizon(self._config.discount_factors)
+
+    def get_action_from_policy(self, current_state, current_timeslot):
+        try:
+            if len(self._policy[0]) > 0:  # if we are here the policy is a matrix (fh)
+                return self._policy[:, current_timeslot][self._states.index(current_state)]
+        except TypeError:
+            return self._policy[self._states.index(current_state)]
+
+    def _init_slices(self):
+        self._slices = []
+        for i in range(self._config.slice_count):
+            self._slices.append(SingleSliceMdpPolicy(self._config, i))
+
+    def _generate_states(self):
+        slices_states = [s.states for s in self._slices]
+        mesh = np.array(np.meshgrid(*slices_states))
+        self._states = mesh.T.reshape(-1, len(slices_states))
+
+    def _generate_actions(self):
+        tmp = []
+        for single_slice_state in self._states[-1]:
+            tmp.append(list(range(single_slice_state.n + 1)))
+
+        mesh = np.array(np.meshgrid(tmp[0], tmp[1]))
+        to_filter = mesh.T.reshape(-1, 2)
+
+        self._actions = []
+        for i in to_filter:
+            if sum(i) <= tmp[0][-1]:
+                self._actions.append(i)
+
+    def _calculate_transition_probability(self, from_state, to_state, action):
+        transition_probability = \
+            math.prod([self._slices[i].transition_matrix[action[i]]
+                       [self._slices[i].states.index(from_state[i])]
+                       [self._slices[i].states.index(to_state[i])] for i in range(self._config.slice_count)])
+        return transition_probability
+
+    def _generate_transition_matrix(self):
+        self._transition_matrix = np.zeros((len(self._actions), len(self._states), len(self._states)))
+
+        for a in range(len(self._transition_matrix)):
+            for i in range(len(self._states)):
+                for j in range(len(self._states)):
+                    self._transition_matrix[a][i][j] = \
+                        self._calculate_transition_probability(self._states[i], self._states[j], self._actions[a])
+
+    def _generate_reward_matrix(self):
+        self._reward_matrix = np.zeros((len(self._actions), len(self._states), len(self._states)))
+
+        for a in range(len(self._reward_matrix)):
+            for i in range(len(self._states)):
+                for j in range(len(self._states)):
+                    if self._transition_matrix[a][i][j] > 0:
+                        self._reward_matrix[a][i][j] = self._calculate_transition_reward(self._states[j])
+
+    def _calculate_transition_reward(self, to_state):
+        # C = alpha * C_k * num of jobs + beta * C_n * num of server + gamma * C_l * E(num of lost jobs)
+        cost1 = [self._config.slices[i].c_job * to_state[i].k for i in range(self._config.slice_count)]
+        cost2 = [self._config.slices[i].c_server * to_state[i].n for i in range(self._config.slice_count)]
+        cost3 = [0] * self._config.slice_count
+
+        # expected value of lost packets
+        for single_slice_index in range(len(self._slices)):
+            for i in range(len(self._config.slices[single_slice_index].arrivals_histogram)):
+                if to_state[single_slice_index].k + i > self._config.slices[single_slice_index].queue_size:
+                    cost3[single_slice_index] += self._config.slices[single_slice_index].arrivals_histogram[i] * i * \
+                                                 self._config.slices[single_slice_index].c_lost
+
+        normalized_cost1 = [self._config.slices[i].alpha * cost1[i] for i in range(self._config.slice_count)]
+        normalized_cost2 = [self._config.slices[i].beta * cost2[i] for i in range(self._config.slice_count)]
+        normalized_cost3 = [self._config.slices[i].gamma * cost3[i] for i in range(self._config.slice_count)]
+
+        return - (sum(normalized_cost1) + sum(normalized_cost2) + sum(normalized_cost3))
+
+    def _run_value_iteration(self, discount):
+        if type(discount) == list:
+            to_return = []
+            for i in discount:
+                vi = mdptoolbox.mdp.ValueIteration(self._transition_matrix, self._reward_matrix, i)
+                vi.run()
+                to_return.append(vi.policy)
+            return to_return
+
+        vi = mdptoolbox.mdp.ValueIteration(self._transition_matrix, self._reward_matrix, discount)
+        vi.run()
+        return vi.policy
+
+    def _run_finite_horizon(self, discount):
+        if type(discount) == list:
+            to_return = []
+            for i in discount:
+                vi = mdptoolbox.mdp.FiniteHorizon(self._transition_matrix, self._reward_matrix,
+                                                  i, self._config.timeslots)
+                vi.run()
+                to_return.append(vi.policy)
+            return to_return
+
+        vi = mdptoolbox.mdp.FiniteHorizon(self._transition_matrix, self._reward_matrix,
+                                          discount, self._config.timeslots)
+        vi.run()
+        return vi.policy
+
+
 
 
 class SingleSliceConservativePolicy(Policy):
-    def __init__(self, policy_config):
+    def __init__(self, policy_config, slice_id):
+        self._id = slice_id
         self._config = policy_config
 
-    def calculate_policy(self):
-        pass
+    @property
+    def policy(self):
+        return self._policy
 
-    def get_action_from_policy(self, current_state):
-        pass
+    def calculate_policy(self):
+        self._policy = []
+        for state in self._states:
+            self._policy.append(state.k)
+
+    def get_action_from_policy(self, current_state, current_timeslot):
+        return self._policy[self._states.index(current_state)]
+
+    def _generate_states(self):
+        self._states = []
+        for i in range(self._config.server_max_cap + 1):
+            for j in range(self._config.slices[self._id].queue_size + 1):
+                self._states.append(SingleSliceState(j, i))
 
 
 class MultiSliceConservativePolicy(Policy):

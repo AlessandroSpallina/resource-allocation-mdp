@@ -1,9 +1,11 @@
-# import refactoring.policy
 from refactoring.config import PolicyConfig
-
+from refactoring.policy import MultiSliceMdpPolicy
 
 def main():
     policy_conf = PolicyConfig()
+    mdp = MultiSliceMdpPolicy(policy_conf)
+    mdp.calculate_policy()
+    print("ok")
 
 
 

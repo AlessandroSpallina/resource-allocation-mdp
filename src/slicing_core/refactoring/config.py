@@ -1,6 +1,7 @@
 import confuse
 
-CONFIG_FILE_PATH = "src/slicing_core/refactoring/config.yaml"
+# CONFIG_FILE_PATH = "src/slicing_core/refactoring/config.yaml"
+CONFIG_FILE_PATH = "config.yaml"
 
 template = {
     'immediate_action': confuse.OneOf([bool]),
