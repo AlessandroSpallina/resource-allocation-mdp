@@ -1,4 +1,4 @@
-class SliceState:
+class SingleSliceState:
     def __init__(self, k, n):
         self._k = k  # k jobs
         self._n = n  # n servers
@@ -25,17 +25,17 @@ class SliceState:
     def __sub__(self, other):
         k = self.k - other.k
         n = self.n - other.n
-        return SliceState(k, n)
+        return SingleSliceState(k, n)
 
     def __eq__(self, other):
-        if isinstance(other, SliceState):
+        if isinstance(other, SingleSliceState):
             return self._k == other._k and self._n == other._n
         return False
 
 
 class MultiSliceState:
     def __init__(self, slice_count):
-        self._state = [SliceState(0, 0) for s in range(slice_count)]
+        self._state = [SingleSliceState(0, 0) for s in range(slice_count)]
 
     @property
     def k(self):
