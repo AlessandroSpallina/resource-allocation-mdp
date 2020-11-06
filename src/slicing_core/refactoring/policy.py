@@ -208,16 +208,16 @@ class MultiSliceMdpPolicy(Policy):
 
     def calculate_policy(self):
         if self._config.algorithm == 'vi':
-            self._policy = self._run_value_iteration(self._config.discount_factors)
+            self._policy = self._run_value_iteration(self._config.discount_factor)
         elif self._config.algorithm == 'fh':
-            self._policy = self._run_finite_horizon(self._config.discount_factors)
+            self._policy = self._run_finite_horizon(self._config.discount_factor)
 
     def get_action_from_policy(self, current_state, current_timeslot):
         try:
             if len(self._policy[0]) > 0:  # if we are here the policy is a matrix (fh)
-                return self._policy[:, current_timeslot][self._states.index(current_state)]
+                return self._actions[self._policy[:, current_timeslot][self._states.index(current_state)]]
         except TypeError:
-            return self._policy[self._states.index(current_state)]
+            return self._actions[self._policy[self._states.index(current_state)]]
 
     def _init_slices(self):
         self._slices = []
@@ -227,7 +227,7 @@ class MultiSliceMdpPolicy(Policy):
     def _generate_states(self):
         slices_states = [s.states for s in self._slices]
         mesh = np.array(np.meshgrid(*slices_states))
-        self._states = mesh.T.reshape(-1, len(slices_states))
+        self._states = mesh.T.reshape(-1, len(slices_states)).tolist()
 
     def _generate_actions(self):
         tmp = []
@@ -313,8 +313,6 @@ class MultiSliceMdpPolicy(Policy):
                                           discount, self._config.timeslots)
         vi.run()
         return vi.policy
-
-
 
 
 class SingleSliceConservativePolicy(Policy):

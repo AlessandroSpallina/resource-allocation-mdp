@@ -8,7 +8,8 @@ template = {
     'arrival_processing_phase': confuse.OneOf([bool]),
     'mdp': {
         'algorithm': confuse.OneOf(['vi', 'fh']),
-        'discount_factors': confuse.Sequence(float)
+        'discount_factor': float
+        # 'discount_factors': confuse.Sequence(float)
     },
     'simulation': {
         'runs': confuse.Integer(),
@@ -53,8 +54,8 @@ class PolicyConfig(Config):
         return self.get_property('mdp/algorithm')
 
     @property
-    def discount_factors(self):
-        return self.get_property('mdp/discount_factors')
+    def discount_factor(self):
+        return self.get_property('mdp/discount_factor')
 
     @property
     def immediate_action(self):
@@ -82,4 +83,31 @@ class PolicyConfig(Config):
 
 
 class EnvironmentConfig(Config):
-    pass
+    @property
+    def immediate_action(self):
+        return self.get_property('immediate_action')
+
+    @property
+    def arrival_processing_phase(self):
+        return self.get_property('arrival_processing_phase')
+
+    @property
+    def timeslots(self):
+        return self.get_property('simulation/timeslots')
+
+    @property
+    def runs(self):
+        return self.get_property('simulation/runs')
+
+    @property
+    def slice_count(self):
+        return len(self.get_property('slices'))
+
+    @property
+    def server_max_cap(self):
+        return self.get_property('server_max_cap')
+
+    @property
+    def slices(self):
+        return self.get_property('slices')
+

@@ -1,19 +1,21 @@
-from refactoring.config import PolicyConfig
+from refactoring.config import PolicyConfig, EnvironmentConfig
 from refactoring.policy import MultiSliceMdpPolicy
+from refactoring.environment import MultiSliceSimulator
+from refactoring.agent import NetworkOperator
+
 
 def main():
     policy_conf = PolicyConfig()
-    mdp = MultiSliceMdpPolicy(policy_conf)
-    mdp.calculate_policy()
-    print("ok")
+    policy = MultiSliceMdpPolicy(policy_conf)
+    policy.calculate_policy()
 
+    environment_conf = EnvironmentConfig()
+    environment = MultiSliceSimulator(environment_conf)
 
+    agent = NetworkOperator(policy, environment, policy_conf.timeslots)
+    agent.start_automatic_control()
 
-
-    # concrete_strategy_a = ConcreteStrategyA()
-    # context = Context(concrete_strategy_a)
-    # context.context_interface()
-
+    print(agent.history)
 
 if __name__ == "__main__":
     main()
