@@ -16,7 +16,16 @@ class NetworkOperator:
         return self._history
 
     def start_automatic_control(self):
-        for i in range(1, self._control_timeslot_duration):
+        for i in range(self._control_timeslot_duration):
+            # self._current_timeslot = i
+            # action_to_do = self._policy.get_action_from_policy(self._current_state, self._current_timeslot)
+            # print("alloco", action_to_do, self._current_state, self._current_timeslot)
+            # self._history.append(self._environment.next_timeslot(action_to_do))
+            # self._current_state = self._history[-1]['state']
             self._current_timeslot = i
+            self._current_state = self._environment.current_state
             action_to_do = self._policy.get_action_from_policy(self._current_state, self._current_timeslot)
+            print("alloco", action_to_do, self._current_state, self._current_timeslot)
             self._history.append(self._environment.next_timeslot(action_to_do))
+
+

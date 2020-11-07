@@ -13,6 +13,11 @@ class Policy(metaclass=abc.ABCMeta):
     ConcreteStrategy.
     """
 
+    @property
+    @abc.abstractmethod
+    def policy(self):
+        pass
+
     @abc.abstractmethod
     def __init__(self, policy_config):
         pass
@@ -42,6 +47,10 @@ class SingleSliceMdpPolicy(Policy):
     @property
     def states(self):
         return self._states
+
+    @property
+    def policy(self):
+        return self._policy
 
     def calculate_policy(self):
         if self._config.algorithm == 'vi':
@@ -206,11 +215,25 @@ class MultiSliceMdpPolicy(Policy):
         self._generate_transition_matrix()
         self._generate_reward_matrix()
 
+    @property
+    def policy(self):
+        return self._policy
+
+    @property
+    def actions(self):
+        return self._actions
+
+    @property
+    def states(self):
+        return self._states
+
     def calculate_policy(self):
         if self._config.algorithm == 'vi':
             self._policy = self._run_value_iteration(self._config.discount_factor)
         elif self._config.algorithm == 'fh':
             self._policy = self._run_finite_horizon(self._config.discount_factor)
+
+        print(self._policy)
 
     def get_action_from_policy(self, current_state, current_timeslot):
         try:
