@@ -4,18 +4,32 @@ from refactoring.environment import MultiSliceSimulator
 from refactoring.agent import NetworkOperator
 
 import plotter
+import time
 
 
 def main():
     policy_conf = PolicyConfig()
+
+    start_time = time.time()
+
     policy = MultiSliceMdpPolicy(policy_conf)
+
+    print(f"Initialization done in {time.time() - start_time} seconds")
+    start_time = time.time()
+
     policy.calculate_policy()
+
+    print(f"Policy calculation done in {time.time() - start_time} seconds")
 
     environment_conf = EnvironmentConfig()
     environment = MultiSliceSimulator(environment_conf)
 
+    start_time = time.time()
+
     agent = NetworkOperator(policy, environment, policy_conf.timeslots)
     agent.start_automatic_control()
+
+    print(f"Simulation done in {time.time() - start_time} seconds")
 
     history = agent.history
 
@@ -54,7 +68,6 @@ def main():
     # )
 
     policy_stuct = policy.policy
-    actions = policy.actions
     states = policy.states
 
     # plotter.table([f'{states[i][0].k},{states[i][1].k} jobs' for i in range(len(policy_stuct))],
@@ -63,10 +76,11 @@ def main():
 
     tmp_1 = [f'{states[i][0].k},{states[i][1].k} jobs' for i in range(len(policy_stuct))]
     tmp_2 = [f'{states[i][0].n},{states[i][1].n} servers' for i in range(len(policy_stuct))]
-    tmp_3 = [actions[policy_stuct[i]] for i in range(len(policy_stuct))]
+    tmp_3 = [policy_stuct[i] for i in range(len(policy_stuct))]
 
     for i in range(len(policy_stuct)):
-        print(tmp_1[i],tmp_2[i],tmp_3[i])
+        print(tmp_1[i], tmp_2[i], tmp_3[i])
+
 
 if __name__ == "__main__":
     main()

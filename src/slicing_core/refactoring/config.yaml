@@ -27,6 +27,21 @@ slices:
     c_server: 1
     c_lost: 10
 
+#  - name: slice-1
+#    arrivals_histogram:
+#      - 0.5
+#      - 0.5
+#    server_capacity_histogram:
+#      - 0.
+#      - 1.
+#    queue_size: 2
+#    alpha: 1
+#    beta: 1
+#    gamma: 1
+#    c_job: 5
+#    c_server: 1
+#    c_lost: 10
+
   - name: slice-1
     arrivals_histogram:
       - 0.
@@ -42,19 +57,3 @@ slices:
     c_job: 5
     c_server: 1
     c_lost: 10
-
-#  - name: slice-1
-#    arrivals_histogram:
-#      - 0.
-#      - 0.5
-#      - 0.5
-#    server_capacity_histogram:
-#      - 0.
-#      - 1.
-#    queue_size: 5
-#    alpha: 1
-#    beta: 1
-#    gamma: 1
-#    c_job: 1
-#    c_server: 1
-#    c_lost: 1
