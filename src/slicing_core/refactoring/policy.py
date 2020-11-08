@@ -2,6 +2,7 @@ import abc
 import numpy as np
 import mdptoolbox
 import math
+# from pathos.multiprocessing import ProcessingPool as Pool
 
 from refactoring.state import SingleSliceState
 
@@ -17,8 +18,12 @@ class Policy(metaclass=abc.ABCMeta):
     def states(self):
         pass
 
+    # @abc.abstractmethod
+    # def __init__(self, policy_config):
+    #     pass
+
     @abc.abstractmethod
-    def __init__(self, policy_config):
+    def init(self):
         pass
 
     @abc.abstractmethod
@@ -35,10 +40,6 @@ class SingleSliceMdpPolicy(Policy):
         self._id = slice_id
         self._config = policy_config
 
-        self._generate_states()
-        self._generate_transition_matrix()
-        self._generate_reward_matrix()
-
     @property
     def transition_matrix(self):
         return self._transition_matrix
@@ -50,6 +51,11 @@ class SingleSliceMdpPolicy(Policy):
     @property
     def policy(self):
         return self._policy
+
+    def init(self):
+        self._generate_states()
+        self._generate_transition_matrix()
+        self._generate_reward_matrix()
 
     def calculate_policy(self):
         if self._config.algorithm == 'vi':
@@ -208,12 +214,6 @@ class MultiSliceMdpPolicy(Policy):
     def __init__(self, policy_config):
         self._config = policy_config
 
-        self._init_slices()
-        self._generate_states()
-        self._generate_actions()
-        self._generate_transition_matrix()
-        self._generate_reward_matrix()
-
     @property
     def policy(self):
         return self._policy
@@ -221,6 +221,13 @@ class MultiSliceMdpPolicy(Policy):
     @property
     def states(self):
         return self._states
+
+    def init(self):
+        self._init_slices()
+        self._generate_states()
+        self._generate_actions()
+        self._generate_transition_matrix()
+        self._generate_reward_matrix()
 
     def calculate_policy(self):
         if self._config.algorithm == 'vi':
@@ -246,8 +253,22 @@ class MultiSliceMdpPolicy(Policy):
 
     def _init_slices(self):
         self._slices = []
+
         for i in range(self._config.slice_count):
             self._slices.append(SingleSliceMdpPolicy(self._config, i))
+            self._slices[-1].init()
+
+        # pool = Pool(self._config.slice_count)
+        # # pool.map([slice.init() for slice in self._slices])
+        #
+        # def multiprocess_slice_init(s):
+        #     s.init()
+        #     return s
+        #
+        # self._slices = pool.map(multiprocess_slice_init, self._slices)
+        # pool.close()
+        # # pool.join()
+        # # print("d")
 
     def _generate_states(self):
         slices_states = [s.states for s in self._slices]
@@ -348,37 +369,37 @@ class MultiSliceMdpPolicy(Policy):
         return vi.policy
 
 
-class SingleSliceConservativePolicy(Policy):
-    def __init__(self, policy_config, slice_id):
-        self._id = slice_id
-        self._config = policy_config
-
-    @property
-    def policy(self):
-        return self._policy
-
-    def calculate_policy(self):
-        self._policy = []
-        for state in self._states:
-            self._policy.append(state.k)
-
-    def get_action_from_policy(self, current_state, current_timeslot):
-        return self._policy[self._states.index(current_state)]
-
-    def _generate_states(self):
-        self._states = []
-        for i in range(self._config.server_max_cap + 1):
-            for j in range(self._config.slices[self._id].queue_size + 1):
-                self._states.append(SingleSliceState(j, i))
-
-
-class MultiSliceConservativePolicy(Policy):
-    def __init__(self, policy_config):
-        self._config = policy_config
-
-    def calculate_policy(self):
-        pass
-
-    def get_action_from_policy(self, current_state):
-        pass
-
+# class SingleSliceConservativePolicy(Policy):
+#     def __init__(self, policy_config, slice_id):
+#         self._id = slice_id
+#         self._config = policy_config
+#
+#     @property
+#     def policy(self):
+#         return self._policy
+#
+#     def calculate_policy(self):
+#         self._policy = []
+#         for state in self._states:
+#             self._policy.append(state.k)
+#
+#     def get_action_from_policy(self, current_state, current_timeslot):
+#         return self._policy[self._states.index(current_state)]
+#
+#     def _generate_states(self):
+#         self._states = []
+#         for i in range(self._config.server_max_cap + 1):
+#             for j in range(self._config.slices[self._id].queue_size + 1):
+#                 self._states.append(SingleSliceState(j, i))
+#
+#
+# class MultiSliceConservativePolicy(Policy):
+#     def __init__(self, policy_config):
+#         self._config = policy_config
+#
+#     def calculate_policy(self):
+#         pass
+#
+#     def get_action_from_policy(self, current_state):
+#         pass
+#

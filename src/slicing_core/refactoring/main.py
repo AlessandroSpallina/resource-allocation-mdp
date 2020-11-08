@@ -9,10 +9,11 @@ import time
 
 def main():
     policy_conf = PolicyConfig()
+    policy = MultiSliceMdpPolicy(policy_conf)
 
     start_time = time.time()
 
-    policy = MultiSliceMdpPolicy(policy_conf)
+    policy.init()
 
     print(f"Initialization done in {time.time() - start_time} seconds")
     start_time = time.time()
