@@ -15,7 +15,7 @@ class Policy(metaclass=abc.ABCMeta):
     @property
     @abc.abstractmethod
     def states(self):
-        return self._states
+        pass
 
     @abc.abstractmethod
     def __init__(self, policy_config):
