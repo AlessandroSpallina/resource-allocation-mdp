@@ -7,16 +7,15 @@ from refactoring.state import SingleSliceState
 
 
 class Policy(metaclass=abc.ABCMeta):
-    """
-    Declare an interface common to all supported algorithms. Context
-    uses this interface to call the algorithm defined by a
-    ConcreteStrategy.
-    """
-
     @property
     @abc.abstractmethod
     def policy(self):
         pass
+
+    @property
+    @abc.abstractmethod
+    def states(self):
+        return self._states
 
     @abc.abstractmethod
     def __init__(self, policy_config):
@@ -220,27 +219,30 @@ class MultiSliceMdpPolicy(Policy):
         return self._policy
 
     @property
-    def actions(self):
-        return self._actions
-
-    @property
     def states(self):
         return self._states
 
     def calculate_policy(self):
         if self._config.algorithm == 'vi':
-            self._policy = self._run_value_iteration(self._config.discount_factor)
+            self._policy = list(self._run_value_iteration(self._config.discount_factor))
+            # translating action id in the policy table with the real action
+            # es. of real action is [0, 5] which means: set 0 servers to slice0 and 5 servers to slice1
+            for i in range(len(self._policy)):
+                self._policy[i] = self._actions[self._policy[i]]
+
         elif self._config.algorithm == 'fh':
             self._policy = self._run_finite_horizon(self._config.discount_factor)
-
-        print(self._policy)
+            # translating action id in the policy table with the real action
+            for i in range(len(self._policy)):
+                for j in range(len(self._policy[i])):
+                    self._policy[i][j] = self._actions[self._policy[i][j]]
 
     def get_action_from_policy(self, current_state, current_timeslot):
         try:
             if len(self._policy[0]) > 0:  # if we are here the policy is a matrix (fh)
-                return self._actions[self._policy[:, current_timeslot][self._states.index(current_state)]]
+                return self._policy[:, current_timeslot][self._states.index(current_state)]
         except TypeError:
-            return self._actions[self._policy[self._states.index(current_state)]]
+            return self._policy[self._states.index(current_state)]
 
     def _init_slices(self):
         self._slices = []
@@ -250,6 +252,14 @@ class MultiSliceMdpPolicy(Policy):
     def _generate_states(self):
         slices_states = [s.states for s in self._slices]
         mesh = np.array(np.meshgrid(*slices_states))
+
+        # TODO: abbiamo stati inutili (es. se max cap=5 -> ((0,5),(0,5)) che è impossibile), ottimizzare
+        # to_filter = mesh.T.reshape(-1, len(slices_states)).tolist()
+        # self._states = []
+        # for multislice_state in to_filter:
+        #     if sum([singleslice_state.n for singleslice_state in multislice_state]) <= self._config.server_max_cap:
+        #         self._states.append(multislice_state)
+
         self._states = mesh.T.reshape(-1, len(slices_states)).tolist()
 
     def _generate_actions(self):
