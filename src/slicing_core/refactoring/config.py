@@ -1,7 +1,10 @@
 import confuse
+import time
 
-# CONFIG_FILE_PATH = "src/slicing_core/refactoring/config.yaml"
 CONFIG_FILE_PATH = "config.yaml"
+EXPORTED_FILES_PATH = f"./exported/results/{int(time.time())}/"
+LOG_FILE_PATH = f"{EXPORTED_FILES_PATH}report.log"
+RESULTS_FILE_PATH = f"{EXPORTED_FILES_PATH}results.data"
 
 template = {
     'immediate_action': confuse.OneOf([bool]),
@@ -22,9 +25,9 @@ template = {
             'arrivals_histogram': confuse.Sequence(float),
             'server_capacity_histogram': confuse.Sequence(float),
             'queue_size': confuse.Integer(),
-            'alpha': confuse.Integer(),
-            'beta': confuse.Integer(),
-            'gamma': confuse.Integer(),
+            'alpha': float,
+            'beta': float,
+            'gamma': float,
             'c_job': confuse.Integer(),
             'c_server': confuse.Integer(),
             'c_lost': confuse.Integer()

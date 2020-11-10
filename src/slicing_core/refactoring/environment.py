@@ -32,9 +32,8 @@ class Job:
         return self._arrival_timeslot
 
 
-"""
-TODO: aggiungere la possibilità di runnare più volte una simulazione e restituire la media (per unluky/luky cases)
-"""
+# TODO: aggiungere la possibilità di runnare più volte una simulazione e restituire la media (per unluky/luky cases)
+#       aggiungere possibilità di media tra N simulazioni, andrebbe fatto dentro al simulatore
 
 
 class SingleSliceSimulator(Environment):
@@ -80,6 +79,7 @@ class SingleSliceSimulator(Environment):
         self._current_timeslot += 1
 
         return {
+            "timeslot": self._current_timeslot,
             "state": copy(self._current_state),
             "lost_jobs": lost_count,
             "processed_jobs": processed_count
@@ -191,7 +191,7 @@ class MultiSliceSimulator(Environment):
         self._config = environment_config
 
         self._current_state = [SingleSliceState(0, 0) for i in range(self._config.slice_count)]
-        self._current_timeslot = 0  # bisogna capire che farne!
+        # self._current_timeslot = 0  # bisogna capire che farne!
 
         self._init_simulations()
 
@@ -205,9 +205,10 @@ class MultiSliceSimulator(Environment):
             tmp.append(self._simulations[i].next_timeslot(slices_allocation[i]))
         self._current_state = [s['state'] for s in tmp]
         return {
+            "timeslot": tmp[0]['timeslot'],
             "state":  copy(self._current_state),
-            "lost_jobs": sum([s['lost_jobs'] for s in tmp]),
-            "processed_jobs": sum([s['processed_jobs'] for s in tmp])
+            "lost_jobs": [s['lost_jobs'] for s in tmp],
+            "processed_jobs": [s['processed_jobs'] for s in tmp]
         }
 
     def _init_simulations(self):
