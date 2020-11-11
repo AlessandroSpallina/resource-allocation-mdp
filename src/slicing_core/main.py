@@ -1,9 +1,11 @@
-from policy import MultiSliceMdpPolicy
-from environment import MultiSliceSimulator
-from agent import NetworkOperator
+# SLICING_CORE MAIN
 
-import config as config
-import utils as utils
+from src.slicing_core.policy import MultiSliceMdpPolicy
+from src.slicing_core.environment import MultiSliceSimulator
+from src.slicing_core.agent import NetworkOperator
+
+import src.slicing_core.config as config
+import src.slicing_core.utils as utils
 
 import time
 import logging
@@ -39,9 +41,6 @@ def main():
     agent.start_automatic_control()
 
     logging.info(f"Simulation done in {time.time() - start_time} seconds")
-
-    aa = agent.history
-    print('c')
 
     utils.export_data({
         'policy': policy.policy,

@@ -4,7 +4,7 @@ import numpy as np
 import random
 from copy import copy
 
-from state import SingleSliceState
+from src.slicing_core.state import SingleSliceState
 
 
 class Environment(metaclass=abc.ABCMeta):

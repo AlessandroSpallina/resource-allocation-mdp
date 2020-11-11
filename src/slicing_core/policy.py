@@ -2,9 +2,8 @@ import abc
 import numpy as np
 import mdptoolbox
 import math
-# from pathos.multiprocessing import ProcessingPool as Pool
 
-from state import SingleSliceState
+from src.slicing_core.state import SingleSliceState
 
 
 class Policy(metaclass=abc.ABCMeta):
@@ -17,10 +16,6 @@ class Policy(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def states(self):
         pass
-
-    # @abc.abstractmethod
-    # def __init__(self, policy_config):
-    #     pass
 
     @abc.abstractmethod
     def init(self):

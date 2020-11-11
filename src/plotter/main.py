@@ -1,7 +1,10 @@
-# questo software è chiamato da slicing_core passandogli il path di results.data
+# PLOTTER MAIN
 
+# questo software è chiamato da slicing_core passandogli il path di results.data
 import getopt
 import sys
+
+import src.plotter.utils as utils
 
 
 def cli_handler(argv):
@@ -24,8 +27,9 @@ def cli_handler(argv):
 def main(argv):
     DATA_PATH = cli_handler(argv)['data']
 
+    imported_data = utils.import_data(DATA_PATH)
 
-    print(DATA_PATH)
+    print(imported_data)
 
 
 if __name__ == '__main__':

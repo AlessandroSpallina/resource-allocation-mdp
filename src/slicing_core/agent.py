@@ -1,4 +1,3 @@
-
 class NetworkOperator:
     def __init__(self, policy, environment, control_timeslot_duration):
         self._policy = policy
