@@ -235,7 +235,7 @@ class MultiSliceMdpPolicy(Policy):
             # translating action id in the policy table with the real action
             # es. of real action is [0, 5] which means: set 0 servers to slice0 and 5 servers to slice1
             for i in range(len(self._policy)):
-                self._policy[i] = self._actions[self._policy[i]]
+                self._policy[i] = self._actions[self._policy[i]].tolist()
 
         elif self._config.algorithm == 'fh':
             self._policy = self._run_finite_horizon(self._config.discount_factor)

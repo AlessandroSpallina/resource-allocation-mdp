@@ -41,8 +41,11 @@ def main():
 
     logging.info(f"Simulation done in {time.time() - start_time} seconds")
 
-    utils.export_data({'policy': policy.policy,
-                       'data': agent.history}, config.RESULTS_FILE_PATH)
+    aa = agent.history
+    print('c')
+
+    utils.export_data(agent.history, config.RESULTS_FILE_PATH)
+    # export csv
 
 
 
