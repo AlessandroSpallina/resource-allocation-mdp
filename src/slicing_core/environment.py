@@ -191,7 +191,6 @@ class MultiSliceSimulator(Environment):
         self._config = environment_config
 
         self._current_state = [SingleSliceState(0, 0) for i in range(self._config.slice_count)]
-        # self._current_timeslot = 0  # bisogna capire che farne!
 
         self._init_simulations()
 

@@ -44,7 +44,13 @@ def main():
 
     utils.export_data({
         'policy': policy.policy,
+        'transition_matrix': policy.transition_matrix,
+        'reward_matrix': policy.reward_matrix,
         'simulation_data': agent.history}, config.RESULTS_FILE_PATH)
+
+    # call the plotter script
+    result_file_absolute_path = os.path.abspath(config.RESULTS_FILE_PATH).replace('\\', '/')
+    os.system(f"cd ../plotter && python main.py -d {result_file_absolute_path}")
 
 
 if __name__ == "__main__":

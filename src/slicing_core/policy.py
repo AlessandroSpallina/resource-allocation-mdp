@@ -40,6 +40,10 @@ class SingleSliceMdpPolicy(Policy):
         return self._transition_matrix
 
     @property
+    def reward_matrix(self):
+        return self._reward_matrix
+
+    @property
     def states(self):
         return self._states
 
@@ -216,6 +220,14 @@ class MultiSliceMdpPolicy(Policy):
     @property
     def states(self):
         return self._states
+
+    @property
+    def transition_matrix(self):
+        return self._transition_matrix
+
+    @property
+    def reward_matrix(self):
+        return self._reward_matrix
 
     def init(self):
         self._init_slices()
