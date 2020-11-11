@@ -1,41 +1,26 @@
-from state import State
 
-
-class Agent:
-    def __init__(self, states, policy, environment):
-        self._states = states
+class NetworkOperator:
+    def __init__(self, policy, environment, control_timeslot_duration):
         self._policy = policy
         self._environment = environment
+        self._control_timeslot_duration = control_timeslot_duration
 
-        # useful for the first timeslot of simulation
         self._current_timeslot = 0
-        self._current_state = [State(0, 0), State(0, 0)] # ATTENZIONE RESTORARE QUESTO DOPO LA PRESENTAZIONE: @findme
-        self._action = self._get_action()
-        self._current_state = self._environment.simulate_timeslot(self._action)
+        self._current_state = self._environment.current_state
 
-    def _get_action(self):
-        
-        try:
-            if len(self._policy[0]) > 0:  # if we are here the policy is a matrix (fh)
-                return self._policy[:, self._current_timeslot][self._states.index(self._current_state)]
-        except TypeError:
-            return self._policy[self._states.index(self._current_state)]
+        # statistics
+        self._history = []
 
-    # @profile
-    def control_environment(self):
-        for i in range(1, self._environment.simulation_time):
+    @property
+    def history(self):
+        return self._history
+
+    def start_automatic_control(self):
+        for i in range(self._control_timeslot_duration):
             self._current_timeslot = i
-            self._action = self._get_action()
-            self._current_state = self._environment.simulate_timeslot(self._action)
+            self._current_state = self._environment.current_state
+            # print(f"Stato dell'env: {self._current_state[0]}, {self._current_state[1]}")
+            action_to_do = self._policy.get_action_from_policy(self._current_state, self._current_timeslot)
+            self._history.append(self._environment.next_timeslot(action_to_do))
 
-        return self._environment.get_statistics()
 
-#
-# class MultiSliceAgent(Agent):
-#     def control_environment(self):
-#         for i in range(1, self._environment.simulation_time):
-#             self._current_timeslot = i
-#             self._action = self._get_action()
-#             self._current_state = self._environment.simulate_timeslot(self._action)
-#
-#         return self._environment.get_statistics()

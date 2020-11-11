@@ -4,7 +4,7 @@ import mdptoolbox
 import math
 # from pathos.multiprocessing import ProcessingPool as Pool
 
-from refactoring.state import SingleSliceState
+from state import SingleSliceState
 
 
 class Policy(metaclass=abc.ABCMeta):

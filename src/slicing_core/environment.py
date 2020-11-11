@@ -4,7 +4,7 @@ import numpy as np
 import random
 from copy import copy
 
-from refactoring.state import SingleSliceState
+from state import SingleSliceState
 
 
 class Environment(metaclass=abc.ABCMeta):
