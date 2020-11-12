@@ -21,4 +21,3 @@ class NetworkOperator:
             action_to_do = self._policy.get_action_from_policy(self._current_state, self._current_timeslot)
             self._history.append(self._environment.next_timeslot(action_to_do))
 
-

@@ -68,9 +68,9 @@ class SingleSliceSimulator(Environment):
 
         if self._config.arrival_processing_phase:
             lost_count = self._simulate_arrival_phase_within_timeslot()
-            processed_count = self._simulate_processing_phase_within_timeslot()
+            processing = self._simulate_processing_phase_within_timeslot()
         else:
-            processed_count = self._simulate_processing_phase_within_timeslot()
+            processing = self._simulate_processing_phase_within_timeslot()
             lost_count = self._simulate_arrival_phase_within_timeslot()
 
         if not self._config.immediate_action:
@@ -82,7 +82,9 @@ class SingleSliceSimulator(Environment):
             "timeslot": self._current_timeslot,
             "state": copy(self._current_state),
             "lost_jobs": lost_count,
-            "processed_jobs": processed_count
+            "processed_jobs": processing['processed_jobs'],
+            "wait_time_in_the_queue": processing['wait_time_in_the_queue'],
+            "wait_time_in_the_system": processing['wait_time_in_the_system']
         }
 
     def _generate_h_d(self):
@@ -124,19 +126,20 @@ class SingleSliceSimulator(Environment):
     """
     def _refill_server_internal_queue(self):
         refill_counter = 0
+        wait_time_in_the_queue = []
 
         for i in range(self._current_state.n - self._servers_internal_queue.qsize()):
             # extract from the queue and put the job in server queue (the cache)
             try:
                 job = self._queue.get(False)
                 self._current_state.k -= 1
-
+                wait_time_in_the_queue.append(self._current_timeslot - job.arrival_timeslot)
                 self._servers_internal_queue.put(job, False)
                 refill_counter += 1
             except queue.Empty:
                 pass
 
-        return refill_counter
+        return {"refilled": refill_counter, "wait_time_in_the_queue": wait_time_in_the_queue}
 
     """ Returns the number of jobs processed in one timeslot """
     def _calculate_processed_jobs(self):
@@ -166,24 +169,31 @@ class SingleSliceSimulator(Environment):
     """ Returns the number of processed jobs in the timeslot """
     def _simulate_processing_phase_within_timeslot(self):
         processed_jobs = 0
+        wait_time_in_the_queue = []
+        wait_time_in_the_system = []
+
         if self._current_state.n > 0:  # if here, i can process jobs
             # estrazione dei job dalla coda e inserimento in cache server (sono in run)
             # poi, processo i job che sono in cache
             # se all'interno dello stesso timeslot posso processare più dei job in cache, refillo la cache
-            self._refill_server_internal_queue()
+            wait_time_in_the_queue = self._refill_server_internal_queue()['wait_time_in_the_queue']
             processed_jobs = self._calculate_processed_jobs()
             for i in range(processed_jobs):
                 try:
                     job = self._servers_internal_queue.get(False)
-                    # TODO: trovare un modo per conservare il wait time in the system & in the queue
-                    # self._wait_time_in_the_system_per_job.append(self._current_timeslot - job.arrival_timeslot)
+                    wait_time_in_the_system.append(self._current_timeslot - job.arrival_timeslot)
                 except queue.Empty:
-                    refill_counter = self._refill_server_internal_queue()
-                    if refill_counter == 0:
+                    tmp = self._refill_server_internal_queue()
+                    wait_time_in_the_queue += tmp['wait_time_in_the_queue']
+                    if tmp['refilled'] == 0:
                         # se entro qui posso processare più job di quanti ne ho in coda ->
                         # la stat deve essere relativa al reale processato!!!!
                         processed_jobs -= 1
-        return processed_jobs
+        return {
+            'processed_jobs': processed_jobs,
+            'wait_time_in_the_queue': wait_time_in_the_queue,
+            'wait_time_in_the_system': wait_time_in_the_system
+        }
 
 
 class MultiSliceSimulator(Environment):
@@ -207,7 +217,9 @@ class MultiSliceSimulator(Environment):
             "timeslot": tmp[0]['timeslot'],
             "state":  copy(self._current_state),
             "lost_jobs": [s['lost_jobs'] for s in tmp],
-            "processed_jobs": [s['processed_jobs'] for s in tmp]
+            "processed_jobs": [s['processed_jobs'] for s in tmp],
+            "wait_time_in_the_queue": [s['wait_time_in_the_queue'] for s in tmp],
+            "wait_time_in_the_system": [s['wait_time_in_the_system'] for s in tmp]
         }
 
     def _init_simulations(self):
