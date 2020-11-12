@@ -265,18 +265,6 @@ class MultiSliceMdpPolicy(Policy):
             self._slices.append(SingleSliceMdpPolicy(self._config, i))
             self._slices[-1].init()
 
-        # pool = Pool(self._config.slice_count)
-        # # pool.map([slice.init() for slice in self._slices])
-        #
-        # def multiprocess_slice_init(s):
-        #     s.init()
-        #     return s
-        #
-        # self._slices = pool.map(multiprocess_slice_init, self._slices)
-        # pool.close()
-        # # pool.join()
-        # # print("d")
-
     def _generate_states(self):
         slices_states = [s.states for s in self._slices]
         mesh = np.array(np.meshgrid(*slices_states))

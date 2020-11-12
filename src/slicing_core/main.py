@@ -13,6 +13,23 @@ import os
 import shutil
 
 
+def add_real_costs_to_stats(environment_history, slices_paramethers):
+    # C = alpha * C_k * num of jobs in the queue + beta * C_n * num of server + gamma * C_l * num of lost jobs
+    to_return = []
+    for ts in environment_history:
+        ts_tmp = []
+        multislice_states = ts['state']
+        lost_jobs = ts['lost_jobs']
+        for i in range(len(slices_paramethers)):
+            cost1 = slices_paramethers[i].alpha * slices_paramethers[i].c_job * multislice_states[i].k
+            cost2 = slices_paramethers[i].beta * slices_paramethers[i].c_server * multislice_states[i].n
+            cost3 = slices_paramethers[i].gamma * slices_paramethers[i].c_lost * lost_jobs[i]
+            ts_tmp.append(cost1 + cost2 + cost3)
+        to_return.append(ts)
+        to_return[-1]['cost'] = ts_tmp
+    return to_return
+
+
 def main():
     os.makedirs(config.EXPORTED_FILES_PATH)
     shutil.copyfile(config.CONFIG_FILE_PATH, f"{config.EXPORTED_FILES_PATH}config.yaml")
@@ -41,11 +58,14 @@ def main():
 
     logging.info(f"Simulation done in {time.time() - start_time} seconds")
 
-    utils.export_data({
-        'policy': policy.policy,
-        'transition_matrix': policy.transition_matrix,
-        'reward_matrix': policy.reward_matrix,
-        'simulation_data': agent.history}, config.RESULTS_FILE_PATH)
+    utils.export_data(
+        {
+            'policy': policy.policy,
+            'transition_matrix': policy.transition_matrix,
+            'reward_matrix': policy.reward_matrix,
+            'environment_data': add_real_costs_to_stats(agent.history, policy_conf.slices)
+        },
+        config.RESULTS_FILE_PATH)
 
     # call the plotter script
     result_file_absolute_path = os.path.abspath(config.RESULTS_FILE_PATH).replace('\\', '/')

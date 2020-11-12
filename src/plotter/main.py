@@ -70,13 +70,13 @@ def main(argv):
 
     imported_data = utils.import_data(DATA_PATH)
 
-    raw_system_processed_per_ts = [sim_ts['processed_jobs'] for sim_ts in imported_data['simulation_data']]
+    raw_system_processed_per_ts = [sim_ts['processed_jobs'] for sim_ts in imported_data['environment_data']]
     system_processed_per_ts = np.sum(raw_system_processed_per_ts, axis=1)
     slices_processed_per_ts = np.hsplit(np.array(raw_system_processed_per_ts), len(raw_system_processed_per_ts[0]))
     for i in range(len(slices_processed_per_ts)):
         slices_processed_per_ts[i] = slices_processed_per_ts[i].reshape(len(slices_processed_per_ts[i]))
 
-    raw_system_lost_per_ts = [sim_ts['lost_jobs'] for sim_ts in imported_data['simulation_data']]
+    raw_system_lost_per_ts = [sim_ts['lost_jobs'] for sim_ts in imported_data['environment_data']]
     system_lost_per_ts = np.sum(raw_system_lost_per_ts, axis=1)
     slices_lost_per_ts = np.hsplit(np.array(raw_system_lost_per_ts), len(raw_system_lost_per_ts[0]))
     for i in range(len(slices_lost_per_ts)):
