@@ -21,7 +21,6 @@ template = {
     'server_max_cap': confuse.Integer(),
     'slices': confuse.Sequence(
         {
-            'name': confuse.String(),
             'arrivals_histogram': confuse.Sequence(float),
             'server_capacity_histogram': confuse.Sequence(float),
             'queue_size': confuse.Integer(),

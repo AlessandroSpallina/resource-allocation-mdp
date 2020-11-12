@@ -10,35 +10,34 @@ import src.slicing_core.utils as utils
 import time
 import logging
 import os
+import shutil
 
 
 def main():
     os.makedirs(config.EXPORTED_FILES_PATH)
+    shutil.copyfile(config.CONFIG_FILE_PATH, f"{config.EXPORTED_FILES_PATH}config.yaml")
     logging.basicConfig(filename=config.LOG_FILE_PATH, level=logging.INFO)
 
     logging.info(f"Latest commit available at {utils.get_last_commit_link()}")
 
+    # ---- POLICY STUFF ------------------------
     policy_conf = config.PolicyConfig()
     policy = MultiSliceMdpPolicy(policy_conf)
-
     start_time = time.time()
-
     policy.init()
-
-    logging.info(f"Initialization done in {time.time() - start_time} seconds")
+    logging.info(f"Initialization (trans&reward matrices) done in {time.time() - start_time} seconds")
     start_time = time.time()
-
     policy.calculate_policy()
-
     logging.info(f"Policy calculation done in {time.time() - start_time} seconds")
+    # ------------------------------------------
 
+    # ---- ENVIRONMENT & AGENT STUFF --------------------
     environment_conf = config.EnvironmentConfig()
     environment = MultiSliceSimulator(environment_conf)
-
     start_time = time.time()
-
     agent = NetworkOperator(policy, environment, policy_conf.timeslots)
     agent.start_automatic_control()
+    # ---------------------------------------------------
 
     logging.info(f"Simulation done in {time.time() - start_time} seconds")
 

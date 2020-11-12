@@ -242,7 +242,7 @@ class MultiSliceMdpPolicy(Policy):
             # translating action id in the policy table with the real action
             # es. of real action is [0, 5] which means: set 0 servers to slice0 and 5 servers to slice1
             for i in range(len(self._policy)):
-                self._policy[i] = self._actions[self._policy[i]].tolist()
+                self._policy[i] = self._actions[self._policy[i]]
 
         elif self._config.algorithm == 'fh':
             self._policy = self._run_finite_horizon(self._config.discount_factor)
@@ -281,22 +281,19 @@ class MultiSliceMdpPolicy(Policy):
         slices_states = [s.states for s in self._slices]
         mesh = np.array(np.meshgrid(*slices_states))
 
-        # TODO: abbiamo stati inutili (es. se max cap=5 -> ((0,5),(0,5)) che è impossibile), ottimizzare
-        # to_filter = mesh.T.reshape(-1, len(slices_states)).tolist()
-        # self._states = []
-        # for multislice_state in to_filter:
-        #     if sum([singleslice_state.n for singleslice_state in multislice_state]) <= self._config.server_max_cap:
-        #         self._states.append(multislice_state)
+        to_filter = mesh.T.reshape(-1, len(slices_states)).tolist()
 
-        self._states = mesh.T.reshape(-1, len(slices_states)).tolist()
+        self._states = []
+
+        for multislice_state in to_filter:
+            if sum([singleslice_state.n for singleslice_state in multislice_state]) <= self._config.server_max_cap:
+                self._states.append(multislice_state)
 
     def _generate_actions(self):
-        tmp = []
-        for single_slice_state in self._states[-1]:
-            tmp.append(list(range(single_slice_state.n + 1)))
+        tmp = [list(range(self._config.server_max_cap + 1))] * self._config.slice_count
 
-        mesh = np.array(np.meshgrid(tmp[0], tmp[1]))
-        to_filter = mesh.T.reshape(-1, 2)
+        mesh = np.array(np.meshgrid(*tmp))
+        to_filter = mesh.T.reshape(-1, len(tmp)).tolist()
 
         self._actions = []
         for i in to_filter:
