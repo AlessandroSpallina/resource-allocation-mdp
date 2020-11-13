@@ -119,7 +119,7 @@ def main(argv):
     cost = get_stat_system_slice_pow(imported_data['environment_data'], 'cost')
     processed = get_stat_system_slice_pow(imported_data['environment_data'], 'processed_jobs')
     lost = get_stat_system_slice_pow(imported_data['environment_data'], 'lost_jobs')
-    state = get_stat_system_slice_pow(imported_data['environment_data'], 'state')
+    # state = get_stat_system_slice_pow(imported_data['environment_data'], 'state')
     # ------------------------------------------------------
 
     # ---- PLOTTING ----------------------------------------
