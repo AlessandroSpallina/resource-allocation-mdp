@@ -142,3 +142,4 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 /src/slicing_core/exported/results/
+/doc/slides/
