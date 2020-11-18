@@ -51,39 +51,55 @@ class Config:
 
 
 class PolicyConfig(Config):
+    def __init__(self):
+        super().__init__()
+        self._algorithm = self.get_property('mdp/algorithm')
+        self._discount_factor = self.get_property('mdp/discount_factor')
+        self._immediate_action = self.get_property('immediate_action')
+        self._arrival_processing_phase = self.get_property('arrival_processing_phase')
+        self._timeslots = self.get_property('simulation/timeslots')
+        self._slice_count = len(self.get_property('slices'))
+        self._server_max_cap = self.get_property('server_max_cap')
+        self._slices = self.get_property('slices')
+
     @property
     def algorithm(self):
-        return self.get_property('mdp/algorithm')
+        return self._algorithm
 
     @property
     def discount_factor(self):
-        return self.get_property('mdp/discount_factor')
+        return self._discount_factor
 
     @property
     def immediate_action(self):
-        return self.get_property('immediate_action')
+        return self._immediate_action
 
     @property
     def arrival_processing_phase(self):
-        return self.get_property('arrival_processing_phase')
+        return self._arrival_processing_phase
 
     @property
     def timeslots(self):
-        return self.get_property('simulation/timeslots')
+        return self._timeslots
 
     @property
     def slice_count(self):
-        return len(self.get_property('slices'))
+        return self._slice_count
 
     @property
     def server_max_cap(self):
-        return self.get_property('server_max_cap')
+        return self._server_max_cap
+
+    @server_max_cap.setter
+    def server_max_cap(self, n):
+        self._server_max_cap = n
 
     @property
     def slices(self):
-        return self.get_property('slices')
+        return self._slices
 
 
+# TODO: switch to new config style as policyconfig
 class EnvironmentConfig(Config):
     @property
     def immediate_action(self):

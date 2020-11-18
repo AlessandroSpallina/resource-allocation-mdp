@@ -58,9 +58,9 @@ class SingleSliceMdpPolicy(Policy):
 
     def calculate_policy(self):
         if self._config.algorithm == 'vi':
-            self._policy = self._run_value_iteration(self._config.discount_factors)
+            self._policy = self._run_value_iteration(self._config.discount_factor)
         elif self._config.algorithm == 'fh':
-            self._policy = self._run_finite_horizon(self._config.discount_factors)
+            self._policy = self._run_finite_horizon(self._config.discount_factor)
 
     def get_action_from_policy(self, current_state, current_timeslot):
         try:
@@ -207,6 +207,44 @@ class SingleSliceMdpPolicy(Policy):
                                           discount, self._config.timeslots)
         vi.run()
         return vi.policy
+
+
+# Order matter! slice with index 0 is the highest priority ans so on..
+class PriorityMultiSliceMdpPolicy(Policy):
+    def __init__(self, policy_config):
+        self._config = policy_config
+
+    @property
+    def policy(self):
+        return self._policy
+
+    @property
+    def states(self):
+        return self._states
+
+    @property
+    def reward_matrix(self):
+        return self._reward_matrix
+
+    def init(self):
+        self._init_slices()
+        self._generate_states()
+        self._generate_actions()
+
+    def calculate_policy(self):
+        pass
+
+    def get_action_from_policy(self, current_state, current_timeslot):
+        pass
+
+    def _init_slices(self):
+        self._slices = []
+
+        for i in range(self._config.slice_count):
+            self._slices.append(SingleSliceMdpPolicy(self._config, i))
+            self._slices[-1].init()
+
+
 
 
 class MultiSliceMdpPolicy(Policy):
@@ -359,6 +397,8 @@ class MultiSliceMdpPolicy(Policy):
                                           discount, self._config.timeslots)
         vi.run()
         return vi.policy
+
+
 
 
 # class SingleSliceConservativePolicy(Policy):
