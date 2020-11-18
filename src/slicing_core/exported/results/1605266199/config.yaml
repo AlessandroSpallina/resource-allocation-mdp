@@ -1,0 +1,110 @@
+immediate_action: True
+arrival_processing_phase: True
+
+mdp:
+  algorithm: vi
+  discount_factor: 0.999
+
+simulation:
+  runs: 1
+  timeslots: 10000
+
+server_max_cap: 5
+
+slices: # scaling /10 /2
+  - arrivals_histogram: # urllc
+      - 0.2
+      - 0.2
+      - 0.2
+      - 0.2
+      - 0.2
+    server_capacity_histogram:
+      - 0.5
+      - 0.5
+    queue_size: 10
+    alpha: 0.333 # TODO: replace this with the old automatic system
+    beta: 0.333
+    gamma: 0.333
+    c_job: 0.000062
+    c_server: 0.0001
+    c_lost: 0.00062
+
+  - arrivals_histogram: # mMTC
+      - 0.2
+      - 0.2
+      - 0.2
+      - 0.2
+      - 0.2
+    server_capacity_histogram:
+      - 0.5
+      - 0.5
+    queue_size: 25
+    alpha: 0.333
+    beta: 0.333
+    gamma: 0.333
+    c_job: 0.0000062
+    c_server: 0.0001
+    c_lost: 0.0000062
+
+#  - arrivals_histogram: # eMBB
+#      - 0.02
+#      - 0.02
+#      - 0.02
+#      - 0.02
+#      - 0.02
+#      - 0.02
+#      - 0.02
+#      - 0.02
+#      - 0.02
+#      - 0.02
+#      - 0.02
+#      - 0.02
+#      - 0.02
+#      - 0.02
+#      - 0.02
+#      - 0.02
+#      - 0.02
+#      - 0.02
+#      - 0.02
+#      - 0.02
+#      - 0.02
+#      - 0.02
+#      - 0.02
+#      - 0.02
+#      - 0.02
+#      - 0.02
+#      - 0.02
+#      - 0.02
+#      - 0.02
+#      - 0.02
+#      - 0.02
+#      - 0.02
+#      - 0.02
+#      - 0.02
+#      - 0.02
+#      - 0.02
+#      - 0.02
+#      - 0.02
+#      - 0.02
+#      - 0.02
+#      - 0.02
+#      - 0.02
+#      - 0.02
+#      - 0.02
+#      - 0.02
+#      - 0.02
+#      - 0.02
+#      - 0.02
+#      - 0.02
+#      - 0.02
+#    server_capacity_histogram:
+#      - 0.5
+#      - 0.5
+#    queue_size: 30
+#    alpha: 0.333
+#    beta: 0.333
+#    gamma: 0.333
+#    c_job: 0.0000062
+#    c_server: 0.0001
+#    c_lost: 0.0000062
+
