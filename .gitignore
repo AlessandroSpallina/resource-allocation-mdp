@@ -1,7 +1,9 @@
 # Custom stuff
 .idea/
 .ipynb_checkpoints/
-src/slicing_core/old/config.yaml
+/src/slicing_core/exported/results/
+/res/plots/
+/src/slicing_core/config.yaml
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -141,5 +143,3 @@ dmypy.json
 
 # Cython debug symbols
 cython_debug/
-/src/slicing_core/exported/results/
-/doc/slides/
