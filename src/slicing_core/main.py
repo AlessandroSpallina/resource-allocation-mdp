@@ -16,11 +16,11 @@ import getopt
 
 
 def cli_handler(argv):
-    USAGE = "main.py -c <configPath>"
+    USAGE = "main.py -w <workingDirectory>"
     to_return = {}
     try:
         # help, config (path), name (directory name of the results)
-        opts, args = getopt.getopt(argv, "hc:", ["config="])
+        opts, args = getopt.getopt(argv, "hw:", ["wdir="])
     except getopt.GetoptError:
         print(USAGE)
         sys.exit(2)
@@ -28,8 +28,8 @@ def cli_handler(argv):
         if opt == '-h':
             print(USAGE)
             sys.exit()
-        elif opt in ('-c', '--config'):
-            to_return['config'] = arg
+        elif opt in ('-c', '--wdir'):
+            to_return['wdir'] = arg
 
     return to_return
 
@@ -53,10 +53,8 @@ def add_real_costs_to_stats(environment_history, slices_paramethers):
 
 def main(argv):
     cli_args = cli_handler(argv)
-    custom_config_file = False
-    if 'config' in cli_args:
-        config.CONFIG_FILE_PATH = cli_args['config']
-        custom_config_file = True
+    if 'wdir' in cli_args:
+        os.chdir(cli_args['wdir'])
 
     os.makedirs(config.EXPORTED_FILES_PATH)
     shutil.copyfile(config.CONFIG_FILE_PATH, f"{config.EXPORTED_FILES_PATH}config.yaml")
@@ -65,7 +63,7 @@ def main(argv):
     logging.info(f"Latest commit available at {utils.get_last_commit_link()}")
 
     # ---- POLICY STUFF ------------------------
-    policy_conf = config.PolicyConfig(config.CONFIG_FILE_PATH if custom_config_file else "")
+    policy_conf = config.PolicyConfig()
     policy = CachedPolicy(policy_conf, MultiSliceMdpPolicy)
     start_time = time.time()
     policy.init()
