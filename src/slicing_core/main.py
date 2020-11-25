@@ -55,6 +55,7 @@ def main(argv):
     cli_args = cli_handler(argv)
     if 'wdir' in cli_args:
         os.chdir(cli_args['wdir'])
+        print(f"changed working dir to {os.getcwd()}")
 
     os.makedirs(config.EXPORTED_FILES_PATH)
     shutil.copyfile(config.CONFIG_FILE_PATH, f"{config.EXPORTED_FILES_PATH}config.yaml")
