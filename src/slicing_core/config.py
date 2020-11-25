@@ -40,9 +40,9 @@ template = {
 
 
 class Config:
-    def __init__(self):
+    def __init__(self, custom_path=""):
         config = confuse.Configuration('SlicingCore')
-        config.set_file(CONFIG_FILE_PATH)
+        config.set_file(CONFIG_FILE_PATH if len(custom_path) == 0 else custom_path)
         self._validated = config.get(template)
 
     @property
@@ -62,8 +62,8 @@ class Config:
 
 class PolicyConfig(Config):
     """ Configuration parameters of a Multi-Slice System """
-    def __init__(self):
-        super().__init__()
+    def __init__(self, custom_path):
+        super().__init__(custom_path)
         self._algorithm = self.get_property('mdp/algorithm')
         self._discount_factor = self.get_property('mdp/discount_factor')
         self._immediate_action = self.get_property('immediate_action')
