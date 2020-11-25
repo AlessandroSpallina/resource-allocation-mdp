@@ -2,8 +2,59 @@ import abc
 import numpy as np
 import mdptoolbox
 import math
+import pickle
+
+from functools import wraps
 
 from src.slicing_core.state import SingleSliceState
+from src.slicing_core.config import POLICY_CACHE_FILES_PATH
+
+
+class _Cache:
+    def __init__(self, config):
+        self._path = f"{POLICY_CACHE_FILES_PATH}{config.hash}.policy"
+
+    def load(self):
+        try:
+            loaded = pickle.load(open(self._path, "rb"))
+        except FileNotFoundError:
+            loaded = None
+        return loaded
+
+    def store(self, policy):
+        pickle.dump(policy, open(self._path, "wb"))
+        return self._path
+
+
+# def _decorate(func1, func2, args1=[], args2=[]):
+#     def inner():
+#         func1(*args1)
+#         func2(*args2)
+#         #cache.store(policy)
+#     return inner
+#
+# def with_print(func):
+#     """ Decorate a function to print its arguments.
+#     """
+#     @wraps(func)
+#     def my_func(*args, **kwargs):
+#         print(args, kwargs)
+#         return func(*args, **kwargs)
+#     return my_func
+#
+#
+# def cached_policy(config, policy_class):
+#     cache = _Cache(config)
+#     cached = cache.load()
+#     if cached is not None:  # if here we have a cached policy on our disk! :)
+#         policy = cached
+#         policy.init = lambda: None
+#         policy.calculate_policy = lambda: None
+#     else:
+#         # global policy
+#         policy = policy_class(config)
+#         policy.calculate_policy = _decorate(policy.calculate_policy, cache.store, args2=[policy])
+#     return policy
 
 
 class Policy(metaclass=abc.ABCMeta):
@@ -16,6 +67,9 @@ class Policy(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def states(self):
         pass
+
+    def __init__(self, policy_config):
+        self._config = policy_config
 
     @abc.abstractmethod
     def init(self):
@@ -30,10 +84,42 @@ class Policy(metaclass=abc.ABCMeta):
         pass
 
 
+class CachedPolicy(Policy):
+    def __init__(self, config, policy_class):
+        super().__init__(config)
+        self._cache = _Cache(config)
+        cached = self._cache.load()
+        if cached is not None:
+            self.obj = cached
+            self._is_cached = True
+        else:
+            self.obj = policy_class(config)
+            self._is_cached = False
+
+    @property
+    def policy(self):
+        return self.obj.policy
+
+    @property
+    def states(self):
+        return self.obj.states
+
+    def init(self):
+        if not self._is_cached:
+            self.obj.init()
+
+    def calculate_policy(self):
+        if not self._is_cached:
+            self.obj.calculate_policy()
+            self._cache.store(self.obj)
+
+    def get_action_from_policy(self, current_state, current_timeslot):
+        self.obj.get_action_from_policy(current_state, current_timeslot)
+
+
 class SingleSliceMdpPolicy(Policy):
-    def __init__(self, policy_config, slice_id):
-        self._id = slice_id
-        self._config = policy_config
+    # def __init__(self, config):
+    #     super().__init__(policy_config=config)
 
     @property
     def transition_matrix(self):
@@ -72,7 +158,7 @@ class SingleSliceMdpPolicy(Policy):
     def _generate_states(self):
         self._states = []
         for i in range(self._config.server_max_cap + 1):
-            for j in range(self._config.slices[self._id].queue_size + 1):
+            for j in range(self._config.queue_size + 1):
                 self._states.append(SingleSliceState(j, i))
 
     def _generate_transition_matrix(self):
@@ -96,11 +182,11 @@ class SingleSliceMdpPolicy(Policy):
         tmp = 0
         tmp2 = 0
 
-        for x in range(max(0, diff.k), self._config.slices[self._id].queue_size - from_state.k + 1):
+        for x in range(max(0, diff.k), self._config.queue_size - from_state.k + 1):
             p_proc = 0
 
             try:
-                p_arr = self._config.slices[self._id].arrivals_histogram[x]
+                p_arr = self._config.arrivals_histogram[x]
             except IndexError:
                 p_arr = 0
 
@@ -118,20 +204,20 @@ class SingleSliceMdpPolicy(Policy):
 
             tmp += p_arr * p_proc
 
-        for x in range(self._config.slices[self._id].queue_size - from_state.k + 1,
-                       len(self._config.slices[self._id].arrivals_histogram) + 1):
+        for x in range(self._config.queue_size - from_state.k + 1,
+                       len(self._config.arrivals_histogram) + 1):
             p_proc = 0
 
             try:
-                p_arr = self._config.slices[self._id].arrivals_histogram[x]
+                p_arr = self._config.arrivals_histogram[x]
             except IndexError:
                 p_arr = 0
 
-            if self._config.slices[self._id].queue_size - to_state.k == self._config.slices[self._id].queue_size:
-                p_proc = sum(h_d[self._config.slices[self._id].queue_size - to_state.k:])
-            elif self._config.slices[self._id].queue_size - to_state.k < self._config.slices[self._id].queue_size:
+            if self._config.queue_size - to_state.k == self._config.queue_size:
+                p_proc = sum(h_d[self._config.queue_size - to_state.k:])
+            elif self._config.queue_size - to_state.k < self._config.queue_size:
                 try:
-                    p_proc = h_d[self._config.slices[self._id].queue_size - to_state.k]
+                    p_proc = h_d[self._config.queue_size - to_state.k]
                 except IndexError:
                     pass
             else:
@@ -146,9 +232,9 @@ class SingleSliceMdpPolicy(Policy):
     def _calculate_h_d(self, state):
         h_d = [1.]  # default H_d value for S = 0
         if state.n > 0:
-            h_d = self._config.slices[self._id].server_capacity_histogram
+            h_d = self._config.server_capacity_histogram
             for i in range(1, state.n):
-                h_d = np.convolve(h_d, self._config.slices[self._id].server_capacity_histogram)
+                h_d = np.convolve(h_d, self._config.server_capacity_histogram)
         return h_d
 
     def _filter_transition_probability_by_action(self, transition_probability, from_state, to_state, action_id):
@@ -167,18 +253,18 @@ class SingleSliceMdpPolicy(Policy):
 
     def _calculate_transition_reward(self, to_state):
         # C = alpha * C_k * num of jobs + beta * C_n * num of server + gamma * C_l * E(num of lost jobs)
-        cost1 = self._config.slices[self._id].c_job * to_state.k
-        cost2 = self._config.slices[self._id].c_server * to_state.n
+        cost1 = self._config.c_job * to_state.k
+        cost2 = self._config.c_server * to_state.n
         cost3 = 0
 
         # expected value of lost packets
-        for i in range(len(self._config.slices[self._id].arrivals_histogram)):
-            if to_state.k + i > self._config.slices[self._id].queue_size:
-                cost3 += self._config.slices[self._id].arrivals_histogram[i] * i * self._config.slices[self._id].c_lost
+        for i in range(len(self._config.arrivals_histogram)):
+            if to_state.k + i > self._config.queue_size:
+                cost3 += self._config.arrivals_histogram[i] * i * self._config.c_lost
 
-        return - (self._config.slices[self._id].alpha * cost1 +
-                  self._config.slices[self._id].beta * cost2 +
-                  self._config.slices[self._id].gamma * cost3)
+        return - (self._config.alpha * cost1 +
+                  self._config.beta * cost2 +
+                  self._config.gamma * cost3)
 
     def _run_value_iteration(self, discount):
         if type(discount) == list:
@@ -211,8 +297,6 @@ class SingleSliceMdpPolicy(Policy):
 
 # Order matter! slice with index 0 is the highest priority ans so on..
 class PriorityMultiSliceMdpPolicy(Policy):
-    def __init__(self, policy_config):
-        self._config = policy_config
 
     @property
     def policy(self):
@@ -231,7 +315,7 @@ class PriorityMultiSliceMdpPolicy(Policy):
         self._generate_states()
         self._generate_actions()
 
-    def calculate_policy(self):
+    def _calculate_policy(self):
         pass
 
     def get_action_from_policy(self, current_state, current_timeslot):
@@ -245,11 +329,9 @@ class PriorityMultiSliceMdpPolicy(Policy):
             self._slices[-1].init()
 
 
-
-
 class MultiSliceMdpPolicy(Policy):
-    def __init__(self, policy_config):
-        self._config = policy_config
+    # def __init__(self, config):
+    #     super().__init__(policy_config=config)
 
     @property
     def policy(self):
@@ -300,7 +382,7 @@ class MultiSliceMdpPolicy(Policy):
         self._slices = []
 
         for i in range(self._config.slice_count):
-            self._slices.append(SingleSliceMdpPolicy(self._config, i))
+            self._slices.append(SingleSliceMdpPolicy(self._config.slice(i)))
             self._slices[-1].init()
 
     def _generate_states(self):
@@ -397,41 +479,3 @@ class MultiSliceMdpPolicy(Policy):
                                           discount, self._config.timeslots)
         vi.run()
         return vi.policy
-
-
-
-
-# class SingleSliceConservativePolicy(Policy):
-#     def __init__(self, policy_config, slice_id):
-#         self._id = slice_id
-#         self._config = policy_config
-#
-#     @property
-#     def policy(self):
-#         return self._policy
-#
-#     def calculate_policy(self):
-#         self._policy = []
-#         for state in self._states:
-#             self._policy.append(state.k)
-#
-#     def get_action_from_policy(self, current_state, current_timeslot):
-#         return self._policy[self._states.index(current_state)]
-#
-#     def _generate_states(self):
-#         self._states = []
-#         for i in range(self._config.server_max_cap + 1):
-#             for j in range(self._config.slices[self._id].queue_size + 1):
-#                 self._states.append(SingleSliceState(j, i))
-#
-#
-# class MultiSliceConservativePolicy(Policy):
-#     def __init__(self, policy_config):
-#         self._config = policy_config
-#
-#     def calculate_policy(self):
-#         pass
-#
-#     def get_action_from_policy(self, current_state):
-#         pass
-#

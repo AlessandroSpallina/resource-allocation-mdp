@@ -1,6 +1,6 @@
 # SLICING_CORE MAIN
 
-from src.slicing_core.policy import MultiSliceMdpPolicy
+from src.slicing_core.policy import MultiSliceMdpPolicy, CachedPolicy
 from src.slicing_core.environment import MultiSliceSimulator
 from src.slicing_core.agent import NetworkOperator
 
@@ -39,7 +39,7 @@ def main():
 
     # ---- POLICY STUFF ------------------------
     policy_conf = config.PolicyConfig()
-    policy = MultiSliceMdpPolicy(policy_conf)
+    policy = CachedPolicy(policy_conf, MultiSliceMdpPolicy)
     start_time = time.time()
     policy.init()
     logging.info(f"Initialization (trans&reward matrices) done in {time.time() - start_time} seconds")
@@ -61,8 +61,8 @@ def main():
     utils.export_data(
         {
             'policy': policy.policy,
-            'transition_matrix': policy.transition_matrix,
-            'reward_matrix': policy.reward_matrix,
+            'transition_matrix': policy.obj.transition_matrix,
+            'reward_matrix': policy.obj.reward_matrix,
             'environment_data': add_real_costs_to_stats(agent.history, policy_conf.slices)
         },
         config.RESULTS_FILE_PATH)

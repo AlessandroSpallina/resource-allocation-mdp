@@ -1,8 +1,12 @@
 import confuse
 import time
+from copy import copy
+import json
+import hashlib
 
 CONFIG_FILE_PATH = "config.yaml"
 EXPORTED_FILES_PATH = f"./exported/results/{int(time.time())}/"
+POLICY_CACHE_FILES_PATH = "./exported/policy_cache/"
 LOG_FILE_PATH = f"{EXPORTED_FILES_PATH}report.log"
 RESULTS_FILE_PATH = f"{EXPORTED_FILES_PATH}results.data"
 
@@ -37,9 +41,15 @@ template = {
 
 class Config:
     def __init__(self):
-        self._config = confuse.Configuration('SlicingCore')
-        self._config.set_file(CONFIG_FILE_PATH)
-        self._validated = self._config.get(template)
+        config = confuse.Configuration('SlicingCore')
+        config.set_file(CONFIG_FILE_PATH)
+        self._validated = config.get(template)
+
+    @property
+    def hash(self):
+        tmp = vars(self)
+        tmp.pop('_validated', None)
+        return hashlib.md5(json.dumps(tmp).encode('UTF8')).hexdigest()
 
     def get_property(self, property_name):
         path = property_name.split("/")
@@ -51,6 +61,7 @@ class Config:
 
 
 class PolicyConfig(Config):
+    """ Configuration parameters of a Multi-Slice System """
     def __init__(self):
         super().__init__()
         self._algorithm = self.get_property('mdp/algorithm')
@@ -97,6 +108,14 @@ class PolicyConfig(Config):
     @property
     def slices(self):
         return self._slices
+
+    def slice(self, index):
+        """Returns the config parameters of a slice (single-slice policy)"""
+        to_ret = copy(self)
+        for key in self._slices[index]:
+            setattr(to_ret, key, self._slices[index][key])
+        to_ret._slices = None
+        return to_ret
 
 
 # TODO: switch to new config style as policyconfig

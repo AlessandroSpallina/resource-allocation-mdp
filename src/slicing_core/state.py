@@ -31,16 +31,3 @@ class SingleSliceState:
         if isinstance(other, SingleSliceState):
             return self._k == other._k and self._n == other._n
         return False
-
-
-# class MultiSliceState:
-#     def __init__(self, slice_count):
-#         self._state = [SingleSliceState(0, 0) for s in range(slice_count)]
-#
-#     @property
-#     def k(self):
-#         return [s.k for s in self._state]
-#
-#     @property
-#     def n(self):
-#         return [s.n for s in self._state]

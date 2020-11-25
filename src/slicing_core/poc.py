@@ -39,6 +39,21 @@ def main():
 
     # ---- POLICY STUFF ------------------------
     policy_conf = config.PolicyConfig()
+    policy2 = config.PolicyConfig()
+    a = policy_conf.hash
+    b = policy2.hash
+
+    tmp = policy_conf.slice(1).hash
+    tmp2 = policy2.slice(1).hash
+
+
+
+    s = policy_conf.slice(0)
+    ee = s.slices
+
+    a = hash(policy_conf)
+
+    print('a')
 
     priority_slices = [SingleSliceMdpPolicy(policy_conf, 0)]
     priority_slices[0].init()
