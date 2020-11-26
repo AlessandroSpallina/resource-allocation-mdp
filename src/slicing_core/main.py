@@ -28,7 +28,7 @@ def cli_handler(argv):
         if opt == '-h':
             print(USAGE)
             sys.exit()
-        elif opt in ('-c', '--wdir'):
+        elif opt in ('-w', '--wdir'):
             to_return['wdir'] = arg
 
     return to_return

@@ -14,9 +14,8 @@ class Environment(metaclass=abc.ABCMeta):
     def current_state(self):
         pass
 
-    @abc.abstractmethod
     def __init__(self, environment_config):
-        pass
+        self._config = environment_config
 
     @abc.abstractmethod
     def next_timeslot(self, slices_allocation):
@@ -37,13 +36,12 @@ class Job:
 
 
 class SingleSliceSimulator(Environment):
-    def __init__(self, environment_config, slice_id):
-        self._id = slice_id
-        self._config = environment_config
+    def __init__(self, environment_config):
+        super().__init__(environment_config)
 
         self._current_state = SingleSliceState(0, 0)
         self._current_timeslot = 0
-        self._queue = queue.Queue(self._config.slices[self._id].queue_size)
+        self._queue = queue.Queue(self._config.queue_size)
         self._servers_internal_queue = queue.Queue(self._config.server_max_cap)
         self._state_sequence = []
 
@@ -93,10 +91,10 @@ class SingleSliceSimulator(Environment):
             if i == 0:
                 self._h_d.append([])
             elif i == 1:
-                self._h_d.append(self._config.slices[self._id].server_capacity_histogram)
+                self._h_d.append(self._config.server_capacity_histogram)
             else:
                 self._h_d.append(
-                    np.convolve(self._config.slices[self._id].server_capacity_histogram, self._h_d[i - 1]).tolist()
+                    np.convolve(self._config.server_capacity_histogram, self._h_d[i - 1]).tolist()
                 )
 
     """ Returns an array, each element represent the num of jobs arrived in the timeslot """
@@ -104,13 +102,13 @@ class SingleSliceSimulator(Environment):
         self._incoming_jobs = [0]
         for i in range(self._config.timeslots):
             prob = random.random()  # generate a random value [0., 1.[
-            for j in range(len(self._config.slices[self._id].arrivals_histogram)):
-                if prob <= self._config.slices[self._id].arrivals_histogram[j]:
+            for j in range(len(self._config.arrivals_histogram)):
+                if prob <= self._config.arrivals_histogram[j]:
                     # in this ts arrive j jobs
                     self._incoming_jobs.append(j)
                     break
                 else:
-                    prob -= self._config.slices[self._id].arrivals_histogram[j]
+                    prob -= self._config.arrivals_histogram[j]
         # in simulation we use .pop() that give the last inserted item
         # with a .reverse() we can impose that the first arrive is 0 jobs
         self._incoming_jobs.reverse()
@@ -198,10 +196,8 @@ class SingleSliceSimulator(Environment):
 
 class MultiSliceSimulator(Environment):
     def __init__(self, environment_config):
-        self._config = environment_config
-
+        super().__init__(environment_config)
         self._current_state = [SingleSliceState(0, 0) for i in range(self._config.slice_count)]
-
         self._init_simulations()
 
     @property
@@ -225,4 +221,4 @@ class MultiSliceSimulator(Environment):
     def _init_simulations(self):
         self._simulations = []
         for i in range(self._config.slice_count):
-            self._simulations.append(SingleSliceSimulator(self._config, i))
+            self._simulations.append(SingleSliceSimulator(self._config.slice(i)))

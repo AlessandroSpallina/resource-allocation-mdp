@@ -62,7 +62,7 @@ class Config:
 
 class PolicyConfig(Config):
     """ Configuration parameters of a Multi-Slice System """
-    def __init__(self, custom_path):
+    def __init__(self, custom_path=""):
         super().__init__(custom_path)
         self._algorithm = self.get_property('mdp/algorithm')
         self._discount_factor = self.get_property('mdp/discount_factor')
@@ -118,33 +118,49 @@ class PolicyConfig(Config):
         return to_ret
 
 
-# TODO: switch to new config style as policyconfig
 class EnvironmentConfig(Config):
+    def __init__(self, custom_path=""):
+        super().__init__(custom_path)
+        self._immediate_action = self.get_property('immediate_action')
+        self._arrival_processing_phase = self.get_property('arrival_processing_phase')
+        self._timeslots = self.get_property('simulation/timeslots')
+        self._runs = self.get_property('simulation/runs')
+        self._slice_count = len(self.get_property('slices'))
+        self._server_max_cap = self.get_property('server_max_cap')
+        self._slices = self.get_property('slices')
+
     @property
     def immediate_action(self):
-        return self.get_property('immediate_action')
+        return self._immediate_action
 
     @property
     def arrival_processing_phase(self):
-        return self.get_property('arrival_processing_phase')
+        return self._arrival_processing_phase
 
     @property
     def timeslots(self):
-        return self.get_property('simulation/timeslots')
+        return self._timeslots
 
     @property
     def runs(self):
-        return self.get_property('simulation/runs')
+        return self._runs
 
     @property
     def slice_count(self):
-        return len(self.get_property('slices'))
+        return self._slice_count
 
     @property
     def server_max_cap(self):
-        return self.get_property('server_max_cap')
+        return self._server_max_cap
 
     @property
     def slices(self):
-        return self.get_property('slices')
+        return self._slices
 
+    def slice(self, index):
+        """Returns the config parameters of a slice (single-slice env)"""
+        to_ret = copy(self)
+        for key in self._slices[index]:
+            setattr(to_ret, key, self._slices[index][key])
+        to_ret._slices = None
+        return to_ret

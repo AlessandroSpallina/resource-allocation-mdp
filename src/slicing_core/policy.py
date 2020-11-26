@@ -114,7 +114,7 @@ class CachedPolicy(Policy):
             self._cache.store(self.obj)
 
     def get_action_from_policy(self, current_state, current_timeslot):
-        self.obj.get_action_from_policy(current_state, current_timeslot)
+        return self.obj.get_action_from_policy(current_state, current_timeslot)
 
 
 class SingleSliceMdpPolicy(Policy):
