@@ -3,7 +3,8 @@ import numpy as np
 import mdptoolbox
 import math
 import pickle
-
+import multiprocessing
+from copy import copy
 
 from src.slicing_core.state import SingleSliceState
 from src.slicing_core.config import POLICY_CACHE_FILES_PATH
@@ -140,8 +141,7 @@ class SingleSliceMdpPolicy(Policy):
         self._actions = [i for i in range(self._config.server_max_cap + 1)]
 
     def _generate_transition_matrix(self):
-        self._transition_matrix = np.zeros((self._config.server_max_cap + 1, len(self._states), len(self._states)),
-                                           dtype=np.float16)
+        self._transition_matrix = np.zeros((self._config.server_max_cap + 1, len(self._states), len(self._states)))
 
         # lets iterate the trans matrix and fill with correct probabilities
         for a in range(len(self._transition_matrix)):
@@ -222,8 +222,7 @@ class SingleSliceMdpPolicy(Policy):
         return transition_probability
 
     def _generate_reward_matrix(self):
-        self._reward_matrix = np.zeros((self._config.server_max_cap + 1, len(self._states), len(self._states)),
-                                       dtype=np.float16)
+        self._reward_matrix = np.zeros((self._config.server_max_cap + 1, len(self._states), len(self._states)))
 
         for a in range(len(self._reward_matrix)):
             for i in range(len(self._states)):
@@ -275,40 +274,6 @@ class SingleSliceMdpPolicy(Policy):
         return vi.policy
 
 
-# Order matter! slice with index 0 is the highest priority ans so on..
-# class PriorityMultiSliceMdpPolicy(Policy):
-# 
-#     @property
-#     def policy(self):
-#         return self._policy
-# 
-#     @property
-#     def states(self):
-#         return self._states
-# 
-#     @property
-#     def reward_matrix(self):
-#         return self._reward_matrix
-# 
-#     def init(self):
-#         self._init_slices()
-#         self._generate_states()
-#         self._generate_actions()
-# 
-#     def _calculate_policy(self):
-#         pass
-# 
-#     def get_action_from_policy(self, current_state, current_timeslot):
-#         pass
-# 
-#     def _init_slices(self):
-#         self._slices = []
-# 
-#         for i in range(self._config.slice_count):
-#             self._slices.append(SingleSliceMdpPolicy(self._config, i))
-#             self._slices[-1].init()
-
-
 class MultiSliceMdpPolicy(SingleSliceMdpPolicy):
     def init(self):
         self._init_slices()
@@ -347,12 +312,30 @@ class MultiSliceMdpPolicy(SingleSliceMdpPolicy):
             if sum(i) <= tmp[0][-1]:
                 self._actions.append(i)
 
+    def _generate_transition_matrix(self):
+        self._transition_matrix = np.zeros((len(self._actions), len(self._states), len(self._states)))
+
+        for a in range(len(self._transition_matrix)):
+            for i in range(len(self._states)):
+                for j in range(len(self._states)):
+                    self._transition_matrix[a][i][j] = \
+                        self._calculate_transition_probability(self._states[i], self._states[j], self._actions[a])
+
     def _calculate_transition_probability(self, from_state, to_state, action):  # da lasciare
         transition_probability = \
             math.prod([self._slices[i].transition_matrix[action[i]]
                        [self._slices[i].states.index(from_state[i])]
                        [self._slices[i].states.index(to_state[i])] for i in range(self._config.slice_count)])
         return transition_probability
+
+    def _generate_reward_matrix(self):
+        self._reward_matrix = np.zeros((len(self._actions), len(self._states), len(self._states)))
+
+        for a in range(len(self._reward_matrix)):
+            for i in range(len(self._states)):
+                for j in range(len(self._states)):
+                    if self._transition_matrix[a][i][j] > 0:
+                        self._reward_matrix[a][i][j] = self._calculate_transition_reward(self._states[j])
 
     def _calculate_transition_reward(self, to_state):  # da lasciare 
         # C = alpha * C_k * num of jobs + beta * C_n * num of server + gamma * C_l * E(num of lost jobs)
@@ -372,3 +355,44 @@ class MultiSliceMdpPolicy(SingleSliceMdpPolicy):
         normalized_cost3 = [self._config.slices[i].gamma * cost3[i] for i in range(self._config.slice_count)]
 
         return - (sum(normalized_cost1) + sum(normalized_cost2) + sum(normalized_cost3))
+
+
+# target function for multiprocessing in PriorityMultiSliceMdpPolicy
+def _run_subslices(slice_conf):
+    subslices = []
+    for i in range(1, slice_conf.server_max_cap + 1):
+        subconf = copy(slice_conf)
+        subconf.server_max_cap = i
+        subslices.append(CachedPolicy(subconf, SingleSliceMdpPolicy))
+        subslices[-1].init()
+        subslices[-1].calculate_policy()
+
+
+# Order matter! slice with index 0 is the highest priority ans so on..
+class PriorityMultiSliceMdpPolicy(MultiSliceMdpPolicy):
+    def init(self):
+        self._init_slices()
+        self._generate_states()
+        self._generate_actions()
+
+    def calculate_policy(self):
+        pass
+
+    def get_action_from_policy(self, current_state, current_timeslot):
+        pass
+
+    def _init_slices(self):
+        """ Preparing multiprocessing stuff """
+        processes = []
+        for i in range(self._config.slice_count):
+            processes.append(multiprocessing.Process(target=_run_subslices, args=(self._config.slice(i),)))
+            processes[-1].start()
+        for process in processes:
+            process.join()
+
+        # when i am here my multiprocesses already cached slices policies, i can just create the slices i want
+        self._slices = []
+
+        for i in range(self._config.slice_count):
+            self._slices.append(SingleSliceMdpPolicy(self._config))
+            self._slices[-1].init()
