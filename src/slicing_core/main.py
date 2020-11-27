@@ -1,6 +1,6 @@
 # SLICING_CORE MAIN
 
-from src.slicing_core.policy import MultiSliceMdpPolicy, CachedPolicy
+from src.slicing_core.policy import PriorityMultiSliceMdpPolicy, CachedPolicy
 from src.slicing_core.environment import MultiSliceSimulator
 from src.slicing_core.agent import NetworkOperator
 
@@ -65,10 +65,10 @@ def main(argv):
 
     # ---- POLICY STUFF ------------------------
     policy_conf = config.PolicyConfig()
-    policy = CachedPolicy(policy_conf, MultiSliceMdpPolicy)
+    policy = CachedPolicy(policy_conf, PriorityMultiSliceMdpPolicy)
     start_time = time.time()
     policy.init()
-    logging.info(f"Initialization (trans&reward matrices) done in {time.time() - start_time} seconds")
+    logging.info(f"Initialization done in {time.time() - start_time} seconds")
     start_time = time.time()
     policy.calculate_policy()
     logging.info(f"Policy calculation done in {time.time() - start_time} seconds")
