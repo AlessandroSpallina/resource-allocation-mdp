@@ -117,12 +117,12 @@ class SingleSliceMdpPolicy(Policy):
                 self._policy[i] = self._actions[self._policy[i]]
 
         elif self._config.algorithm == 'fh':
-            self._policy = self._run_finite_horizon(self._config.discount_factor)
+            policy = self._run_finite_horizon(self._config.discount_factor)
+            self._policy = np.empty_like(policy, dtype=object)
             # translating action id in the policy table with the real action
             for i in range(len(self._policy)):
                 for j in range(len(self._policy[i])):
-                    self._policy[i][j] = self._actions[self._policy[i][j]]
-                    self._policy[i][j] = self._actions[self._policy[i][j]]
+                    self._policy[i][j] = self._actions[policy[i][j]]
 
     def get_action_from_policy(self, current_state, current_timeslot):
         try:
@@ -282,14 +282,14 @@ class MultiSliceMdpPolicy(SingleSliceMdpPolicy):
         self._generate_transition_matrix()
         self._generate_reward_matrix()
 
-    def _init_slices(self):  # da lasciare
+    def _init_slices(self):
         self._slices = []
 
         for i in range(self._config.slice_count):
             self._slices.append(SingleSliceMdpPolicy(self._config.slice(i)))
             self._slices[-1].init()
 
-    def _generate_states(self):  # da lasciare
+    def _generate_states(self):
         slices_states = [s.states for s in self._slices]
         mesh = np.array(np.meshgrid(*slices_states))
 
@@ -301,7 +301,7 @@ class MultiSliceMdpPolicy(SingleSliceMdpPolicy):
             if sum([singleslice_state.n for singleslice_state in multislice_state]) <= self._config.server_max_cap:
                 self._states.append(multislice_state)
 
-    def _generate_actions(self):  # da lasciare
+    def _generate_actions(self):
         tmp = [list(range(self._config.server_max_cap + 1))] * self._config.slice_count
 
         mesh = np.array(np.meshgrid(*tmp))
@@ -321,7 +321,7 @@ class MultiSliceMdpPolicy(SingleSliceMdpPolicy):
                     self._transition_matrix[a][i][j] = \
                         self._calculate_transition_probability(self._states[i], self._states[j], self._actions[a])
 
-    def _calculate_transition_probability(self, from_state, to_state, action):  # da lasciare
+    def _calculate_transition_probability(self, from_state, to_state, action):
         transition_probability = \
             math.prod([self._slices[i].transition_matrix[action[i]]
                        [self._slices[i].states.index(from_state[i])]
@@ -337,7 +337,7 @@ class MultiSliceMdpPolicy(SingleSliceMdpPolicy):
                     if self._transition_matrix[a][i][j] > 0:
                         self._reward_matrix[a][i][j] = self._calculate_transition_reward(self._states[j])
 
-    def _calculate_transition_reward(self, to_state):  # da lasciare 
+    def _calculate_transition_reward(self, to_state):
         # C = alpha * C_k * num of jobs + beta * C_n * num of server + gamma * C_l * E(num of lost jobs)
         cost1 = [self._config.slices[i].c_job * to_state[i].k for i in range(self._config.slice_count)]
         cost2 = [self._config.slices[i].c_server * to_state[i].n for i in range(self._config.slice_count)]
@@ -383,6 +383,8 @@ class PriorityMultiSliceMdpPolicy(MultiSliceMdpPolicy):
             action_slice_1 = self._slices[1][self._config.server_max_cap - action_slice_0].get_action_from_policy(state[1], 0)
             self._policy.append([action_slice_0, action_slice_1])
 
+        print('a')
+
     # def get_action_from_policy(self, current_state, current_timeslot):
     #     pass
 
@@ -421,14 +423,9 @@ class PriorityMultiSliceMdpPolicy(MultiSliceMdpPolicy):
             # add s_min and s_max update for slice2..sliceN
 
     def _generate_states(self):
-        # WARNING: we have dead states!!!! filter it
-
         slices_with_maxservers = \
             [CachedPolicy(self._config.slice(i), SingleSliceMdpPolicy) for i in range(self._config.slice_count)]
-        # subconf = self._config.slice(1)
-        # subconf.server_max_cap = 1
-        # slices_with_maxservers = [CachedPolicy(self._config.slice(0), SingleSliceMdpPolicy),
-        #                           CachedPolicy(subconf, SingleSliceMdpPolicy)]
+
         for s in slices_with_maxservers:
             s.init()
 
