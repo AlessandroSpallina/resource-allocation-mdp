@@ -11,8 +11,8 @@ from src.slicing_core.config import POLICY_CACHE_FILES_PATH
 
 
 class _Cache:
-    def __init__(self, config):
-        self._path = f"{POLICY_CACHE_FILES_PATH}{config.hash}.policy"
+    def __init__(self, config, file_extension):
+        self._path = f"{POLICY_CACHE_FILES_PATH}{config.hash}.{file_extension}"
 
     def load(self):
         try:
@@ -56,7 +56,7 @@ class Policy(metaclass=abc.ABCMeta):
 class CachedPolicy(Policy):
     def __init__(self, config, policy_class):
         super().__init__(config)
-        self._cache = _Cache(config)
+        self._cache = _Cache(config, policy_class(config).__class__.__name__)
         cached = self._cache.load()
         if cached is not None:
             self.obj = cached
@@ -349,6 +349,7 @@ def _run_subslices(slice_conf):
         subslices.append(CachedPolicy(subconf, SingleSliceMdpPolicy))
         subslices[-1].init()
         subslices[-1].calculate_policy()
+    return subslices
 
 
 # Order matter! slice with index 0 is the highest priority ans so on..
@@ -361,15 +362,41 @@ class PriorityMultiSliceMdpPolicy(MultiSliceMdpPolicy):
     def calculate_policy(self):
         self._policy = []
 
-        for state in self._states:
-            action_slice_0 = self._slices[0].get_action_from_policy(state[0], 0)
-            action_slice_1 = self._slices[1][self._config.server_max_cap - action_slice_0].get_action_from_policy(state[1], 0)
-            self._policy.append([action_slice_0, action_slice_1])
+        for state in self._states:  # @ for each state
+            servers_left = 0
+            if self._config.algorithm == 'vi':
+                servers_left = self._config.server_max_cap
+            elif self._config.algorithm == 'fh':
+                servers_left = np.array([self._config.server_max_cap] * self._config.timeslots)
+            multislice_action = []
+            for i in range(self._config.slice_count):  # @ for each singleslice in the multislice
+                slice_action = []
+                if self._config.algorithm == 'vi':
+                    if state[i].n > servers_left:
+                        # we are here when state[i] is a not possible state due highest priority slice allocations
+                        # i.e. state (0,2) when servers_left are only 1
+                        # this will never happen when the system start from [(0,0) for all slices], but we have to
+                        # be robust so if for any reason the low priority slice is in a (0,2) state, the policy have to
+                        # handle this
+                        state[i].n = servers_left
 
-        print('a')
+                    slice_action = \
+                        self._slices[i][servers_left].policy[self._slices[i][servers_left].states.index(state[i])]
+                    servers_left -= slice_action
 
-    # def get_action_from_policy(self, current_state, current_timeslot):
-    #     pass
+                elif self._config.algorithm == 'fh':
+                    if state[i].n > min(servers_left):
+                        # the same as above, but for finite horizon mdp algo
+                        state[i].n = min(servers_left)
+
+                    slice_action = \
+                        self._slices[i][min(servers_left)].policy[self._slices[i][min(servers_left)].states.index(state[i])]
+
+                    servers_left = servers_left - slice_action
+                    slice_action = slice_action.tolist()
+
+                multislice_action.append(slice_action)
+            self._policy.append(multislice_action)
 
     def _init_slices(self):
         """ Preparing multiprocessing stuff """
@@ -380,37 +407,12 @@ class PriorityMultiSliceMdpPolicy(MultiSliceMdpPolicy):
         for process in processes:
             process.join()
 
-        # when i am here my multiprocesses already cached slices policies, i can just create the slices i want
-        self._slices = []
-
-        # highest priority slice is ok with maximum server cap
-        self._slices.append(CachedPolicy(self._config.slice(0), SingleSliceMdpPolicy))
-        s_min = min(self._slices[0].policy)
-        s_max = max(self._slices[0].policy)
-
-        for i in range(1, self._config.slice_count):
-            subslices = []
-            for j in range(self._config.server_max_cap - s_max, self._config.server_max_cap - s_min + 1):
-                subconf = copy(self._config.slice(i))  # probably this copy is not needed
-                subconf.server_max_cap = j
-                subslices.append(CachedPolicy(subconf, SingleSliceMdpPolicy))
-                subslices[-1].init()
-            # for j in range(self._config.server_max_cap):
-            #     subconf = copy(self._config.slice(i))  # probably this copy is not needed
-            #     subconf.server_max_cap = j
-            #     subslices.append(CachedPolicy(subconf, SingleSliceMdpPolicy))
-            #     subslices[-1].init()
-
-            self._slices.append(subslices)
-
-            # add s_min and s_max update for slice2..sliceN
+        # when i am here my multiprocesses already cached slices policies, i can just pick all of these
+        self._slices = [_run_subslices(self._config.slice(i)) for i in range(self._config.slice_count)]
 
     def _generate_states(self):
-        slices_with_maxservers = \
-            [CachedPolicy(self._config.slice(i), SingleSliceMdpPolicy) for i in range(self._config.slice_count)]
-
-        for s in slices_with_maxservers:
-            s.init()
+        max_servers = self._config.server_max_cap
+        slices_with_maxservers = [s[max_servers] for s in self._slices]
 
         slices_states = [s.states for s in slices_with_maxservers]
         mesh = np.array(np.meshgrid(*slices_states))
