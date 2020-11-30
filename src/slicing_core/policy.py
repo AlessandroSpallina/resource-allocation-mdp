@@ -246,28 +246,11 @@ class SingleSliceMdpPolicy(Policy):
                   self._config.gamma * cost3)
 
     def _run_value_iteration(self, discount):
-        if type(discount) == list:
-            to_return = []
-            for i in discount:
-                vi = mdptoolbox.mdp.ValueIteration(self._transition_matrix, self._reward_matrix, i)
-                vi.run()
-                to_return.append(vi.policy)
-            return to_return
-
         vi = mdptoolbox.mdp.ValueIteration(self._transition_matrix, self._reward_matrix, discount)
         vi.run()
         return vi.policy
 
     def _run_finite_horizon(self, discount):
-        if type(discount) == list:
-            to_return = []
-            for i in discount:
-                vi = mdptoolbox.mdp.FiniteHorizon(self._transition_matrix, self._reward_matrix,
-                                                  i, self._config.timeslots)
-                vi.run()
-                to_return.append(vi.policy)
-            return to_return
-
         vi = mdptoolbox.mdp.FiniteHorizon(self._transition_matrix, self._reward_matrix,
                                           discount, self._config.timeslots)
         vi.run()
