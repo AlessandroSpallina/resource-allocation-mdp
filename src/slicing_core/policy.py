@@ -389,11 +389,12 @@ class PriorityMultiSliceMdpPolicy(MultiSliceMdpPolicy):
                         # the same as above, but for finite horizon mdp algo
                         state[i].n = min(servers_left)
 
-                    slice_action = \
-                        self._slices[i][min(servers_left)].policy[self._slices[i][min(servers_left)].states.index(state[i])]
+                    slice_action = []
+                    for j in range(len(servers_left)):
+                        slice_action.append\
+                            (self._slices[i][servers_left[j]].policy[self._slices[i][servers_left[j]].states.index(state[i])][j])
 
                     servers_left = servers_left - slice_action
-                    slice_action = slice_action.tolist()
 
                 multislice_action.append(slice_action)
             self._policy.append(multislice_action)
