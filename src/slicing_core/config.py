@@ -49,7 +49,7 @@ class Config:
     def hash(self):
         tmp = vars(self)
         tmp.pop('_validated', None)
-        return hashlib.md5(json.dumps(tmp).encode('UTF8')).hexdigest()
+        return hashlib.sha256(json.dumps(tmp).encode('UTF8')).hexdigest()
 
     def get_property(self, property_name):
         path = property_name.split("/")
