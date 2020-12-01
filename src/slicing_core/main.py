@@ -1,6 +1,6 @@
 # SLICING_CORE MAIN
 
-from src.slicing_core.policy import PriorityMultiSliceMdpPolicy, CachedPolicy
+from src.slicing_core.policy import MultiSliceMdpPolicy, PriorityMultiSliceMdpPolicy, CachedPolicy
 from src.slicing_core.environment import MultiSliceSimulator
 from src.slicing_core.agent import NetworkOperator
 
@@ -87,8 +87,8 @@ def main(argv):
     utils.export_data(
         {
             'policy': policy.policy,
-            'transition_matrix': policy.obj.transition_matrix,
-            'reward_matrix': policy.obj.reward_matrix,
+            # 'transition_matrix': policy.obj.transition_matrix,
+            # 'reward_matrix': policy.obj.reward_matrix,
             'environment_data': add_real_costs_to_stats(agent.history, policy_conf.slices)
         },
         config.RESULTS_FILE_PATH)

@@ -2,12 +2,12 @@ immediate_action: True
 arrival_processing_phase: True
 
 mdp:
-  algorithm: vi
+  algorithm: fh
   discount_factor: 0.999
 
 simulation:
   runs: 1
-  timeslots: 1000
+  timeslots: 10
 
 server_max_cap: 2
 
