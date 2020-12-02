@@ -2,7 +2,7 @@ immediate_action: True
 arrival_processing_phase: True
 
 mdp:
-  algorithm: fh
+  algorithm: vi
   discount_factor: 0.999
 
 simulation:

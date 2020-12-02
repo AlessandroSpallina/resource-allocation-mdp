@@ -27,6 +27,11 @@ class _Cache:
 
 
 class Policy(metaclass=abc.ABCMeta):
+    def __init__(self, policy_config):
+        self._config = policy_config
+        self._policy = []
+        self._states = []
+
     @property
     @abc.abstractmethod
     def policy(self):
@@ -36,9 +41,6 @@ class Policy(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def states(self):
         pass
-
-    def __init__(self, policy_config):
-        self._config = policy_config
 
     @abc.abstractmethod
     def init(self):
@@ -124,12 +126,14 @@ class SingleSliceMdpPolicy(Policy):
                 for j in range(len(self._policy[i])):
                     self._policy[i][j] = self._actions[policy[i][j]]
 
+            self._policy = self._policy.tolist()
+
     def get_action_from_policy(self, current_state, current_timeslot):
-        try:
-            if len(self._policy[0]) > 0:  # if we are here the policy is a matrix (fh)
-                return self._policy[:, current_timeslot][self._states.index(current_state)]
-        except TypeError:
+        if self._config.algorithm == 'vi':
             return self._policy[self._states.index(current_state)]
+        elif self._config.algorithm == 'fh':
+            #return self._policy[:, current_timeslot][self._states.index(current_state)]
+            return self._policy[self._states.index(current_state)][current_timeslot]
 
     def _generate_states(self):
         self._states = []
@@ -260,7 +264,7 @@ class SingleSliceMdpPolicy(Policy):
 class MultiSliceMdpPolicy(SingleSliceMdpPolicy):
     def init(self):
         self._init_slices()
-        self._generate_states()
+        self._generate_states(self._slices)
         self._generate_actions()
         self._generate_transition_matrix()
         self._generate_reward_matrix()
@@ -272,8 +276,8 @@ class MultiSliceMdpPolicy(SingleSliceMdpPolicy):
             self._slices.append(SingleSliceMdpPolicy(self._config.slice(i)))
             self._slices[-1].init()
 
-    def _generate_states(self):
-        slices_states = [s.states for s in self._slices]
+    def _generate_states(self, from_slices=[]):
+        slices_states = [s.states for s in from_slices]
         mesh = np.array(np.meshgrid(*slices_states))
 
         to_filter = mesh.T.reshape(-1, len(slices_states)).tolist()
@@ -356,7 +360,7 @@ def _run_subslices(slice_conf):
 class PriorityMultiSliceMdpPolicy(MultiSliceMdpPolicy):
     def init(self):
         self._init_slices()
-        self._generate_states()
+        self._generate_states([s[self._config.server_max_cap] for s in self._slices])
         self._generate_actions()
 
     def calculate_policy(self):
@@ -364,14 +368,11 @@ class PriorityMultiSliceMdpPolicy(MultiSliceMdpPolicy):
 
         for state in self._states:  # @ for each state
             servers_left = 0
+            multislice_action = []
+
             if self._config.algorithm == 'vi':
                 servers_left = self._config.server_max_cap
-            elif self._config.algorithm == 'fh':
-                servers_left = np.array([self._config.server_max_cap] * self._config.timeslots)
-            multislice_action = []
-            for i in range(self._config.slice_count):  # @ for each singleslice in the multislice
-                slice_action = []
-                if self._config.algorithm == 'vi':
+                for i in range(self._config.slice_count):  # @ for each singleslice in the multislice
                     if state[i].n > servers_left:
                         # we are here when state[i] is a not possible state due highest priority slice allocations
                         # i.e. state (0,2) when servers_left are only 1
@@ -383,8 +384,13 @@ class PriorityMultiSliceMdpPolicy(MultiSliceMdpPolicy):
                     slice_action = \
                         self._slices[i][servers_left].policy[self._slices[i][servers_left].states.index(state[i])]
                     servers_left -= slice_action
+                    multislice_action.append(slice_action)
 
-                elif self._config.algorithm == 'fh':
+                self._policy.append(multislice_action)
+
+            elif self._config.algorithm == 'fh':
+                servers_left = np.array([self._config.server_max_cap] * self._config.timeslots)
+                for i in range(self._config.slice_count):  # @ for each singleslice in the multislice
                     if state[i].n > min(servers_left):
                         # the same as above, but for finite horizon mdp algo
                         state[i].n = min(servers_left)
@@ -395,9 +401,9 @@ class PriorityMultiSliceMdpPolicy(MultiSliceMdpPolicy):
                             (self._slices[i][servers_left[j]].policy[self._slices[i][servers_left[j]].states.index(state[i])][j])
 
                     servers_left = servers_left - slice_action
+                    multislice_action.append(slice_action)
 
-                multislice_action.append(slice_action)
-            self._policy.append(multislice_action)
+                self._policy.append(np.column_stack(multislice_action).tolist())
 
     def _init_slices(self):
         """ Preparing multiprocessing stuff """
@@ -411,17 +417,17 @@ class PriorityMultiSliceMdpPolicy(MultiSliceMdpPolicy):
         # when i am here my multiprocesses already cached slices policies, i can just pick all of these
         self._slices = [_run_subslices(self._config.slice(i)) for i in range(self._config.slice_count)]
 
-    def _generate_states(self):
-        max_servers = self._config.server_max_cap
-        slices_with_maxservers = [s[max_servers] for s in self._slices]
-
-        slices_states = [s.states for s in slices_with_maxservers]
-        mesh = np.array(np.meshgrid(*slices_states))
-
-        to_filter = mesh.T.reshape(-1, len(slices_states)).tolist()
-
-        self._states = []
-
-        for multislice_state in to_filter:
-            if sum([singleslice_state.n for singleslice_state in multislice_state]) <= self._config.server_max_cap:
-                self._states.append(multislice_state)
+    # def _generate_states(self):
+    #     # max_servers = self._config.server_max_cap
+    #     # slices_with_maxservers = [s[max_servers] for s in self._slices]
+    #
+    #     slices_states = [s.states for s in slices_with_maxservers]
+    #     mesh = np.array(np.meshgrid(*slices_states))
+    #
+    #     to_filter = mesh.T.reshape(-1, len(slices_states)).tolist()
+    #
+    #     self._states = []
+    #
+    #     for multislice_state in to_filter:
+    #         if sum([singleslice_state.n for singleslice_state in multislice_state]) <= self._config.server_max_cap:
+    #             self._states.append(multislice_state)
