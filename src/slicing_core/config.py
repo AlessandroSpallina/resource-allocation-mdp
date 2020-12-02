@@ -28,9 +28,9 @@ template = {
             'arrivals_histogram': confuse.Sequence(float),
             'server_capacity_histogram': confuse.Sequence(float),
             'queue_size': confuse.Integer(),
-            'alpha': float,
-            'beta': float,
-            'gamma': float,
+            'alpha': int,
+            'beta': int,
+            'gamma': int,
             'c_job': confuse.Integer(),
             'c_server': confuse.Integer(),
             'c_lost': confuse.Integer()
@@ -40,10 +40,12 @@ template = {
 
 
 class Config:
-    def __init__(self, custom_path=""):
+    def __init__(self, custom_path="", config_processor=None):
         config = confuse.Configuration('SlicingCore')
         config.set_file(CONFIG_FILE_PATH if len(custom_path) == 0 else custom_path)
         self._validated = config.get(template)
+        if config_processor is not None:
+            config_processor()
 
     @property
     def hash(self):
@@ -72,6 +74,8 @@ class PolicyConfig(Config):
         self._slice_count = len(self.get_property('slices'))
         self._server_max_cap = self.get_property('server_max_cap')
         self._slices = self.get_property('slices')
+
+        self._normalize_alpha_beta_gamma()
 
     @property
     def algorithm(self):
@@ -117,6 +121,16 @@ class PolicyConfig(Config):
         to_ret._slices = None
         return to_ret
 
+    def _normalize_alpha_beta_gamma(self):
+        for i in range(self._slice_count):
+            alpha = self._validated['slices'][i]['alpha']
+            beta = self._validated['slices'][i]['beta']
+            gamma = self._validated['slices'][i]['gamma']
+
+            self._validated['slices'][i]['alpha'] = alpha / (alpha + beta + gamma)
+            self._validated['slices'][i]['beta'] = beta / (alpha + beta + gamma)
+            self._validated['slices'][i]['gamma'] = gamma / (alpha + beta + gamma)
+
 
 class EnvironmentConfig(Config):
     def __init__(self, custom_path=""):
@@ -128,6 +142,8 @@ class EnvironmentConfig(Config):
         self._slice_count = len(self.get_property('slices'))
         self._server_max_cap = self.get_property('server_max_cap')
         self._slices = self.get_property('slices')
+
+        self._normalize_alpha_beta_gamma()
 
     @property
     def immediate_action(self):
@@ -164,3 +180,13 @@ class EnvironmentConfig(Config):
             setattr(to_ret, key, self._slices[index][key])
         to_ret._slices = None
         return to_ret
+
+    def _normalize_alpha_beta_gamma(self):
+        for i in range(self._slice_count):
+            alpha = self._validated['slices'][i]['alpha']
+            beta = self._validated['slices'][i]['beta']
+            gamma = self._validated['slices'][i]['gamma']
+
+            self._validated['slices'][i]['alpha'] = alpha / (alpha + beta + gamma)
+            self._validated['slices'][i]['beta'] = beta / (alpha + beta + gamma)
+            self._validated['slices'][i]['gamma'] = gamma / (alpha + beta + gamma)
