@@ -132,7 +132,7 @@ class PolicyConfig(Config):
             self._validated['slices'][i]['gamma'] = gamma / (alpha + beta + gamma)
 
 
-class EnvironmentConfig(Config):
+class SimulationConfig(Config):
     def __init__(self, custom_path=""):
         super().__init__(custom_path)
         self._immediate_action = self.get_property('immediate_action')

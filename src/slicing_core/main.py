@@ -2,7 +2,7 @@
 
 from src.slicing_core.policy import MultiSliceMdpPolicy, PriorityMultiSliceMdpPolicy, CachedPolicy
 from src.slicing_core.environment import MultiSliceSimulator
-from src.slicing_core.agent import NetworkOperator
+from src.slicing_core.agent import NetworkOperatorSimulator
 
 import src.slicing_core.config as config
 import src.slicing_core.utils as utils
@@ -34,23 +34,6 @@ def cli_handler(argv):
     return to_return
 
 
-def add_real_costs_to_stats(environment_history, slices_paramethers):
-    # C = alpha * C_k * num of jobs in the queue + beta * C_n * num of server + gamma * C_l * num of lost jobs
-    to_return = []
-    for ts in environment_history:
-        ts_tmp = []
-        multislice_states = ts['state']
-        lost_jobs = ts['lost_jobs']
-        for i in range(len(slices_paramethers)):
-            cost1 = slices_paramethers[i].alpha * slices_paramethers[i].c_job * multislice_states[i].k
-            cost2 = slices_paramethers[i].beta * slices_paramethers[i].c_server * multislice_states[i].n
-            cost3 = slices_paramethers[i].gamma * slices_paramethers[i].c_lost * lost_jobs[i]
-            ts_tmp.append(cost1 + cost2 + cost3)
-        to_return.append(ts)
-        to_return[-1]['cost'] = ts_tmp
-    return to_return
-
-
 def main(argv):
     cli_args = cli_handler(argv)
     if 'wdir' in cli_args:
@@ -75,10 +58,9 @@ def main(argv):
     # ------------------------------------------
 
     # ---- ENVIRONMENT & AGENT STUFF --------------------
-    environment_conf = config.EnvironmentConfig()
-    environment = MultiSliceSimulator(environment_conf)
+    simulation_conf = config.SimulationConfig()
     start_time = time.time()
-    agent = NetworkOperator(policy, environment, policy_conf.timeslots)
+    agent = NetworkOperatorSimulator(policy, simulation_conf)
     agent.start_automatic_control()
     # ---------------------------------------------------
 

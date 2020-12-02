@@ -8,7 +8,6 @@ from src.slicing_core.state import SingleSliceState
 
 
 class Environment(metaclass=abc.ABCMeta):
-
     @property
     @abc.abstractmethod
     def current_state(self):
@@ -29,10 +28,6 @@ class Job:
     @property
     def arrival_timeslot(self):
         return self._arrival_timeslot
-
-
-# TODO: aggiungere la possibilità di runnare più volte una simulazione e restituire la media (per unluky/luky cases)
-#       aggiungere possibilità di media tra N simulazioni, andrebbe fatto dentro al simulatore
 
 
 class SingleSliceSimulator(Environment):
@@ -218,6 +213,7 @@ class MultiSliceSimulator(Environment):
             "wait_time_in_the_system": [s['wait_time_in_the_system'] for s in tmp]
         }
 
+    # this should be renamed to _init_slices because it creates N single-slice-simulator
     def _init_simulations(self):
         self._simulations = []
         for i in range(self._config.slice_count):
