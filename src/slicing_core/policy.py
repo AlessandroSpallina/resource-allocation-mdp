@@ -373,16 +373,17 @@ class PriorityMultiSliceMdpPolicy(MultiSliceMdpPolicy):
             if self._config.algorithm == 'vi':
                 servers_left = self._config.server_max_cap
                 for i in range(self._config.slice_count):  # @ for each singleslice in the multislice
-                    if state[i].n > servers_left:
+                    i_th_state = copy(state[i])
+                    if i_th_state.n > servers_left:
                         # we are here when state[i] is a not possible state due highest priority slice allocations
                         # i.e. state (0,2) when servers_left are only 1
                         # this will never happen when the system start from [(0,0) for all slices], but we have to
                         # be robust so if for any reason the low priority slice is in a (0,2) state, the policy have to
                         # handle this
-                        state[i].n = servers_left
+                        i_th_state.n = servers_left
 
                     slice_action = \
-                        self._slices[i][servers_left].policy[self._slices[i][servers_left].states.index(state[i])]
+                        self._slices[i][servers_left].policy[self._slices[i][servers_left].states.index(i_th_state)]
                     servers_left -= slice_action
                     multislice_action.append(slice_action)
 
@@ -391,14 +392,15 @@ class PriorityMultiSliceMdpPolicy(MultiSliceMdpPolicy):
             elif self._config.algorithm == 'fh':
                 servers_left = np.array([self._config.server_max_cap] * self._config.timeslots)
                 for i in range(self._config.slice_count):  # @ for each singleslice in the multislice
-                    if state[i].n > min(servers_left):
+                    i_th_state = copy(state[i])
+                    if i_th_state.n > min(servers_left):
                         # the same as above, but for finite horizon mdp algo
-                        state[i].n = min(servers_left)
+                        i_th_state.n = min(servers_left)
 
                     slice_action = []
                     for j in range(len(servers_left)):
                         slice_action.append\
-                            (self._slices[i][servers_left[j]].policy[self._slices[i][servers_left[j]].states.index(state[i])][j])
+                            (self._slices[i][servers_left[j]].policy[self._slices[i][servers_left[j]].states.index(i_th_state)][j])
 
                     servers_left = servers_left - slice_action
                     multislice_action.append(slice_action)
