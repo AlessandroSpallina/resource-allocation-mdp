@@ -132,7 +132,6 @@ class SingleSliceMdpPolicy(Policy):
         if self._config.algorithm == 'vi':
             return self._policy[self._states.index(current_state)]
         elif self._config.algorithm == 'fh':
-            #return self._policy[:, current_timeslot][self._states.index(current_state)]
             return self._policy[self._states.index(current_state)][current_timeslot]
 
     def _generate_states(self):
@@ -367,7 +366,7 @@ class PriorityMultiSliceMdpPolicy(MultiSliceMdpPolicy):
         self._policy = []
 
         for state in self._states:  # @ for each state
-            servers_left = 0
+            # servers_left = 0
             multislice_action = []
 
             if self._config.algorithm == 'vi':
@@ -418,18 +417,3 @@ class PriorityMultiSliceMdpPolicy(MultiSliceMdpPolicy):
 
         # when i am here my multiprocesses already cached slices policies, i can just pick all of these
         self._slices = [_run_subslices(self._config.slice(i)) for i in range(self._config.slice_count)]
-
-    # def _generate_states(self):
-    #     # max_servers = self._config.server_max_cap
-    #     # slices_with_maxservers = [s[max_servers] for s in self._slices]
-    #
-    #     slices_states = [s.states for s in slices_with_maxservers]
-    #     mesh = np.array(np.meshgrid(*slices_states))
-    #
-    #     to_filter = mesh.T.reshape(-1, len(slices_states)).tolist()
-    #
-    #     self._states = []
-    #
-    #     for multislice_state in to_filter:
-    #         if sum([singleslice_state.n for singleslice_state in multislice_state]) <= self._config.server_max_cap:
-    #             self._states.append(multislice_state)

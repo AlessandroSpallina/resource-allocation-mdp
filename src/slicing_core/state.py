@@ -22,6 +22,11 @@ class SingleSliceState:
     def __str__(self):
         return "(" + str(self._k) + "," + str(self._n) + ")"
 
+    def __add__(self, other):
+        k = self.k + other.k
+        n = self.n + other.n
+        return SingleSliceState(k, n)
+
     def __sub__(self, other):
         k = self.k - other.k
         n = self.n - other.n
