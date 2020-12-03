@@ -95,7 +95,7 @@ class SingleSliceSimulator(Environment):
     """ Returns an array, each element represent the num of jobs arrived in the timeslot """
     def _generate_incoming_jobs(self):
         self._incoming_jobs = [0]
-        for i in range(self._config.timeslots):
+        for _ in range(self._config.timeslots):
             prob = random.random()  # generate a random value [0., 1.[
             for j in range(len(self._config.arrivals_histogram)):
                 if prob <= self._config.arrivals_histogram[j]:
@@ -121,7 +121,7 @@ class SingleSliceSimulator(Environment):
         refill_counter = 0
         wait_time_in_the_queue = []
 
-        for i in range(self._current_state.n - self._servers_internal_queue.qsize()):
+        for _ in range(self._current_state.n - self._servers_internal_queue.qsize()):
             # extract from the queue and put the job in server queue (the cache)
             try:
                 job = self._queue.get(False)
@@ -151,7 +151,7 @@ class SingleSliceSimulator(Environment):
 
             j = Job(self._current_timeslot)
 
-            for i in range(arrived_jobs):
+            for _ in range(arrived_jobs):
                 try:
                     self._queue.put(j, False)
                     self._current_state.k += 1
@@ -171,7 +171,7 @@ class SingleSliceSimulator(Environment):
             # se all'interno dello stesso timeslot posso processare più dei job in cache, refillo la cache
             wait_time_in_the_queue = self._refill_server_internal_queue()['wait_time_in_the_queue']
             processed_jobs = self._calculate_processed_jobs()
-            for i in range(processed_jobs):
+            for _ in range(processed_jobs):
                 try:
                     job = self._servers_internal_queue.get(False)
                     wait_time_in_the_system.append(self._current_timeslot - job.arrival_timeslot)
@@ -192,7 +192,7 @@ class SingleSliceSimulator(Environment):
 class MultiSliceSimulator(Environment):
     def __init__(self, environment_config):
         super().__init__(environment_config)
-        self._current_state = [SingleSliceState(0, 0) for i in range(self._config.slice_count)]
+        self._current_state = [SingleSliceState(0, 0) for _ in range(self._config.slice_count)]
         self._init_simulations()
 
     @property
@@ -206,7 +206,9 @@ class MultiSliceSimulator(Environment):
         self._current_state = [s['state'] for s in tmp]
         return {
             "timeslot": tmp[0]['timeslot'],
-            "state":  copy(self._current_state),
+            # "state":  copy(self._current_state),
+            "active_servers": [s.n for s in self._current_state],
+            "jobs_in_queue": [s.k for s in self._current_state],
             "lost_jobs": [s['lost_jobs'] for s in tmp],
             "processed_jobs": [s['processed_jobs'] for s in tmp],
             "wait_time_in_the_queue": [s['wait_time_in_the_queue'] for s in tmp],

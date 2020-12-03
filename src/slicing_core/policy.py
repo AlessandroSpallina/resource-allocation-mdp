@@ -215,7 +215,7 @@ class SingleSliceMdpPolicy(Policy):
         h_d = [1.]  # default H_d value for S = 0
         if state.n > 0:
             h_d = self._config.server_capacity_histogram
-            for i in range(1, state.n):
+            for _ in range(1, state.n):
                 h_d = np.convolve(h_d, self._config.server_capacity_histogram)
         return h_d
 
@@ -366,7 +366,6 @@ class PriorityMultiSliceMdpPolicy(MultiSliceMdpPolicy):
         self._policy = []
 
         for state in self._states:  # @ for each state
-            # servers_left = 0
             multislice_action = []
 
             if self._config.algorithm == 'vi':
