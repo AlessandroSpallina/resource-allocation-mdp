@@ -15,7 +15,7 @@ class Agent:
         pass
 
 
-# TODO: this NetworkOperator needs a little refactoring in order to be usable in a real scenario (i.e. timeslots, costs)
+# TODO: this NetworkOperator needs a refactoring in order to be usable in a real scenario (i.e. timeslots, costs)
 class NetworkOperator(Agent):
     def __init__(self, policy, environment, control_timeslot_duration):
         self._policy = policy
@@ -57,6 +57,7 @@ def add_real_costs_to_stats(environment_history, slices_paramethers):
     return to_return
 
 
+# TODO: This class does processing (i.e. wait time in the system/queue), this should not stay here in the future
 class NetworkOperatorSimulator(Agent):
     """
     NetworkOperatorSimulator is a NetworkOperator with the capability to run several simulations
@@ -80,22 +81,75 @@ class NetworkOperatorSimulator(Agent):
             agent.start_automatic_control()
             history_tmp.append(add_real_costs_to_stats(agent.history, self._simulation_conf.slices))
 
-        self._history = history_tmp
-
-        # self._history = self._averaged_history()
+        self._history = self._average_history(history_tmp)
 
     def _init_agents(self):
         self._agents = []
-        for i in range(self._simulation_conf.runs):
+        for _ in range(self._simulation_conf.runs):
             self._agents.append(NetworkOperator(self._policy,
                                                 MultiSliceSimulator(self._simulation_conf),
                                                 self._simulation_conf.timeslots))
 
-    # def _average_history(self, history_to_average):
-    #     to_ret = []
-    #
-    #     lost_jobs_to_average = []
-    #     processed_jobs_
+    # TODO: this can be written better and independent of what the environment returns
+    def _average_history(self, history_to_average):
+        active_servers_average = []
+        jobs_in_queue_average = []
+        lost_jobs_average = []
+        processed_jobs_average = []
+        wait_time_in_the_queue_average = []
+        wait_time_in_the_system_average = []
+
+        for i in range(self._simulation_conf.runs):
+            active_servers_average.append([d['active_servers'] for d in history_to_average[i]])
+            jobs_in_queue_average.append([d['jobs_in_queue'] for d in history_to_average[i]])
+            lost_jobs_average.append([d['lost_jobs'] for d in history_to_average[i]])
+            processed_jobs_average.append([d['processed_jobs'] for d in history_to_average[i]])
+            wait_time_in_the_queue_average.append([d['wait_time_in_the_queue'] for d in history_to_average[i]])
+            wait_time_in_the_system_average.append([d['wait_time_in_the_system'] for d in history_to_average[i]])
+
+        active_servers_average = np.average(np.array(active_servers_average), axis=0)
+        jobs_in_queue_average = np.average(np.array(jobs_in_queue_average), axis=0)
+        lost_jobs_average = np.average(np.array(lost_jobs_average), axis=0)
+        processed_jobs_average = np.average(np.array(processed_jobs_average), axis=0)
+        wait_time_in_the_queue_average = \
+            np.average(
+                [self._histogram_from_feature(sim, (np.array(wait_time_in_the_queue_average, dtype=object).max() + 1))
+                 for sim in wait_time_in_the_queue_average], axis=0)
+        wait_time_in_the_system_average = \
+            np.average(
+                [self._histogram_from_feature(sim, (np.array(wait_time_in_the_system_average, dtype=object).max() + 1))
+                 for sim in wait_time_in_the_system_average], axis=0)
+
+        return {
+            "active_servers": active_servers_average,
+            "jobs_in_queue": jobs_in_queue_average,
+            "lost_jobs": lost_jobs_average,
+            "processed_jobs": processed_jobs_average,
+            "wait_time_in_the_queue": wait_time_in_the_queue_average,
+            "wait_time_in_the_system": wait_time_in_the_system_average
+        }
+
+    def _histogram_from_feature(self, feature, output_dimension):
+        # splitting feature per subslice
+        feature_per_subslice = [list() for _ in range(self._simulation_conf.slice_count)]
+        histogram = [0] * output_dimension
+        for elem in feature:
+            for i in range(len(elem)):
+                if len(elem[i]) > 0:
+                    for e in elem[i]:
+                        feature_per_subslice[i].append(e)
+
+
+        for s in feature_per_subslice:
+            for i in range(max(s) + 1):
+                #histogram[s.count(i)
+                #WIP
+
+
+
+
+
+
 
 
 

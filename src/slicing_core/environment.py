@@ -206,7 +206,7 @@ class MultiSliceSimulator(Environment):
         self._current_state = [s['state'] for s in tmp]
         return {
             "timeslot": tmp[0]['timeslot'],
-            # "state":  copy(self._current_state),
+            "state":  copy(self._current_state),
             "active_servers": [s.n for s in self._current_state],
             "jobs_in_queue": [s.k for s in self._current_state],
             "lost_jobs": [s['lost_jobs'] for s in tmp],
