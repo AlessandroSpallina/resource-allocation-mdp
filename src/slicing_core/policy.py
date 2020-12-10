@@ -5,6 +5,7 @@ import math
 import pickle
 import multiprocessing
 from copy import copy
+from scipy.sparse import dok_matrix
 
 from src.slicing_core.state import SingleSliceState
 from src.slicing_core.config import POLICY_CACHE_FILES_PATH
@@ -144,6 +145,7 @@ class SingleSliceMdpPolicy(Policy):
         self._actions = [i for i in range(self._config.server_max_cap + 1)]
 
     def _generate_transition_matrix(self):
+        #self._transition_matrix = [dok_matrix((len(self._actions), len(self._actions))) for a in range(len(self._actions))]
         self._transition_matrix = np.zeros((self._config.server_max_cap + 1, len(self._states), len(self._states)))
 
         # lets iterate the trans matrix and fill with correct probabilities

@@ -98,6 +98,7 @@ class NetworkOperatorSimulator(Agent):
         processed_jobs_average = []
         wait_time_in_the_queue_average = []
         wait_time_in_the_system_average = []
+        cost_average = []
 
         for i in range(self._simulation_conf.runs):
             active_servers_average.append([d['active_servers'] for d in history_to_average[i]])
@@ -106,18 +107,22 @@ class NetworkOperatorSimulator(Agent):
             processed_jobs_average.append([d['processed_jobs'] for d in history_to_average[i]])
             wait_time_in_the_queue_average.append([d['wait_time_in_the_queue'] for d in history_to_average[i]])
             wait_time_in_the_system_average.append([d['wait_time_in_the_system'] for d in history_to_average[i]])
+            cost_average.append([d['cost'] for d in history_to_average[i]])
 
-        active_servers_average = np.average(np.array(active_servers_average), axis=0)
-        jobs_in_queue_average = np.average(np.array(jobs_in_queue_average), axis=0)
-        lost_jobs_average = np.average(np.array(lost_jobs_average), axis=0)
-        processed_jobs_average = np.average(np.array(processed_jobs_average), axis=0)
+        active_servers_average = np.average(np.array(active_servers_average), axis=0).tolist()
+        jobs_in_queue_average = np.average(np.array(jobs_in_queue_average), axis=0).tolist()
+        lost_jobs_average = np.average(np.array(lost_jobs_average), axis=0).tolist()
+        processed_jobs_average = np.average(np.array(processed_jobs_average), axis=0).tolist()
+        cost_average = np.average(np.array(cost_average), axis=0).tolist()
+
+        # timing statistics need before to be processed in order to have histograms
         wait_time_in_the_queue_average = \
             np.average(
-                [self._histogram_from_feature(sim, (np.array(wait_time_in_the_queue_average, dtype=object).max() + 1))
+                [self._histogram_from_feature(sim, (np.array(wait_time_in_the_queue_average, dtype=object).max()[0] + 1))
                  for sim in wait_time_in_the_queue_average], axis=0)
         wait_time_in_the_system_average = \
             np.average(
-                [self._histogram_from_feature(sim, (np.array(wait_time_in_the_system_average, dtype=object).max() + 1))
+                [self._histogram_from_feature(sim, (np.array(wait_time_in_the_system_average, dtype=object).max()[0] + 1))
                  for sim in wait_time_in_the_system_average], axis=0)
 
         return {
@@ -125,6 +130,7 @@ class NetworkOperatorSimulator(Agent):
             "jobs_in_queue": jobs_in_queue_average,
             "lost_jobs": lost_jobs_average,
             "processed_jobs": processed_jobs_average,
+            "cost": cost_average,
             "wait_time_in_the_queue": wait_time_in_the_queue_average,
             "wait_time_in_the_system": wait_time_in_the_system_average
         }
@@ -132,18 +138,28 @@ class NetworkOperatorSimulator(Agent):
     def _histogram_from_feature(self, feature, output_dimension):
         # splitting feature per subslice
         feature_per_subslice = [list() for _ in range(self._simulation_conf.slice_count)]
-        histogram = [0] * output_dimension
-        for elem in feature:
+
+        histogram = np.zeros((self._simulation_conf.slice_count, output_dimension))
+        for elem in feature:  # elem contains a time-slot timing rilevation
             for i in range(len(elem)):
                 if len(elem[i]) > 0:
                     for e in elem[i]:
                         feature_per_subslice[i].append(e)
 
+        # counting the occurrencies of times
+        # i.e. [999, 90, 1] means 999 jobs in 0 ts, 90 in 1 ts and so on
+        for s in range(len(feature_per_subslice)):
+            for i in range(max(feature_per_subslice[s]) + 1):
+                histogram[s][i] = feature_per_subslice[s].count(i)
 
-        for s in feature_per_subslice:
-            for i in range(max(s) + 1):
-                #histogram[s.count(i)
-                #WIP
+        # and now calculate the percentage!
+        for s in range(len(histogram)):
+            slice_sum = histogram[s].sum()
+            for i in range(len(histogram[s])):
+                histogram[s][i] /= slice_sum
+
+        return histogram.T
+
 
 
 

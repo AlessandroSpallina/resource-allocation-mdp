@@ -69,9 +69,7 @@ def main(argv):
     utils.export_data(
         {
             'policy': policy.policy,
-            # 'transition_matrix': policy.obj.transition_matrix,
-            # 'reward_matrix': policy.obj.reward_matrix,
-            'environment_data': add_real_costs_to_stats(agent.history, policy_conf.slices)
+            'environment_data': agent.history
         },
         config.RESULTS_FILE_PATH)
 
