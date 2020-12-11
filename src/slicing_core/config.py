@@ -31,9 +31,9 @@ template = {
             'alpha': int,
             'beta': int,
             'gamma': int,
-            'c_job': confuse.Integer(),
-            'c_server': confuse.Integer(),
-            'c_lost': confuse.Integer()
+            'c_job': float,
+            'c_server': float,
+            'c_lost': float
         }
     )
 }
