@@ -149,14 +149,16 @@ class NetworkOperatorSimulator(Agent):
         # counting the occurrencies of times
         # i.e. [999, 90, 1] means 999 jobs in 0 ts, 90 in 1 ts and so on
         for s in range(len(feature_per_subslice)):
-            for i in range(max(feature_per_subslice[s]) + 1):
-                histogram[s][i] = feature_per_subslice[s].count(i)
+            if len(feature_per_subslice[s]) > 0:
+                for i in range(max(feature_per_subslice[s]) + 1):
+                    histogram[s][i] = feature_per_subslice[s].count(i)
 
         # and now calculate the percentage!
         for s in range(len(histogram)):
-            slice_sum = histogram[s].sum()
-            for i in range(len(histogram[s])):
-                histogram[s][i] /= slice_sum
+            if len(feature_per_subslice[s]) > 0:
+                slice_sum = histogram[s].sum()
+                for i in range(len(histogram[s])):
+                    histogram[s][i] /= slice_sum
 
         return histogram.T
 

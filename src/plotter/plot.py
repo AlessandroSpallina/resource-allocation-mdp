@@ -3,6 +3,7 @@ from graphviz import Digraph
 
 
 def plot(ydata, xdata=[], title="", xlabel="", ylabel="", save_path=""):
+    plt.rcParams.update({'font.size': 22})
     fig, ax = plt.subplots(figsize=(15, 10))
     ax.grid(True)
     ax.minorticks_on()
@@ -17,6 +18,7 @@ def plot(ydata, xdata=[], title="", xlabel="", ylabel="", save_path=""):
 
 
 def plot_cumulative(ydata, xdata=[], title="", xlabel="", ylabel="", save_path="", multiple_plots=False):
+    plt.rcParams.update({'font.size': 22})
     fig, ax = plt.subplots(figsize=(15, 10))
     ax.grid(True)
     ax.minorticks_on()
@@ -60,9 +62,9 @@ def plot_cumulative(ydata, xdata=[], title="", xlabel="", ylabel="", save_path="
                                 ylabel=ylabel, save_path=save_path)
 
 
-# TODO: bar una accanto all'altra, se vedi il numero di stat (rand, mdp -> n=2) puoi fare width/n
-# https://python-graph-gallery.com/11-grouped-barplot/
+# https://www.tutorialspoint.com/matplotlib/matplotlib_bar_plot.htm
 def bar(ydata, xdata=[], title="", xlabel="", ylabel="", save_path=""):
+    plt.rcParams.update({'font.size': 22})
     fig, ax = plt.subplots(figsize=(15, 10))
     ax.minorticks_on()
     ax.grid(True)
@@ -78,6 +80,7 @@ def bar(ydata, xdata=[], title="", xlabel="", ylabel="", save_path=""):
 
 # Export to file a graph representing the markov chain related to an action
 def plot_markov_chain(states, transition_matrix, reward_matrix=None, directory_save_path=""):
+    plt.rcParams.update({'font.size': 22})
     for a in range(len(transition_matrix)):
         dot = Digraph(filename=f"action{a}" + ".gv", format="png")
 
@@ -96,6 +99,7 @@ def plot_markov_chain(states, transition_matrix, reward_matrix=None, directory_s
 
 
 def plot_two_scales(data1, data2, xdata=[], ylabel1="", ylabel2="", xlabel="", title="", save_path=""):
+    plt.rcParams.update({'font.size': 22})
     fig, ax1 = plt.subplots(figsize=(15, 10))
     ax1.minorticks_on()
     ax1.grid(True)
@@ -128,6 +132,7 @@ def plot_two_scales(data1, data2, xdata=[], ylabel1="", ylabel2="", xlabel="", t
 
 # see https://towardsdatascience.com/simple-little-tables-with-matplotlib-9780ef5d0bc4
 def table(row_headers, column_headers, data, title="", save_path=""):
+    plt.rcParams.update({'font.size': 22})
     fig_background_color = 'skyblue'
     fig_border = 'steelblue'
 

@@ -5,9 +5,10 @@ import getopt
 import sys
 import os
 import numpy as np
+import copy
 
 import src.plotter.utils as utils
-import src.plotter.plot as plot
+import src.plotter.plot as plotter
 
 
 def cli_handler(argv):
@@ -26,90 +27,120 @@ def cli_handler(argv):
             to_return['data'] = arg
     return to_return
 
-# TODO: da fixare
-# def plot_policy(policy, title="", save_path=""):
+
+def moving_average(data, average_window):
+    averaged = np.convolve(data, np.ones((average_window,)) / average_window, mode='valid')
+    return np.arange(len(data), step=len(data) / averaged.size), averaged
+
+
+# def plot_policy(plot_identifier, base_save_path, slice_policy):
 #     try:
-#         if len(policy[0]) > 0:  # if we are here the policy is a matrix (fh)
+#         if len(slice_policy[0]) > 0:  # if we are here the policy is a matrix (fh)
 #             previous_policy = []
-#             for i in range(len(policy)):
-#                 if policy[i] != previous_policy:
-#                     previous_policy = policy[i]
-#                     plot.table([f'{i} jobs' for i in range(len(previous_policy))],
-#                                [f'{i} servers' for i in range(len(previous_policy[0]))],
-#                                previous_policy, title=f"{title} (ts {i})", save_path=save_path)
+#             for i in range(len(slice_policy)):
+#                 if np.array(slice_policy)[:, i] != previous_policy:
+#                     previous_policy = np.array(slice_policy)[:, i]
+#                     plotter.table([f'{i} jobs' for i in range(len(previous_policy))],
+#                                   [f'{i} servers' for i in range(len(previous_policy[0]))],
+#                                   previous_policy, title=f"{plot_identifier} (ts {i})",
+#                                   save_path=f"{base_save_path}policy-ts{i}")
 #     except TypeError:
-#         plot.table([f'{i} jobs' for i in range(len(policy))],
-#                    [f'{i} servers' for i in range(len(policy[0]))],
-#                    policy, title=f"{title}", save_path=save_path)
+#         plotter.table([f'{i} jobs' for i in range(len(slice_policy))],
+#                       [f'{i} servers' for i in range(len(slice_policy[0]))],
+#                       slice_policy, title=f"{plot_identifier}", save_path=f"{base_save_path}policy")
 
+# needs to readapt to vi
+def plot_policy(base_save_path, policy, states):
+    previous_policy = []
+    ts_len = len(policy[0])
 
-def plot_cumulative_cost_processed_job(cost_per_ts, processed_per_ts, lost_per_ts,
-                                       title="", save_path="", average_window=10):
+    for ts in range(ts_len):
+        policy_ts = np.array(policy)[:, ts]
+        if not np.array_equal(policy_ts, previous_policy):
+            # plot policy_ts!
+            with open(f"{base_save_path}ts-{ts}.csv", "w") as f:
+                f.write("state;action\n")
+                for s in range(len(policy_ts)):
+                    line = str([(sub['k'], sub['n']) for sub in states[s]])
+                    line += f";{policy_ts[s]}"
+                    f.write(f"{line}\n")
 
-    cost_per_ts = utils.moving_average(cost_per_ts, average_window)
-    processed_per_ts = utils.moving_average(processed_per_ts, average_window)
-    lost_per_ts = utils.moving_average(lost_per_ts, average_window)
-
-    plot.plot_cumulative(ydata={"costs": cost_per_ts[1],
-                                "processed jobs": processed_per_ts[1],
-                                "lost jobs": lost_per_ts[1]},
-                         xdata=cost_per_ts[0], xlabel="timeslot",
-                         title=f"[{title}] Mean Cumulative", save_path=save_path)
-
-
-def plot_per_ts_cost_processed_job(cost_per_ts, processed_per_ts, lost_per_ts,
-                                   title="", save_path="", average_window=10):
-
-    cost_per_ts = utils.moving_average(cost_per_ts, average_window)
-    processed_per_ts = utils.moving_average(processed_per_ts, average_window)
-    lost_per_ts = utils.moving_average(lost_per_ts, average_window)
-
-    plot.plot(ydata={"costs": cost_per_ts[1],
-                     "processed jobs": processed_per_ts[1],
-                     "lost jobs": lost_per_ts[1]},
-              xdata=cost_per_ts[0], xlabel="timeslot",
-              title=f"[{title}] Mean", save_path=save_path)
-
-
-def plot_per_ts_job_in_queue_vs_active_server(state, title="", save_path="", average_window=10):
-    k = []
-    n = []
-    if type(state) == list:  # we are plotting a system pow
-        for ts in state:
-            k.append(sum([s['k'] for s in ts]))
-            n.append(sum([s['n'] for s in ts]))
-    else:
-        for ts in state:
-            k.append(ts['k'])
-            n.append(ts['n'])
-
-    # k = utils.moving_average(k, average_window)
-    # n = utils.moving_average(n, average_window)
-
-    # plot.plot_two_scales(data1=k[1], ylabel1="jobs in the queue",
-    #                      data2=n[1], ylabel2="active servers",
-    #                      xdata=k[0], xlabel="timeslot", title=title, save_path=save_path)
-    plot.plot_two_scales(data1=k, ylabel1="jobs in the queue",
-                         data2=n, ylabel2="active servers",
-                         xlabel="timeslot", title=title, save_path=save_path)
+            previous_policy = policy_ts
 
 
 
-def get_stat_system_slice_pow(stat, keyword):
-    raw_system_stat_per_ts = [sim_ts[keyword] for sim_ts in stat]
-    system_stat_per_ts = np.sum(raw_system_stat_per_ts, axis=1)
-    slices_stat_per_ts = np.hsplit(np.array(raw_system_stat_per_ts), len(raw_system_stat_per_ts[0]))
-    for i in range(len(slices_stat_per_ts)):
-        slices_stat_per_ts[i] = slices_stat_per_ts[i].reshape(len(slices_stat_per_ts[i]))
-    return {'system_pow': system_stat_per_ts, 'slices_pow': slices_stat_per_ts}
+
+def easy_plot(plot_identifier, base_save_path, stats, window_average):
+    active_servers_per_ts = moving_average(stats['active_servers'], window_average)
+    jobs_in_queue_per_ts = moving_average(stats['jobs_in_queue'], window_average)
+    lost_jobs_per_ts = moving_average(stats['lost_jobs'], window_average)
+    processed_jobs_per_ts = moving_average(stats['processed_jobs'], window_average)
+    cost_per_ts = moving_average(stats['cost'], window_average)
+    wait_time_in_the_queue = stats['wait_time_in_the_queue']
+    wait_time_in_the_system = stats['wait_time_in_the_system']
+
+    plotter.plot_cumulative(ydata={"costs": cost_per_ts[1],
+                                   "processed jobs": processed_jobs_per_ts[1],
+                                   "lost jobs": lost_jobs_per_ts[1]},
+                            xdata=cost_per_ts[0], xlabel="timeslot", title=f"[{plot_identifier}] Mean Cumulative",
+                            save_path=f"{base_save_path}cumulative")
+
+    plotter.plot(ydata={"costs per ts": cost_per_ts[1],
+                        "processed jobs per ts": processed_jobs_per_ts[1],
+                        "lost jobs per ts": lost_jobs_per_ts[1]},
+                 xdata=cost_per_ts[0], xlabel="timeslot", title=f"[{plot_identifier}] Mean per Timeslot",
+                 save_path=f"{base_save_path}per_ts")
+
+    # total time is wait time in the system
+    plotter.bar(ydata={"job wait time": wait_time_in_the_system},
+                xlabel="timeslot", ylabel="% of jobs",
+                title=f"[{plot_identifier}] Mean Job Wait Time in the System (Total Time)",
+                save_path=f"{base_save_path}wait_time_in_system")
+
+    plotter.bar(ydata={"job wait time": wait_time_in_the_queue},
+                xlabel="timeslot", ylabel="% of jobs",
+                title=f"[{plot_identifier}] Mean Job Wait Time in the Queue",
+                save_path=f"{base_save_path}wait_time_in_queue")
+
+    plotter.plot_two_scales(jobs_in_queue_per_ts[1], active_servers_per_ts[1], xdata=jobs_in_queue_per_ts[0],
+                            ylabel1="jobs in queue", ylabel2="active servers", xlabel="timeslot",
+                            title=f"[{plot_identifier}] Mean Queue and Servers",
+                            save_path=f"{base_save_path}jobs_in_queue_vs_active_servers")
 
 
-def get_state_system_slice_pow(stat):
-    system_stat_per_ts = [sim_ts['state'] for sim_ts in stat]
-    slices_stat_per_ts = np.hsplit(np.array(system_stat_per_ts), len(system_stat_per_ts[0]))
-    for i in range(len(slices_stat_per_ts)):
-        slices_stat_per_ts[i] = slices_stat_per_ts[i].reshape(len(slices_stat_per_ts[i]))
-    return {'system_pow': system_stat_per_ts, 'slices_pow': slices_stat_per_ts}
+def split_stats_per_slice(stats):
+    stats_per_slice = [{} for _ in range(len(stats['active_servers'][0]))]
+
+    for key in stats:
+        for ts in stats[key]:
+            for slice_i in range(len(ts)):
+                if not key in stats_per_slice[slice_i]:
+                    stats_per_slice[slice_i][key] = []
+                stats_per_slice[slice_i][key].append(ts[slice_i])
+
+    return stats_per_slice
+
+
+# # needs to re-adapt for vi   NOT NEEDED ANY MORE
+# def split_policy_per_slice(policy):
+#     policy_per_slice = [copy.deepcopy(policy) for _ in range((len(policy[0][0])))]
+#
+#     for i in range(len(policy_per_slice)):
+#         for state_i in range(len(policy_per_slice[i])):
+#             for ts_i in range(len(policy_per_slice[i][state_i])):
+#                 policy_per_slice[i][state_i][ts_i] = policy_per_slice[i][state_i][ts_i][i]
+#
+#     return policy_per_slice
+
+
+def merge_stats_for_system_pow(stats):
+    merged = copy.deepcopy(stats)
+
+    for key in stats:
+        for ts_i in range(len(stats[key])):
+            merged[key][ts_i] = sum(stats[key][ts_i])
+
+    return merged
 
 
 def main(argv):
@@ -127,30 +158,24 @@ def main(argv):
 
     imported_data = utils.import_data(DATA_PATH)
 
-    # ---- PROCESSING --------------------------------------
-    cost = get_stat_system_slice_pow(imported_data['environment_data'], 'cost')
-    processed = get_stat_system_slice_pow(imported_data['environment_data'], 'processed_jobs')
-    lost = get_stat_system_slice_pow(imported_data['environment_data'], 'lost_jobs')
-    state = get_state_system_slice_pow(imported_data['environment_data'])
-    # ------------------------------------------------------
+    for result in imported_data:
+        result_base_path = f"{EXPORTED_FILES_PATH}{result['name']}/"
+        os.makedirs(result_base_path)
 
-    # ---- PLOTTING ----------------------------------------
-    plot_cumulative_cost_processed_job(cost['system_pow'], processed['system_pow'], lost['system_pow'],
-                                       "System MDP", f"{EXPORTED_FILES_PATH}system_cumulative", AVERAGE_WINDOW)
-    plot_per_ts_cost_processed_job(cost['system_pow'], processed['system_pow'], lost['system_pow'],
-                                   "System MDP", f"{EXPORTED_FILES_PATH}system_per_ts", AVERAGE_WINDOW)
-    plot_per_ts_job_in_queue_vs_active_server(state['system_pow'], "System MDP",
-                                              f"{EXPORTED_FILES_PATH}jobs_vs_servers_per_ts", AVERAGE_WINDOW)
+        stats_per_slice = split_stats_per_slice(result['environment_data'])
+        # policy_per_slice = split_policy_per_slice(result['policy'])
 
-    for i in range(len(cost['slices_pow'])):  # for each slice
-        plot_cumulative_cost_processed_job(cost['slices_pow'][i], processed['slices_pow'][i], lost['slices_pow'][i],
-                                           f"Slice {i}", f"{EXPORTED_FILES_PATH}slice_{i}_cumulative", AVERAGE_WINDOW)
-        plot_per_ts_cost_processed_job(cost['slices_pow'][i], processed['slices_pow'][i], lost['slices_pow'][i],
-                                       f"Slice {i}", f"{EXPORTED_FILES_PATH}slice_{i}_per_ts", AVERAGE_WINDOW)
-        plot_per_ts_job_in_queue_vs_active_server(state['slices_pow'][i], f"Slice {i}",
-                                                  f"{EXPORTED_FILES_PATH}jobs_vs_servers_{i}_per_ts", AVERAGE_WINDOW)
+        for i in range(len(stats_per_slice)):
+            os.makedirs(f"{result_base_path}slice-{i}")
+            easy_plot(f"slice-{i}", f"{result_base_path}slice-{i}/", stats_per_slice[i], AVERAGE_WINDOW)
+            # plot_policy(f"slice-{i}", f"{result_base_path}slice-{i}/", policy_per_slice[i])
 
-    # -----------------------------------------------------
+        merged_per_system = merge_stats_for_system_pow(result['environment_data'])
+        os.makedirs(f"{result_base_path}system_pow")
+        easy_plot(f"system-pow", f"{result_base_path}system_pow/", merged_per_system, AVERAGE_WINDOW)
+        plot_policy(f"{result_base_path}system_pow/", result['policy'], result['states'])
+
+
 
 
 if __name__ == '__main__':

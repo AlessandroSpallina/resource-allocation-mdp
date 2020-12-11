@@ -67,10 +67,14 @@ def main(argv):
     logging.info(f"Simulation done in {time.time() - start_time} seconds")
 
     utils.export_data(
-        {
-            'policy': policy.policy,
-            'environment_data': agent.history
-        },
+        [
+            {
+                'name': policy.obj.__class__.__name__,
+                'policy': policy.policy,
+                'states': policy.states,
+                'environment_data': agent.history
+            }
+        ],
         config.RESULTS_FILE_PATH)
 
     # call the plotter script
