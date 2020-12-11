@@ -38,6 +38,8 @@ template = {
     )
 }
 
+# for scientific notation issues see https://github.com/beetbox/confuse/issues/91
+
 
 class Config:
     def __init__(self, custom_path="", config_processor=None):
