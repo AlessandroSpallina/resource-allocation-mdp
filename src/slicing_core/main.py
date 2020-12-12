@@ -1,7 +1,7 @@
 # SLICING_CORE MAIN
 
-from src.slicing_core.policy import MultiSliceMdpPolicy, PriorityMultiSliceMdpPolicy, CachedPolicy
-from src.slicing_core.environment import MultiSliceSimulator
+from src.slicing_core.policy import MultiSliceMdpPolicy, PriorityMultiSliceMdpPolicy, MultiSliceStaticPolicy,\
+    CachedPolicy
 from src.slicing_core.agent import NetworkOperatorSimulator
 
 import src.slicing_core.config as config
@@ -48,20 +48,31 @@ def main(argv):
 
     # ---- POLICY STUFF ------------------------
     policy_conf = config.PolicyConfig()
-    policy = CachedPolicy(policy_conf, PriorityMultiSliceMdpPolicy)
+    policies = [
+            CachedPolicy(policy_conf, PriorityMultiSliceMdpPolicy),
+            CachedPolicy(policy_conf, MultiSliceStaticPolicy)
+        ]
     start_time = time.time()
-    policy.init()
+
+    for policy in policies:
+        policy.init()
+
     logging.info(f"Initialization done in {time.time() - start_time} seconds")
     start_time = time.time()
-    policy.calculate_policy()
+
+    for policy in policies:
+        policy.calculate_policy()
+
     logging.info(f"Policy calculation done in {time.time() - start_time} seconds")
     # ------------------------------------------
 
     # ---- ENVIRONMENT & AGENT STUFF --------------------
     simulation_conf = config.SimulationConfig()
     start_time = time.time()
-    agent = NetworkOperatorSimulator(policy, simulation_conf)
-    agent.start_automatic_control()
+    agents = [NetworkOperatorSimulator(policy, simulation_conf) for policy in policies]
+
+    for agent in agents:
+        agent.start_automatic_control()
     # ---------------------------------------------------
 
     logging.info(f"Simulation done in {time.time() - start_time} seconds")
@@ -69,18 +80,18 @@ def main(argv):
     utils.export_data(
         [
             {
-                'name': policy.obj.__class__.__name__,
-                'policy': policy.policy,
-                'states': policy.states,
+                'name': policies[i].obj.__class__.__name__,
+                'policy': policies[i].policy,
+                'states': policies[i].states,
                 'slices': [
                     {
-                        'arrivals_histogram': policy_conf.slices[i].arrivals_histogram,
-                        'server_capacity_histogram': policy_conf.slices[i].server_capacity_histogram,
+                        'arrivals_histogram': policy_conf.slices[j].arrivals_histogram,
+                        'server_capacity_histogram': policy_conf.slices[j].server_capacity_histogram,
                     }
-                    for i in range(policy_conf.slice_count)
+                    for j in range(policy_conf.slice_count)
                 ],
-                'environment_data': agent.history
-            }
+                'environment_data': agents[i].history
+            } for i in range(len(policies))
         ],
         config.RESULTS_FILE_PATH)
 

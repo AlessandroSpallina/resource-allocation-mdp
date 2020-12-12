@@ -418,3 +418,81 @@ class PriorityMultiSliceMdpPolicy(MultiSliceMdpPolicy):
 
         # when i am here my multiprocesses already cached slices policies, i can just pick all of these
         self._slices = [_run_subslices(self._config.slice(i)) for i in range(self._config.slice_count)]
+
+
+class SingleSliceStaticPolicy(Policy):
+    @property
+    def policy(self):
+        return self._policy
+
+    @property
+    def states(self):
+        return self._states
+
+    def init(self):
+        self._generate_states()
+
+    def calculate_policy(self):
+        self._policy = [self._config.server_max_cap] * len(self._states)
+
+    def get_action_from_policy(self, current_state, current_timeslot):
+        return self._policy[self._states.index(current_state)]
+
+    def _generate_states(self):
+        self._states = []
+        for i in range(self._config.server_max_cap + 1):
+            for j in range(self._config.queue_size + 1):
+                self._states.append(SingleSliceState(j, i))
+
+
+def _eq_div(what, who):
+    return [] if who <= 0 else [what // who + 1] * (what % who) + [what // who] * (who - what % who)
+
+
+class MultiSliceStaticPolicy(Policy):
+    @property
+    def policy(self):
+        return self._policy
+
+    @property
+    def states(self):
+        return self._states
+
+    def init(self):
+        self._init_slices()
+        self._generate_states(self._slices)
+
+    def calculate_policy(self):
+        self._policy = []
+        for s in self._states:
+            action = []
+            for i in range(len(s)):
+                action.append(self._slices[i].get_action_from_policy(s[i], 0))
+            self._policy.append(action)
+
+    def get_action_from_policy(self, current_state, current_timeslot):
+        return self._policy[self._states.index(current_state)]
+
+    def _init_slices(self):
+        self._slices = []
+
+        server_division = _eq_div(self._config.server_max_cap, self._config.slice_count)
+
+        for i in range(self._config.slice_count):
+            slice_conf = self._config.slice(i)
+            slice_conf.server_max_cap = server_division[i]
+            self._slices.append(SingleSliceStaticPolicy(slice_conf))
+            self._slices[-1].init()
+            self._slices[-1].calculate_policy()
+
+    def _generate_states(self, from_slices=[]):
+        slices_states = [s.states for s in from_slices]
+        mesh = np.array(np.meshgrid(*slices_states))
+
+        to_filter = mesh.T.reshape(-1, len(slices_states)).tolist()
+
+        self._states = []
+
+        for multislice_state in to_filter:
+            if sum([singleslice_state.n for singleslice_state in multislice_state]) <= self._config.server_max_cap:
+                self._states.append(multislice_state)
