@@ -72,6 +72,13 @@ def main(argv):
                 'name': policy.obj.__class__.__name__,
                 'policy': policy.policy,
                 'states': policy.states,
+                'slices': [
+                    {
+                        'arrivals_histogram': policy_conf.slices[i].arrivals_histogram,
+                        'server_capacity_histogram': policy_conf.slices[i].server_capacity_histogram,
+                    }
+                    for i in range(policy_conf.slice_count)
+                ],
                 'environment_data': agent.history
             }
         ],

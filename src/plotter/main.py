@@ -33,22 +33,6 @@ def moving_average(data, average_window):
     return np.arange(len(data), step=len(data) / averaged.size), averaged
 
 
-# def plot_policy(plot_identifier, base_save_path, slice_policy):
-#     try:
-#         if len(slice_policy[0]) > 0:  # if we are here the policy is a matrix (fh)
-#             previous_policy = []
-#             for i in range(len(slice_policy)):
-#                 if np.array(slice_policy)[:, i] != previous_policy:
-#                     previous_policy = np.array(slice_policy)[:, i]
-#                     plotter.table([f'{i} jobs' for i in range(len(previous_policy))],
-#                                   [f'{i} servers' for i in range(len(previous_policy[0]))],
-#                                   previous_policy, title=f"{plot_identifier} (ts {i})",
-#                                   save_path=f"{base_save_path}policy-ts{i}")
-#     except TypeError:
-#         plotter.table([f'{i} jobs' for i in range(len(slice_policy))],
-#                       [f'{i} servers' for i in range(len(slice_policy[0]))],
-#                       slice_policy, title=f"{plot_identifier}", save_path=f"{base_save_path}policy")
-
 # needs to readapt to vi
 def plot_policy(base_save_path, policy, states):
     previous_policy = []
@@ -68,9 +52,8 @@ def plot_policy(base_save_path, policy, states):
             previous_policy = policy_ts
 
 
-
-
-def easy_plot(plot_identifier, base_save_path, stats, window_average):
+# Plotting stuff related to simulation results
+def plot_results(plot_identifier, base_save_path, stats, window_average):
     active_servers_per_ts = moving_average(stats['active_servers'], window_average)
     jobs_in_queue_per_ts = moving_average(stats['jobs_in_queue'], window_average)
     lost_jobs_per_ts = moving_average(stats['lost_jobs'], window_average)
@@ -108,6 +91,18 @@ def easy_plot(plot_identifier, base_save_path, stats, window_average):
                             save_path=f"{base_save_path}jobs_in_queue_vs_active_servers")
 
 
+def plot_slices_configs(plot_identifier, base_save_path, configs):
+    plotter.bar(ydata={"arrivals": configs['arrivals_histogram']},
+                xlabel="number of jobs", ylabel="% of probability",
+                title=f"[{plot_identifier}] Arrivals Histogram",
+                save_path=f"{base_save_path}arrivals_histogram")
+
+    plotter.bar(ydata={"job wait time": configs['server_capacity_histogram']},
+                xlabel="number of jobs", ylabel="% of probability",
+                title=f"[{plot_identifier}] Server Capacity Histogram",
+                save_path=f"{base_save_path}server_capacity_histogram")
+
+
 def split_stats_per_slice(stats):
     stats_per_slice = [{} for _ in range(len(stats['active_servers'][0]))]
 
@@ -119,18 +114,6 @@ def split_stats_per_slice(stats):
                 stats_per_slice[slice_i][key].append(ts[slice_i])
 
     return stats_per_slice
-
-
-# # needs to re-adapt for vi   NOT NEEDED ANY MORE
-# def split_policy_per_slice(policy):
-#     policy_per_slice = [copy.deepcopy(policy) for _ in range((len(policy[0][0])))]
-#
-#     for i in range(len(policy_per_slice)):
-#         for state_i in range(len(policy_per_slice[i])):
-#             for ts_i in range(len(policy_per_slice[i][state_i])):
-#                 policy_per_slice[i][state_i][ts_i] = policy_per_slice[i][state_i][ts_i][i]
-#
-#     return policy_per_slice
 
 
 def merge_stats_for_system_pow(stats):
@@ -163,16 +146,15 @@ def main(argv):
         os.makedirs(result_base_path)
 
         stats_per_slice = split_stats_per_slice(result['environment_data'])
-        # policy_per_slice = split_policy_per_slice(result['policy'])
 
         for i in range(len(stats_per_slice)):
             os.makedirs(f"{result_base_path}slice-{i}")
-            easy_plot(f"slice-{i}", f"{result_base_path}slice-{i}/", stats_per_slice[i], AVERAGE_WINDOW)
-            # plot_policy(f"slice-{i}", f"{result_base_path}slice-{i}/", policy_per_slice[i])
+            plot_slices_configs(f"slice-{i}", f"{result_base_path}slice-{i}/", result['slices'][i])
+            plot_results(f"slice-{i}", f"{result_base_path}slice-{i}/", stats_per_slice[i], AVERAGE_WINDOW)
 
         merged_per_system = merge_stats_for_system_pow(result['environment_data'])
         os.makedirs(f"{result_base_path}system_pow")
-        easy_plot(f"system-pow", f"{result_base_path}system_pow/", merged_per_system, AVERAGE_WINDOW)
+        plot_results(f"system-pow", f"{result_base_path}system_pow/", merged_per_system, AVERAGE_WINDOW)
         plot_policy(f"{result_base_path}system_pow/", result['policy'], result['states'])
 
 
