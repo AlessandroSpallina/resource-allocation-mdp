@@ -5,10 +5,12 @@ import json
 import hashlib
 
 CONFIG_FILE_PATH = "config.yaml"
-EXPORTED_FILES_PATH = f"./exported/results/{int(time.time())}/"
 POLICY_CACHE_FILES_PATH = "./exported/policy_cache/"
-LOG_FILE_PATH = f"{EXPORTED_FILES_PATH}report.log"
-RESULTS_FILE_PATH = f"{EXPORTED_FILES_PATH}results.data"
+
+EXPORTED_FILES_PATH = f"./exported/results/{int(time.time())}/"
+LOG_FILENAME = "report.log"
+RESULTS_FILENAME = "results.data"
+
 
 template = {
     'immediate_action': confuse.OneOf([bool]),

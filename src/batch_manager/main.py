@@ -1,3 +1,5 @@
+# BATCH MANAGER MAIN
+
 import os
 import subprocess
 import time
@@ -19,8 +21,10 @@ def main():
 
     while len(paths) > 0:
         path = paths.pop()
-        process = subprocess.Popen(['../../venv/Scripts/python.exe', '../slicing_core/single_main.py',
-                                    '-c', path, '-n', f"b-{start_time}/{path.split('/')[-1].split('.')[0]}"])
+        process = subprocess.Popen(['../../venv/Scripts/python.exe', '../slicing_core/main.py',
+                                    '-w', '../slicing_core/',
+                                    '-c', path,
+                                    '-n', f"b-{start_time}/{path.split('/')[-1].split('.')[0]}"])
         process.communicate()  # this will wait for the process termination
 
 

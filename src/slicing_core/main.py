@@ -16,11 +16,11 @@ import getopt
 
 
 def cli_handler(argv):
-    USAGE = "main.py -w <workingDirectory>"
+    USAGE = "main.py -w <workingDirectory> -c <configPath> -n <simulationName>"
     to_return = {}
     try:
         # help, config (path), name (directory name of the results)
-        opts, args = getopt.getopt(argv, "hw:", ["wdir="])
+        opts, args = getopt.getopt(argv, "hw:c:n:", ["wdir=", "config=", "name="])
     except getopt.GetoptError:
         print(USAGE)
         sys.exit(2)
@@ -30,24 +30,34 @@ def cli_handler(argv):
             sys.exit()
         elif opt in ('-w', '--wdir'):
             to_return['wdir'] = arg
+        elif opt in ('-c', '--config'):
+            to_return['config'] = arg
+        elif opt in ('-n', '--name'):
+            to_return['name'] = arg
 
     return to_return
 
 
 def main(argv):
+    # ---- CLI ARGS HANDLING -----------------------
     cli_args = cli_handler(argv)
     if 'wdir' in cli_args:
         os.chdir(cli_args['wdir'])
         print(f"changed working dir to {os.getcwd()}")
+    if 'name' in cli_args:  # name influences the exported_files_path
+        config.EXPORTED_FILES_PATH = f"{config.EXPORTED_FILES_PATH[:-11]}{cli_args['name']}/"
+    if 'config' in cli_args:  # config influences the config_file_path
+        config.CONFIG_FILE_PATH = cli_args['config']
+    # ----------------------------------------------
 
     os.makedirs(config.EXPORTED_FILES_PATH)
     shutil.copyfile(config.CONFIG_FILE_PATH, f"{config.EXPORTED_FILES_PATH}config.yaml")
-    logging.basicConfig(filename=config.LOG_FILE_PATH, level=logging.INFO)
+    logging.basicConfig(filename=f"{config.EXPORTED_FILES_PATH}{config.LOG_FILENAME}", level=logging.INFO)
 
     logging.info(f"Latest commit available at {utils.get_last_commit_link()}")
 
     # ---- POLICY STUFF ------------------------
-    policy_conf = config.PolicyConfig()
+    policy_conf = config.PolicyConfig(custom_path=config.CONFIG_FILE_PATH)
     policies = [
             CachedPolicy(policy_conf, PriorityMultiSliceMdpPolicy),
             CachedPolicy(policy_conf, MultiSliceStaticPolicy)
@@ -93,10 +103,11 @@ def main(argv):
                 'environment_data': agents[i].history
             } for i in range(len(policies))
         ],
-        config.RESULTS_FILE_PATH)
+        f"{config.EXPORTED_FILES_PATH}{config.RESULTS_FILENAME}")
 
     # call the plotter script
-    result_file_absolute_path = os.path.abspath(config.RESULTS_FILE_PATH).replace('\\', '/')
+    result_file_absolute_path = \
+        os.path.abspath(f"{config.EXPORTED_FILES_PATH}{config.RESULTS_FILENAME}").replace('\\', '/')
     os.system(f"cd ../plotter && python main.py -d {result_file_absolute_path}")
 
 
