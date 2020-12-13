@@ -21,7 +21,7 @@ def main():
 
     while len(paths) > 0:
         path = paths.pop()
-        process = subprocess.Popen(['../../venv/Scripts/python.exe', '../slicing_core/main.py',
+        process = subprocess.Popen(['../../venv/Scripts/python', '../slicing_core/main.py',
                                     '-w', '../slicing_core/',
                                     '-c', path,
                                     '-n', f"b-{start_time}/{path.split('/')[-1].split('.')[0]}"])
