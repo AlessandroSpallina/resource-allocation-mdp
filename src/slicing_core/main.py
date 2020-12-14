@@ -108,7 +108,7 @@ def main(argv):
     # call the plotter script
     result_file_absolute_path = \
         os.path.abspath(f"{config.EXPORTED_FILES_PATH}{config.RESULTS_FILENAME}").replace('\\', '/')
-    os.system(f"cd ../plotter && python -m src.plotter.main -d {result_file_absolute_path}")
+    os.system(f"cd ../../ && python -m src.plotter.main -d {result_file_absolute_path}")
 
 
 if __name__ == "__main__":
