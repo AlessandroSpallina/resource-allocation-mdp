@@ -33,6 +33,7 @@ def config_paths(path="./configs"):
         file_path = os.path.abspath(os.path.join(path, file))
         if os.path.isfile(file_path) and '.yaml' in file_path:
             to_return.append(file_path.replace('\\', '/'))
+    to_return.reverse()
     return to_return
 
 
@@ -51,7 +52,7 @@ def main(argv):
         path = paths.pop()
         os.system(f"cd ../../ && "
                   f"python -m src.slicing_core.main "
-                  f"-w ./src/slicing_core/ -c {path} -n 'b-{start_time}/{path.split('/')[-1].split('.')[0]}'")
+                  f"-w ./src/slicing_core/ -c {path} -n b-{start_time}/{path.split('/')[-1].split('.')[0]}")
 
         # process = subprocess.Popen(['../../venv/Scripts/python', '../slicing_core/main.py',
         #                             '-w', '../slicing_core/',
