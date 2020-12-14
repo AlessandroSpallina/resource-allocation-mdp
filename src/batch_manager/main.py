@@ -8,11 +8,11 @@ import getopt
 
 
 def cli_handler(argv):
-    USAGE = "main.py -w <workingDirectory> -c <configPath> -n <simulationName>"
+    USAGE = "main.py -w <workingDirectory>"
     to_return = {}
     try:
         # help, config (path), name (directory name of the results)
-        opts, args = getopt.getopt(argv, "hw", ["wdir="])
+        opts, args = getopt.getopt(argv, "hw:", ["wdir="])
     except getopt.GetoptError:
         print(USAGE)
         sys.exit(2)
@@ -53,12 +53,6 @@ def main(argv):
         os.system(f"cd ../../ && "
                   f"python -m src.slicing_core.main "
                   f"-w ./src/slicing_core/ -c {path} -n b-{start_time}/{path.split('/')[-1].split('.')[0]}")
-
-        # process = subprocess.Popen(['../../venv/Scripts/python', '../slicing_core/main.py',
-        #                             '-w', '../slicing_core/',
-        #                             '-c', path,
-        #                             '-n', f"b-{start_time}/{path.split('/')[-1].split('.')[0]}"])
-        # process.communicate()  # this will wait for the process termination
 
 
 if __name__ == '__main__':

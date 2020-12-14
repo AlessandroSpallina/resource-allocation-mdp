@@ -12,10 +12,10 @@ import src.plotter.plot as plotter
 
 
 def cli_handler(argv):
-    USAGE = "main.py -d <dataPath>"
+    USAGE = "main.py -d <dataPath> -w <workingDirectory>"
     to_return = {}
     try:
-        opts, args = getopt.getopt(argv, "hd:", ["data="])
+        opts, args = getopt.getopt(argv, "hd:w:", ["data=", "wdir="])
     except getopt.GetoptError:
         print(USAGE)
         sys.exit(2)
@@ -25,6 +25,8 @@ def cli_handler(argv):
             sys.exit()
         elif opt in ('-d', '--data'):
             to_return['data'] = arg
+        elif opt in ('-w', '--wdir'):
+            to_return['wdir'] = arg
     return to_return
 
 
@@ -127,7 +129,14 @@ def merge_stats_for_system_pow(stats):
 
 
 def main(argv):
-    DATA_PATH = cli_handler(argv)['data']
+    # ---- CLI ARGS HANDLING -----------------------
+    cli_args = cli_handler(argv)
+    if 'wdir' in cli_args:
+        os.chdir(cli_args['wdir'])
+        print(f"changed working dir to {os.getcwd()}")
+    # ---------------------------------------------
+
+    DATA_PATH = cli_args['data']
     EXPORTED_FILES_PATH = f"../../res/plots/{DATA_PATH.split('/')[-2]}/"
     AVERAGE_WINDOW = 200
 
@@ -139,7 +148,6 @@ def main(argv):
         os.system(f'mklink /D \"{EXPORTED_FILES_PATH}raw_results\" \"{"/".join(DATA_PATH.split("/")[:-1])}\"')
     else:
         os.system(f'ln -s \"{"/".join(DATA_PATH.split("/")[:-1])}\" \"{EXPORTED_FILES_PATH}raw_results\"')
-        #os.symlink(f"{EXPORTED_FILES_PATH}raw_results", "/".join(DATA_PATH.split("/")[:-1]), True)
     # ------------------------------------------------------
 
     imported_data = utils.import_data(DATA_PATH)
@@ -158,7 +166,7 @@ def main(argv):
         merged_per_system = merge_stats_for_system_pow(result['environment_data'])
         os.makedirs(f"{result_base_path}system_pow")
         plot_results(f"system-pow", f"{result_base_path}system_pow/", merged_per_system, AVERAGE_WINDOW)
-        plot_policy(f"{result_base_path}system_pow/", result['policy'], result['states'])
+        # plot_policy(f"{result_base_path}system_pow/", result['policy'], result['states'])
 
 if __name__ == '__main__':
     main(sys.argv[1:])
