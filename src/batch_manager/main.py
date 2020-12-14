@@ -33,6 +33,7 @@ def config_paths(path="./configs"):
         file_path = os.path.abspath(os.path.join(path, file))
         if os.path.isfile(file_path) and '.yaml' in file_path:
             to_return.append(file_path.replace('\\', '/'))
+    to_return.sort()
     to_return.reverse()
     return to_return
 
