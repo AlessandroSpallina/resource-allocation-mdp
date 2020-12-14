@@ -136,7 +136,8 @@ def main(argv):
     if os.name == 'nt':  # we are on windows (symbolic link are not working well using native python)
         os.system(f'mklink /D \"{EXPORTED_FILES_PATH}raw_results\" \"{"/".join(DATA_PATH.split("/")[:-1])}\"')
     else:
-        os.symlink(f"{EXPORTED_FILES_PATH}raw_results", "/".join(DATA_PATH.split("/")[:-1]), True)
+        os.system(f'ln -s \"{"/".join(DATA_PATH.split("/")[:-1])}\" \"{EXPORTED_FILES_PATH}raw_results\"')
+        #os.symlink(f"{EXPORTED_FILES_PATH}raw_results", "/".join(DATA_PATH.split("/")[:-1]), True)
     # ------------------------------------------------------
 
     imported_data = utils.import_data(DATA_PATH)
