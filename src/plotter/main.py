@@ -131,6 +131,8 @@ def main(argv):
     EXPORTED_FILES_PATH = f"../../res/plots/{DATA_PATH.split('/')[-2]}/"
     AVERAGE_WINDOW = 200
 
+    print(f"PLOTTER: Current directory {os.getcwd()}")
+
     # ---- CREATING STUFF ON FILE SYSTEM -------------------
     os.makedirs(EXPORTED_FILES_PATH)
     if os.name == 'nt':  # we are on windows (symbolic link are not working well using native python)
@@ -157,9 +159,6 @@ def main(argv):
         os.makedirs(f"{result_base_path}system_pow")
         plot_results(f"system-pow", f"{result_base_path}system_pow/", merged_per_system, AVERAGE_WINDOW)
         plot_policy(f"{result_base_path}system_pow/", result['policy'], result['states'])
-
-
-
 
 if __name__ == '__main__':
     main(sys.argv[1:])
