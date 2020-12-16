@@ -4,8 +4,8 @@ import mdptoolbox
 import math
 import pickle
 import multiprocessing
+import logging
 from copy import copy
-from scipy.sparse import dok_matrix
 
 from src.slicing_core.state import SingleSliceState
 from src.slicing_core.config import POLICY_CACHE_FILES_PATH
@@ -145,7 +145,7 @@ class SingleSliceMdpPolicy(Policy):
         self._actions = [i for i in range(self._config.server_max_cap + 1)]
 
     def _generate_transition_matrix(self):
-        #self._transition_matrix = [dok_matrix((len(self._actions), len(self._actions))) for a in range(len(self._actions))]
+        # self._transition_matrix = [dok_matrix((len(self._actions), len(self._actions))) for a in range(len(self._actions))]
         self._transition_matrix = np.zeros((self._config.server_max_cap + 1, len(self._states), len(self._states)))
 
         # lets iterate the trans matrix and fill with correct probabilities
@@ -345,7 +345,36 @@ class MultiSliceMdpPolicy(SingleSliceMdpPolicy):
         return - (sum(normalized_cost1) + sum(normalized_cost2) + sum(normalized_cost3))
 
 
-# target function for multiprocessing in PriorityMultiSliceMdpPolicy
+#   -------------------------------------
+def _get_subconfs_from_singleslice(singleslice_conf):
+    subconfs = {}
+    for i in range(singleslice_conf.server_max_cap + 1):
+        subconf = copy(singleslice_conf)
+        subconf.server_max_cap = i
+        subconfs[i] = subconf
+    return subconfs
+
+
+def _get_balanced_confs(confs_dict):
+    keys = list(confs_dict.keys())
+    keys.sort()
+    balanced = []
+    if len(keys) % 2 > 0:  # if odd
+        balanced.append([confs_dict[keys[-1]]])
+        keys.remove(keys[-1])
+    for i in range(int(len(keys) / 2)):
+        balanced.append([confs_dict[i], confs_dict[max(keys) - i]])
+    return balanced
+
+
+# target function for multiprocessing
+def _run_singleslice_from_confs(slice_index, slice_confs):
+    for slice_conf in slice_confs:
+        p = CachedPolicy(slice_conf, SingleSliceMdpPolicy)
+        p.init()
+        p.calculate_policy()
+
+
 def _run_subslices(slice_conf):
     subslices = []
     for i in range(slice_conf.server_max_cap + 1):
@@ -355,6 +384,18 @@ def _run_subslices(slice_conf):
         subslices[-1].init()
         subslices[-1].calculate_policy()
     return subslices
+
+
+#   ------------------------------------
+#
+#
+# def _get_subconfs_list_from_singleslice(singleslice_conf):
+#     subconfs = []
+#     for i in range(singleslice_conf.server_max_cap + 1):
+#         subconf = copy(singleslice_conf)
+#         subconf.server_max_cap = i
+#         subconfs.append(subconf)
+#     return subconfs
 
 
 # Order matter! slice with index 0 is the highest priority ans so on..
@@ -399,25 +440,46 @@ class PriorityMultiSliceMdpPolicy(MultiSliceMdpPolicy):
 
                     slice_action = []
                     for j in range(len(servers_left)):
-                        slice_action.append\
-                            (self._slices[i][servers_left[j]].policy[self._slices[i][servers_left[j]].states.index(i_th_state)][j])
+                        slice_action.append \
+                            (self._slices[i][servers_left[j]].policy[
+                                 self._slices[i][servers_left[j]].states.index(i_th_state)][j])
 
                     servers_left = servers_left - slice_action
                     multislice_action.append(slice_action)
 
                 self._policy.append(np.column_stack(multislice_action).tolist())
 
-    def _init_slices(self):
+    def _init_slices(self):  # THIS HAVE MORE PARALLELISM, BUT SEEMS WORSE
         """ Preparing multiprocessing stuff """
         processes = []
+
         for i in range(self._config.slice_count):
-            processes.append(multiprocessing.Process(target=_run_subslices, args=(self._config.slice(i),)))
-            processes[-1].start()
+            subconfs = _get_balanced_confs(_get_subconfs_from_singleslice(self._config.slice(i)))
+
+            for s in subconfs:
+                processes.append(multiprocessing.Process(target=_run_singleslice_from_confs, args=(i, s,)))
+                processes[-1].start()
+
         for process in processes:
             process.join()
 
         # when i am here my multiprocesses already cached slices policies, i can just pick all of these
         self._slices = [_run_subslices(self._config.slice(i)) for i in range(self._config.slice_count)]
+
+    # def _init_slices(self):  # FIRST PARALLELISM (N PROCESS AS N SLICES)
+    #     """ Preparing multiprocessing stuff """
+    #     processes = []
+    #
+    #     for i in range(self._config.slice_count):
+    #         # subconfs = _get_subconfs_list_from_singleslice(self._config.slice(i))
+    #
+    #         processes.append(multiprocessing.Process(target=_run_subslices, args=(self._config.slice(i),)))
+    #         processes[-1].start()
+    #     for process in processes:
+    #         process.join()
+    #
+    #     # when i am here my multiprocesses already cached slices policies, i can just pick all of these
+    #     self._slices = [_run_subslices(self._config.slice(i)) for i in range(self._config.slice_count)]
 
 
 class SingleSliceStaticPolicy(Policy):
