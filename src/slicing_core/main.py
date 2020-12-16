@@ -52,7 +52,10 @@ def main(argv):
 
     os.makedirs(config.EXPORTED_FILES_PATH)
     shutil.copyfile(config.CONFIG_FILE_PATH, f"{config.EXPORTED_FILES_PATH}config.yaml")
-    logging.basicConfig(filename=f"{config.EXPORTED_FILES_PATH}{config.LOG_FILENAME}", level=logging.INFO)
+    logging.basicConfig(filename=f"{config.EXPORTED_FILES_PATH}{config.LOG_FILENAME}",
+                        level=logging.INFO,
+                        format="%(asctime)s::%(levelname)s::%(filename)s::%(lineno)d::%(message)s",
+                        datefmt="%d%b %H:%M")
 
     logging.info(f"Latest commit available at {utils.get_last_commit_link()}")
 

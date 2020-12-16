@@ -373,6 +373,7 @@ def _run_singleslice_from_confs(slice_index, slice_confs):
         p = CachedPolicy(slice_conf, SingleSliceMdpPolicy)
         p.init()
         p.calculate_policy()
+        print(f"Policy of slice-{slice_index} with {slice_conf.server_max_cap} servers done", flush=True)
 
 
 def _run_subslices(slice_conf):
