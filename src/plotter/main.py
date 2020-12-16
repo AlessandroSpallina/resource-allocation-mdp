@@ -35,23 +35,29 @@ def moving_average(data, average_window):
     return np.arange(len(data), step=len(data) / averaged.size), averaged
 
 
-# needs to readapt to vi
+# TODO: needs to debug with fh
 def plot_policy(base_save_path, policy, states):
-    previous_policy = []
-    ts_len = len(policy[0])
-
-    for ts in range(ts_len):
-        policy_ts = np.array(policy)[:, ts]
-        if not np.array_equal(policy_ts, previous_policy):
-            # plot policy_ts!
-            with open(f"{base_save_path}ts-{ts}.csv", "w") as f:
-                f.write("state;action\n")
-                for s in range(len(policy_ts)):
-                    line = str([(sub['k'], sub['n']) for sub in states[s]])
-                    line += f";{policy_ts[s]}"
-                    f.write(f"{line}\n")
-
-            previous_policy = policy_ts
+    if policy[0][0] > 0:  # if here we have vi (mdp) or other policy not based on the timeslot
+        with open(f"{base_save_path}policy.csv", "w") as f:
+            f.write("state;action\n")
+            for policy_i in range(len(policy)):
+                line = str([(sub['k'], sub['n']) for sub in states[policy_i]])
+                line += f";{policy[policy_i]}"
+                f.write(f"{line}\n")
+    else:  # fh
+        previous_policy = []
+        ts_len = len(policy[0])
+        for ts in range(ts_len):
+            policy_ts = np.array(policy)[:, ts]
+            if not np.array_equal(policy_ts, previous_policy):
+                # plot policy_ts!
+                with open(f"{base_save_path}ts-{ts}.csv", "w") as f:
+                    f.write("state;action\n")
+                    for s in range(len(policy_ts)):
+                        line = str([(sub['k'], sub['n']) for sub in states[s]])
+                        line += f";{policy_ts[s]}"
+                        f.write(f"{line}\n")
+                previous_policy = policy_ts
 
 
 # Plotting stuff related to simulation results
@@ -166,7 +172,8 @@ def main(argv):
         merged_per_system = merge_stats_for_system_pow(result['environment_data'])
         os.makedirs(f"{result_base_path}system_pow")
         plot_results(f"system-pow", f"{result_base_path}system_pow/", merged_per_system, AVERAGE_WINDOW)
-        # plot_policy(f"{result_base_path}system_pow/", result['policy'], result['states'])
+        plot_policy(f"{result_base_path}system_pow/", result['policy'], result['states'])
+
 
 if __name__ == '__main__':
     main(sys.argv[1:])
