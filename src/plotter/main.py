@@ -139,15 +139,15 @@ def plot_slice_comparison(plot_identifier, base_save_path, stats, window_average
                             xlabel="timeslot", title=f"[{plot_identifier}] Mean Cumulative Lost Jobs",
                             save_path=f"{base_save_path}cumulative_lost_jobs")
 
-    plotter.plot(ydata=wait_time_in_the_queue,
-                 xlabel="timeslot",
-                 ylabel="% of jobs", title=f"[{plot_identifier}] Mean Job Wait Time in the Queue",
-                 save_path=f"{base_save_path}wait_time_in_queue")
+    plotter.bar(ydata=wait_time_in_the_queue,
+                xlabel="timeslot",
+                ylabel="% of jobs", title=f"[{plot_identifier}] Mean Job Wait Time in the Queue",
+                save_path=f"{base_save_path}wait_time_in_queue")
 
-    plotter.plot(ydata=wait_time_in_the_system,
-                 xlabel="timeslot",
-                 ylabel="% of jobs", title=f"[{plot_identifier}] Mean Job Wait Time in the System (Total Time)",
-                 save_path=f"{base_save_path}wait_time_in_system")
+    plotter.bar(ydata=wait_time_in_the_system,
+                xlabel="timeslot",
+                ylabel="% of jobs", title=f"[{plot_identifier}] Mean Job Wait Time in the System (Total Time)",
+                save_path=f"{base_save_path}wait_time_in_system")
 
     plotter.plot(ydata=jobs_in_queue_per_ts,
                  xdata=xdata, xlabel="timeslot",

@@ -1,5 +1,9 @@
 import matplotlib.pyplot as plt
+
+from matplotlib.ticker import MaxNLocator
 from graphviz import Digraph
+
+import numpy as np
 
 
 def plot(ydata, xdata=[], title="", xlabel="", ylabel="", save_path=""):
@@ -66,10 +70,14 @@ def plot_cumulative(ydata, xdata=[], title="", xlabel="", ylabel="", save_path="
 def bar(ydata, xdata=[], title="", xlabel="", ylabel="", save_path=""):
     plt.rcParams.update({'font.size': 22})
     fig, ax = plt.subplots(figsize=(15, 10))
-    ax.minorticks_on()
-    ax.grid(True)
+    ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+    # ax.grid(True)
+    xdata = []
+    offset = 0.0
     for k in ydata:
-        ax.bar(xdata if len(xdata) else list(range(len(ydata[k]))), ydata[k], label=k)
+        ax.bar(np.array(xdata if len(xdata) else list(range(len(ydata[k])))) + offset, ydata[k], label=k, width=0.25)
+        offset += 0.25
+
     ax.set_title(title)
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
