@@ -40,7 +40,7 @@ class NetworkOperator(Agent):
             self._history.append(self._environment.next_timeslot(action_to_do))
 
 
-def add_real_costs_to_stats(environment_history, slices_paramethers):
+def _add_real_costs_to_stats(environment_history, slices_paramethers):
     # C = alpha * C_k * num of jobs in the queue + beta * C_n * num of server + gamma * C_l * num of lost jobs
     to_return = []
     for ts in environment_history:
@@ -55,6 +55,25 @@ def add_real_costs_to_stats(environment_history, slices_paramethers):
         to_return.append(ts)
         to_return[-1]['cost'] = ts_tmp
     return to_return
+
+
+# does mean between arrays with different length
+def _tolerant_mean(arrs):
+    lens = [len(i) for i in arrs]
+    arr = np.ma.empty((np.max(lens), len(arrs)))
+    arr.mask = True
+    for idx, l in enumerate(arrs):
+        arr[:len(l), idx] = l
+    return arr.mean(axis=-1).tolist()
+
+
+# transform an array simNum*sliceNum to sliceNum*simNum
+def _simulations_to_slices(simulations):
+    slices = [list() for _ in range(len(simulations[0]))]
+    for sim in simulations:
+        for i in range(len(sim)):
+            slices[i].append(sim[i])
+    return slices
 
 
 # TODO: This class does processing (i.e. wait time in the system/queue), this should not stay here in the future
@@ -79,7 +98,7 @@ class NetworkOperatorSimulator(Agent):
         history_tmp = []
         for agent in self._agents:
             agent.start_automatic_control()
-            history_tmp.append(add_real_costs_to_stats(agent.history, self._simulation_conf.slices))
+            history_tmp.append(_add_real_costs_to_stats(agent.history, self._simulation_conf.slices))
 
         self._history = self._average_history(history_tmp)
 
