@@ -61,14 +61,12 @@ def plot_policy(base_save_path, policy, states):
 
 
 # Plotting stuff related to simulation results
-def plot_slice_results(plot_identifier, base_save_path, stats, window_average):
+def plot_slice_results(plot_identifier, base_save_path, stats, window_average, is_system_pow=False):
     active_servers_per_ts = moving_average(stats['active_servers'], window_average)
     jobs_in_queue_per_ts = moving_average(stats['jobs_in_queue'], window_average)
     lost_jobs_per_ts = moving_average(stats['lost_jobs'], window_average)
     processed_jobs_per_ts = moving_average(stats['processed_jobs'], window_average)
     cost_per_ts = moving_average(stats['cost'], window_average)
-    wait_time_in_the_queue = stats['wait_time_in_the_queue']
-    wait_time_in_the_system = stats['wait_time_in_the_system']
 
     plotter.plot_cumulative(ydata={"costs": cost_per_ts[1],
                                    "processed jobs": processed_jobs_per_ts[1],
@@ -82,21 +80,25 @@ def plot_slice_results(plot_identifier, base_save_path, stats, window_average):
                  xdata=cost_per_ts[0], xlabel="timeslot", title=f"[{plot_identifier}] Mean per Timeslot",
                  save_path=f"{base_save_path}per_ts")
 
-    # total time is wait time in the system
-    plotter.bar(ydata={"job wait time": wait_time_in_the_system},
-                xlabel="timeslot", ylabel="% of jobs",
-                title=f"[{plot_identifier}] Mean Job Wait Time in the System (Total Time)",
-                save_path=f"{base_save_path}wait_time_in_system")
-
-    plotter.bar(ydata={"job wait time": wait_time_in_the_queue},
-                xlabel="timeslot", ylabel="% of jobs",
-                title=f"[{plot_identifier}] Mean Job Wait Time in the Queue",
-                save_path=f"{base_save_path}wait_time_in_queue")
-
     plotter.plot_two_scales(jobs_in_queue_per_ts[1], active_servers_per_ts[1], xdata=jobs_in_queue_per_ts[0],
                             ylabel1="jobs in queue", ylabel2="active servers", xlabel="timeslot",
                             title=f"[{plot_identifier}] Mean Queue and Servers",
                             save_path=f"{base_save_path}jobs_in_queue_vs_active_servers")
+
+    if not is_system_pow:
+        wait_time_in_the_queue = stats['wait_time_in_the_queue']
+        wait_time_in_the_system = stats['wait_time_in_the_system']
+
+        # total time is wait time in the system
+        plotter.bar(ydata={"job wait time": wait_time_in_the_system},
+                    xlabel="timeslot", ylabel="% of jobs",
+                    title=f"[{plot_identifier}] Mean Job Wait Time in the System (Total Time)",
+                    save_path=f"{base_save_path}wait_time_in_system")
+
+        plotter.bar(ydata={"job wait time": wait_time_in_the_queue},
+                    xlabel="timeslot", ylabel="% of jobs",
+                    title=f"[{plot_identifier}] Mean Job Wait Time in the Queue",
+                    save_path=f"{base_save_path}wait_time_in_queue")
 
 
 def plot_slice_comparison(plot_identifier, base_save_path, stats, window_average):
@@ -234,7 +236,8 @@ def main(argv):
 
         merged_per_system = merge_stats_for_system_pow(result['environment_data'])
         os.makedirs(f"{result_base_path}system_pow")
-        plot_slice_results(f"system-pow", f"{result_base_path}system_pow/", merged_per_system, AVERAGE_WINDOW)
+        plot_slice_results(f"system-pow",
+                           f"{result_base_path}system_pow/", merged_per_system, AVERAGE_WINDOW, is_system_pow=True)
         plot_policy(f"{result_base_path}system_pow/", result['policy'], result['states'])
 
     os.makedirs(f"{EXPORTED_FILES_PATH}comparison/")
