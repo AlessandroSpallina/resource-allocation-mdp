@@ -57,25 +57,6 @@ def _add_real_costs_to_stats(environment_history, slices_paramethers):
     return to_return
 
 
-# does mean between arrays with different length
-def _tolerant_mean(arrs):
-    lens = [len(i) for i in arrs]
-    arr = np.ma.empty((np.max(lens), len(arrs)))
-    arr.mask = True
-    for idx, l in enumerate(arrs):
-        arr[:len(l), idx] = l
-    return arr.mean(axis=-1).tolist()
-
-
-# transform an array simNum*sliceNum to sliceNum*simNum
-def _simulations_to_slices(simulations):
-    slices = [list() for _ in range(len(simulations[0]))]
-    for sim in simulations:
-        for i in range(len(sim)):
-            slices[i].append(sim[i])
-    return slices
-
-
 # TODO: This class does processing (i.e. wait time in the system/queue), this should not stay here in the future
 class NetworkOperatorSimulator(Agent):
     """
