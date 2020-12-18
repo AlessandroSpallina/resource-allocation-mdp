@@ -179,6 +179,27 @@ def split_stats_per_slice(stats):
                 if not key in stats_per_slice[slice_i]:
                     stats_per_slice[slice_i][key] = []
                 stats_per_slice[slice_i][key].append(ts[slice_i])
+    return stats_per_slice
+
+
+# deletes 0s from wait_time in the queue and in the system, these 0s are without meaning here (not true in other stats!)
+def filter_stats_per_slice(stats_per_slice):
+    # wait_time_in_the_queue_per_slice = stats_per_slice['wait_time_in_the_queue']
+    # wait_time_in_the_system_per_slice = stats_per_slice['wait_time_in_the_queue']
+    for s_index in range(len(stats_per_slice)):
+        to_filter_queue = stats_per_slice[s_index]['wait_time_in_the_queue']
+        for element in reversed(to_filter_queue):
+            if element == 0:
+                to_filter_queue.pop()
+            else:
+                break
+
+        to_filter_system = stats_per_slice[s_index]['wait_time_in_the_system']
+        for element in reversed(to_filter_system):
+            if element == 0:
+                to_filter_system.pop()
+            else:
+                break
 
     return stats_per_slice
 
@@ -224,7 +245,7 @@ def main(argv):
         result_base_path = f"{EXPORTED_FILES_PATH}{result['name']}/"
         os.makedirs(result_base_path)
 
-        stats_per_slice = split_stats_per_slice(result['environment_data'])
+        stats_per_slice = filter_stats_per_slice(split_stats_per_slice(result['environment_data']))
 
         for i in range(len(stats_per_slice)):
             os.makedirs(f"{result_base_path}slice-{i}")
