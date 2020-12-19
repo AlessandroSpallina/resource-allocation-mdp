@@ -66,67 +66,26 @@ class Config:
         return value
 
 
-class PolicyConfig(Config):
-    """ Configuration parameters of a Multi-Slice System """
+class SlicingConfig(Config):
     def __init__(self, custom_path=""):
         super().__init__(custom_path)
-        self._algorithm = self.get_property('mdp/algorithm')
-        self._discount_factor = self.get_property('mdp/discount_factor')
-        self._immediate_action = self.get_property('immediate_action')
-        self._arrival_processing_phase = self.get_property('arrival_processing_phase')
-        self._timeslots = self.get_property('simulation/timeslots')
-        self._slice_count = len(self.get_property('slices'))
-        self._server_max_cap = self.get_property('server_max_cap')
-        self._slices = self.get_property('slices')
+        self.slice_count = len(self.get_property('slices'))
+        self.server_max_cap = self.get_property('server_max_cap')
+        self.slices = self.get_property('slices')
 
         self._normalize_alpha_beta_gamma()
-
-    @property
-    def algorithm(self):
-        return self._algorithm
-
-    @property
-    def discount_factor(self):
-        return self._discount_factor
-
-    @property
-    def immediate_action(self):
-        return self._immediate_action
-
-    @property
-    def arrival_processing_phase(self):
-        return self._arrival_processing_phase
-
-    @property
-    def timeslots(self):
-        return self._timeslots
-
-    @property
-    def slice_count(self):
-        return self._slice_count
-
-    @property
-    def server_max_cap(self):
-        return self._server_max_cap
-
-    @server_max_cap.setter
-    def server_max_cap(self, n):
-        self._server_max_cap = n
-
-    @property
-    def slices(self):
-        return self._slices
 
     def slice(self, index):
         """Returns the config parameters of a slice (single-slice policy)"""
         to_ret = copy(self)
-        for key in self._slices[index]:
-            setattr(to_ret, key, self._slices[index][key])
-        to_ret._slices = None
+        for key in self.slices[index]:
+            setattr(to_ret, key, self.slices[index][key])
+        to_ret.slices = None
+        to_ret.slice_count = None
         return to_ret
 
     def _normalize_alpha_beta_gamma(self):
-        for i in range(self._slice_count):
+        for i in range(self.slice_count):
             alpha = self._validated['slices'][i]['alpha']
             beta = self._validated['slices'][i]['beta']
             gamma = self._validated['slices'][i]['gamma']
@@ -136,61 +95,37 @@ class PolicyConfig(Config):
             self._validated['slices'][i]['gamma'] = gamma / (alpha + beta + gamma)
 
 
-class SimulationConfig(Config):
+class MdpPolicyConfig(SlicingConfig):
     def __init__(self, custom_path=""):
         super().__init__(custom_path)
-        self._immediate_action = self.get_property('immediate_action')
-        self._arrival_processing_phase = self.get_property('arrival_processing_phase')
-        self._timeslots = self.get_property('simulation/timeslots')
-        self._runs = self.get_property('simulation/runs')
-        self._slice_count = len(self.get_property('slices'))
-        self._server_max_cap = self.get_property('server_max_cap')
-        self._slices = self.get_property('slices')
+        self.algorithm = self.get_property('mdp/algorithm')
+        self.discount_factor = self.get_property('mdp/discount_factor')
+        self.immediate_action = self.get_property('immediate_action')
+        self.arrival_processing_phase = self.get_property('arrival_processing_phase')
+        if self.algorithm == 'fh':
+            self.timeslots = self.get_property('simulation/timeslots')
 
-        self._normalize_alpha_beta_gamma()
 
-    @property
-    def immediate_action(self):
-        return self._immediate_action
+class StaticPolicyConfig(SlicingConfig):
+    def __init__(self, custom_path=""):
+        super().__init__(custom_path)
 
-    @property
-    def arrival_processing_phase(self):
-        return self._arrival_processing_phase
+        allocations = self._eq_div(self.server_max_cap, self.slice_count)
+        allocations.reverse()
 
-    @property
-    def timeslots(self):
-        return self._timeslots
+        for slice_i in self.slices:
+            slice_i['allocation'] = allocations.pop()
 
-    @property
-    def runs(self):
-        return self._runs
+    def _eq_div(self, what, who):
+        return [] if who <= 0 else [what // who + 1] * (what % who) + [what // who] * (who - what % who)
 
-    @property
-    def slice_count(self):
-        return self._slice_count
 
-    @property
-    def server_max_cap(self):
-        return self._server_max_cap
+class SimulatorConfig(SlicingConfig):
+    def __init__(self, custom_path=""):
+        super().__init__(custom_path)
+        self.immediate_action = self.get_property('immediate_action')
+        self.arrival_processing_phase = self.get_property('arrival_processing_phase')
+        self.timeslots = self.get_property('simulation/timeslots')
+        self.runs = self.get_property('simulation/runs')
 
-    @property
-    def slices(self):
-        return self._slices
 
-    def slice(self, index):
-        """Returns the config parameters of a slice (single-slice env)"""
-        to_ret = copy(self)
-        for key in self._slices[index]:
-            setattr(to_ret, key, self._slices[index][key])
-        to_ret._slices = None
-        return to_ret
-
-    def _normalize_alpha_beta_gamma(self):
-        for i in range(self._slice_count):
-            alpha = self._validated['slices'][i]['alpha']
-            beta = self._validated['slices'][i]['beta']
-            gamma = self._validated['slices'][i]['gamma']
-
-            self._validated['slices'][i]['alpha'] = alpha / (alpha + beta + gamma)
-            self._validated['slices'][i]['beta'] = beta / (alpha + beta + gamma)
-            self._validated['slices'][i]['gamma'] = gamma / (alpha + beta + gamma)
