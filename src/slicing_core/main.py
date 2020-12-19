@@ -60,10 +60,13 @@ def main(argv):
     logging.info(f"Latest commit available at {utils.get_last_commit_link()}")
 
     # ---- POLICY STUFF ------------------------
-    policy_conf = config.PolicyConfig(custom_path=config.CONFIG_FILE_PATH)
+    confs = [
+        config.MdpPolicyConfig(custom_path=config.CONFIG_FILE_PATH),
+        config.StaticPolicyConfig(custom_path=config.CONFIG_FILE_PATH),
+    ]
     policies = [
-            CachedPolicy(policy_conf, PriorityMultiSliceMdpPolicy),
-            CachedPolicy(policy_conf, MultiSliceStaticPolicy)
+            CachedPolicy(confs[0], PriorityMultiSliceMdpPolicy),
+            CachedPolicy(confs[1], MultiSliceStaticPolicy)
         ]
     start_time = time.time()
 
@@ -80,7 +83,7 @@ def main(argv):
     # ------------------------------------------
 
     # ---- ENVIRONMENT & AGENT STUFF --------------------
-    simulation_conf = config.SimulationConfig()
+    simulation_conf = config.SimulatorConfig(custom_path=config.CONFIG_FILE_PATH)
     start_time = time.time()
     agents = [NetworkOperatorSimulator(policy, simulation_conf) for policy in policies]
 
@@ -98,10 +101,10 @@ def main(argv):
                 'states': policies[i].states,
                 'slices': [
                     {
-                        'arrivals_histogram': policy_conf.slices[j].arrivals_histogram,
-                        'server_capacity_histogram': policy_conf.slices[j].server_capacity_histogram,
+                        'arrivals_histogram': confs[i].slices[j].arrivals_histogram,
+                        'server_capacity_histogram': confs[i].slices[j].server_capacity_histogram,
                     }
-                    for j in range(policy_conf.slice_count)
+                    for j in range(confs[i].slice_count)
                 ],
                 'environment_data': agents[i].history
             } for i in range(len(policies))
