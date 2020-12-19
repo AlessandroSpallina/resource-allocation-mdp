@@ -72,7 +72,6 @@ def bar(ydata, xdata=[], title="", xlabel="", ylabel="", save_path=""):
     fig, ax = plt.subplots(figsize=(15, 10))
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
     # ax.grid(True)
-    xdata = []
     offset = 0.0
     for k in ydata:
         ax.bar(np.array(xdata if len(xdata) else list(range(len(ydata[k])))) + offset, ydata[k], label=k, width=0.25)
