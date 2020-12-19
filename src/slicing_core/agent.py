@@ -79,6 +79,7 @@ class NetworkOperatorSimulator(Agent):
         history_tmp = []
         for agent in self._agents:
             agent.start_automatic_control()
+            # TODO: this add_real_costs_to_stats can be moved inside the NetworkOperator object (useful with real scen.)
             history_tmp.append(_add_real_costs_to_stats(agent.history, self._simulation_conf.slices))
 
         self._history = self._average_history(history_tmp)
