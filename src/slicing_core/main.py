@@ -64,10 +64,12 @@ def main(argv):
         config.MdpPolicyConfig(custom_path=config.CONFIG_FILE_PATH),
         config.StaticPolicyConfig(custom_path=config.CONFIG_FILE_PATH),
     ]
+
     policies = [
             CachedPolicy(confs[0], PriorityMultiSliceMdpPolicy),
             CachedPolicy(confs[1], MultiSliceStaticPolicy)
         ]
+
     start_time = time.time()
 
     for policy in policies:
@@ -78,6 +80,16 @@ def main(argv):
 
     for policy in policies:
         policy.calculate_policy()
+
+    priority_static_conf = config.StaticPolicyConfig(custom_path=config.CONFIG_FILE_PATH)
+    priority_static_conf.set_allocation(0, max(policies[0].policy[0]))
+
+    priority_static = CachedPolicy(priority_static_conf, MultiSliceStaticPolicy)
+    priority_static.init()
+    priority_static.calculate_policy()
+
+    confs.append(priority_static_conf)
+    policies.append(priority_static)
 
     logging.info(f"Policy calculation done in {time.time() - start_time} seconds")
     # ------------------------------------------
@@ -96,7 +108,7 @@ def main(argv):
     utils.export_data(
         [
             {
-                'name': policies[i].obj.__class__.__name__,
+                'name': f"{i}_{policies[i].obj.__class__.__name__}",
                 'policy': policies[i].policy,
                 'states': policies[i].states,
                 'slices': [

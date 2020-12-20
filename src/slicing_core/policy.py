@@ -4,7 +4,6 @@ import mdptoolbox
 import math
 import pickle
 import multiprocessing
-import logging
 from copy import copy
 
 from src.slicing_core.state import SingleSliceState
@@ -345,7 +344,6 @@ class MultiSliceMdpPolicy(SingleSliceMdpPolicy):
         return - (sum(normalized_cost1) + sum(normalized_cost2) + sum(normalized_cost3))
 
 
-#   -------------------------------------
 def _get_subconfs_from_singleslice(singleslice_conf):
     subconfs = {}
     for i in range(singleslice_conf.server_max_cap + 1):
@@ -385,18 +383,6 @@ def _run_subslices(slice_conf):
         subslices[-1].init()
         subslices[-1].calculate_policy()
     return subslices
-
-
-#   ------------------------------------
-#
-#
-# def _get_subconfs_list_from_singleslice(singleslice_conf):
-#     subconfs = []
-#     for i in range(singleslice_conf.server_max_cap + 1):
-#         subconf = copy(singleslice_conf)
-#         subconf.server_max_cap = i
-#         subconfs.append(subconf)
-#     return subconfs
 
 
 # Order matter! slice with index 0 is the highest priority ans so on..
@@ -467,21 +453,6 @@ class PriorityMultiSliceMdpPolicy(MultiSliceMdpPolicy):
         # when i am here my multiprocesses already cached slices policies, i can just pick all of these
         self._slices = [_run_subslices(self._config.slice(i)) for i in range(self._config.slice_count)]
 
-    # def _init_slices(self):  # FIRST PARALLELISM (N PROCESS AS N SLICES)
-    #     """ Preparing multiprocessing stuff """
-    #     processes = []
-    #
-    #     for i in range(self._config.slice_count):
-    #         # subconfs = _get_subconfs_list_from_singleslice(self._config.slice(i))
-    #
-    #         processes.append(multiprocessing.Process(target=_run_subslices, args=(self._config.slice(i),)))
-    #         processes[-1].start()
-    #     for process in processes:
-    #         process.join()
-    #
-    #     # when i am here my multiprocesses already cached slices policies, i can just pick all of these
-    #     self._slices = [_run_subslices(self._config.slice(i)) for i in range(self._config.slice_count)]
-
 
 class SingleSliceStaticPolicy(Policy):
     @property
@@ -496,20 +467,16 @@ class SingleSliceStaticPolicy(Policy):
         self._generate_states()
 
     def calculate_policy(self):
-        self._policy = [self._config.server_max_cap] * len(self._states)
+        self._policy = [self._config.allocation] * len(self._states)
 
     def get_action_from_policy(self, current_state, current_timeslot):
         return self._policy[self._states.index(current_state)]
 
     def _generate_states(self):
         self._states = []
-        for i in range(self._config.server_max_cap + 1):
+        for i in range(self._config.allocation + 1):
             for j in range(self._config.queue_size + 1):
                 self._states.append(SingleSliceState(j, i))
-
-
-def _eq_div(what, who):
-    return [] if who <= 0 else [what // who + 1] * (what % who) + [what // who] * (who - what % who)
 
 
 class MultiSliceStaticPolicy(Policy):
@@ -539,11 +506,8 @@ class MultiSliceStaticPolicy(Policy):
     def _init_slices(self):
         self._slices = []
 
-        server_division = _eq_div(self._config.server_max_cap, self._config.slice_count)
-
         for i in range(self._config.slice_count):
             slice_conf = self._config.slice(i)
-            slice_conf.server_max_cap = server_division[i]
             self._slices.append(SingleSliceStaticPolicy(slice_conf))
             self._slices[-1].init()
             self._slices[-1].calculate_policy()

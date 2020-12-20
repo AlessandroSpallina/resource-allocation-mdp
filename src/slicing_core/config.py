@@ -18,7 +18,6 @@ template = {
     'mdp': {
         'algorithm': confuse.OneOf(['vi', 'fh']),
         'discount_factor': float
-        # 'discount_factors': confuse.Sequence(float)
     },
     'simulation': {
         'runs': confuse.Integer(),
@@ -53,7 +52,7 @@ class Config:
 
     @property
     def hash(self):
-        tmp = vars(self)
+        tmp = self.__dict__
         tmp.pop('_validated', None)
         return hashlib.sha256(json.dumps(tmp).encode('UTF8')).hexdigest()
 
@@ -114,10 +113,22 @@ class StaticPolicyConfig(SlicingConfig):
         allocations.reverse()
 
         for slice_i in self.slices:
+            # setattr(self, slice_i['allocation'], allocations.pop())
             slice_i['allocation'] = allocations.pop()
+
 
     def _eq_div(self, what, who):
         return [] if who <= 0 else [what // who + 1] * (what % who) + [what // who] * (who - what % who)
+
+    # very important to use this function from 0 to N, with order!
+    def set_allocation(self, slice_id, allocation):
+        self.slices[slice_id]['allocation'] = allocation
+        remaining_servers = self.server_max_cap - allocation
+        remaining_slices = self.slice_count - (slice_id + 1)
+        new_allocations = self._eq_div(remaining_servers, remaining_slices)
+        new_allocations.reverse()
+        for slice_i in range(slice_id + 1, self.slice_count):
+            self.slices[slice_i]['allocation'] = new_allocations.pop()
 
 
 class SimulatorConfig(SlicingConfig):
