@@ -1,18 +1,17 @@
 # BATCH MANAGER MAIN
 
 import os
-import subprocess
 import sys
 import time
 import getopt
 
 
 def cli_handler(argv):
-    USAGE = "main.py -w <workingDirectory>"
+    USAGE = "main.py -w <workingDirectory> -c <configDirectory>"
     to_return = {}
     try:
         # help, config (path), name (directory name of the results)
-        opts, args = getopt.getopt(argv, "hw:", ["wdir="])
+        opts, args = getopt.getopt(argv, "hw:c:", ["wdir="])
     except getopt.GetoptError:
         print(USAGE)
         sys.exit(2)
@@ -22,6 +21,8 @@ def cli_handler(argv):
             sys.exit()
         elif opt in ('-w', '--wdir'):
             to_return['wdir'] = arg
+        elif opt in ('-c', '--config'):
+            to_return['config'] = arg
 
     return to_return
 
@@ -44,9 +45,12 @@ def main(argv):
     if 'wdir' in cli_args:
         os.chdir(cli_args['wdir'])
         print(f"changed working dir to {os.getcwd()}")
+    if 'config' in cli_args:
+        paths = config_paths(path=cli_args['config'])
+    else:
+        paths = config_paths()
     # ---------------------------------------------
 
-    paths = config_paths()
     start_time = int(time.time())
 
     while len(paths) > 0:
