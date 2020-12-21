@@ -17,7 +17,8 @@ template = {
     'arrival_processing_phase': confuse.OneOf([bool]),
     'mdp': {
         'algorithm': confuse.OneOf(['vi', 'fh']),
-        'discount_factor': float
+        'discount_factor': float,
+        'queue_scaling': confuse.Integer()
     },
     'simulation': {
         'runs': confuse.Integer(),
@@ -101,6 +102,7 @@ class MdpPolicyConfig(SlicingConfig):
         self.discount_factor = self.get_property('mdp/discount_factor')
         self.immediate_action = self.get_property('immediate_action')
         self.arrival_processing_phase = self.get_property('arrival_processing_phase')
+        self.queue_scaling = self.get_property('mdp/queue_scaling')
         if self.algorithm == 'fh':
             self.timeslots = self.get_property('simulation/timeslots')
 
@@ -113,9 +115,7 @@ class StaticPolicyConfig(SlicingConfig):
         allocations.reverse()
 
         for slice_i in self.slices:
-            # setattr(self, slice_i['allocation'], allocations.pop())
             slice_i['allocation'] = allocations.pop()
-
 
     def _eq_div(self, what, who):
         return [] if who <= 0 else [what // who + 1] * (what % who) + [what // who] * (who - what % who)

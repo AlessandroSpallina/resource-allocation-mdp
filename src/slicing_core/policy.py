@@ -129,30 +129,65 @@ class SingleSliceMdpPolicy(Policy):
             self._policy = self._policy.tolist()
 
     def get_action_from_policy(self, current_state, current_timeslot):
-        if self._config.algorithm == 'vi':
-            return self._policy[self._states.index(current_state)]
-        elif self._config.algorithm == 'fh':
-            return self._policy[self._states.index(current_state)][current_timeslot]
+        try:
+            if self._config.algorithm == 'vi':
+                return self._policy[self._states.index(current_state)]
+            elif self._config.algorithm == 'fh':
+                return self._policy[self._states.index(current_state)][current_timeslot]
+        except ValueError:
+            # TODO: this can be faster
+            to_ret = []
+
+            for s_index in range(len(current_state)):
+                mega_states_count = int((self._config.slices[s_index].queue_size + 1) / self._config.queue_scaling) # es. 5
+                for i in range(mega_states_count):
+                    if i <= current_state[s_index].k < (i + 1) * mega_states_count:
+                        current_state[s_index].k = i
+                        break
+
+            return self.get_action_from_policy(current_state, current_timeslot)
+
+
+            # return ricorsiva con lo stato corretto
+
+
 
     def _generate_states(self):
         self._states = []
         for i in range(self._config.server_max_cap + 1):
-            for j in range(self._config.queue_size + 1):
+            for j in range(0, self._config.queue_size + 1, self._config.queue_scaling):
                 self._states.append(SingleSliceState(j, i))
 
     def _generate_actions(self):
         self._actions = [i for i in range(self._config.server_max_cap + 1)]
 
     def _generate_transition_matrix(self):
-        # self._transition_matrix = [dok_matrix((len(self._actions), len(self._actions))) for a in range(len(self._actions))]
         self._transition_matrix = np.zeros((self._config.server_max_cap + 1, len(self._states), len(self._states)))
 
         # lets iterate the trans matrix and fill with correct probabilities
         for a in range(len(self._transition_matrix)):
             for i in range(len(self._states)):
                 for j in range(len(self._states)):
-                    self._transition_matrix[a][i][j] = \
-                        self._calculate_transition_probability(self._states[i], self._states[j], a)
+
+                    if self._config.queue_scaling > 1:
+                        # example: if queue_scaling is 5:
+                        #   Pr[(0,X)->(5,X)] is the same as without the scaling
+                        #   but Pr[(0,X)->(0,X)] is bigger because of the sum of the prob. of the hidden states
+                        #   Pr[(0,X)->(0,X)] = Pr[(0,X)->(0,X)] + Pr[(0,X)->(1,X)] + Pr[(0,X)->(2,X)] ... etc
+                        hidden_from = copy(self._states[i])
+                        for i_from in range(self._config.queue_scaling):
+                            hidden_from.k += i_from
+                            hidden_to = copy(self._states[j])
+                            for j_to in range(self._config.queue_scaling):
+                                hidden_to.k += j_to
+                                if hidden_to.k <= self._config.queue_size:
+                                    prob_tmp = self._calculate_transition_probability(hidden_from, hidden_to, a)
+                                    self._transition_matrix[a][i][j] += prob_tmp
+                    else:
+                        self._transition_matrix[a][i][j] = \
+                            self._calculate_transition_probability(self._states[i], self._states[j], a)
+
+                self._transition_matrix[a][i] /= self._transition_matrix[a][i].sum()
 
     def _calculate_transition_probability(self, from_state, to_state, action_id):
         if not self._config.immediate_action:
@@ -232,7 +267,16 @@ class SingleSliceMdpPolicy(Policy):
             for i in range(len(self._states)):
                 for j in range(len(self._states)):
                     if self._transition_matrix[a][i][j] > 0:
-                        self._reward_matrix[a][i][j] = self._calculate_transition_reward(self._states[j])
+                        if self._config.queue_scaling > 1:
+                            # is the same as _generate_transition_matrix but for the reward!
+                            hidden_to = copy(self._states[j])
+                            for j_to in range(self._config.queue_scaling):
+                                hidden_to.k += j_to
+                                if hidden_to.k <= self._config.queue_size:
+                                    rew_tmp = self._calculate_transition_reward(hidden_to)
+                                    self._reward_matrix[a][i][j] += rew_tmp
+                        else:
+                            self._reward_matrix[a][i][j] = self._calculate_transition_reward(self._states[j])
 
     def _calculate_transition_reward(self, to_state):
         # C = alpha * C_k * num of jobs + beta * C_n * num of server + gamma * C_l * E(num of lost jobs)
