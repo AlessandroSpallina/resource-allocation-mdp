@@ -84,6 +84,7 @@ def main(argv):
 
     priority_static_conf = config.StaticPolicyConfig(custom_path=config.CONFIG_FILE_PATH)
     priority_static_conf.set_allocation(0, int(np.array(policies[0].policy)[:, 0].max()))
+    priority_static_conf.set_allocation(1, int(np.array(policies[1].policy)[:, 0].max()))
 
     priority_static = CachedPolicy(priority_static_conf, MultiSliceStaticPolicy)
     priority_static.init()

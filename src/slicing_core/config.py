@@ -16,9 +16,10 @@ template = {
     'immediate_action': confuse.OneOf([bool]),
     'arrival_processing_phase': confuse.OneOf([bool]),
     'mdp': {
-        'algorithm': confuse.OneOf(['vi', 'fh']),
+        'algorithm': confuse.OneOf(['vi', 'rvi', 'fh']),
         'discount_factor': float,
-        'queue_scaling': confuse.Integer()
+        'queue_scaling': confuse.Integer(),
+        'normalize_reward_matrix': confuse.OneOf([bool])
     },
     'simulation': {
         'runs': confuse.Integer(),
@@ -99,12 +100,14 @@ class MdpPolicyConfig(SlicingConfig):
     def __init__(self, custom_path=""):
         super().__init__(custom_path)
         self.algorithm = self.get_property('mdp/algorithm')
-        self.discount_factor = self.get_property('mdp/discount_factor')
         self.immediate_action = self.get_property('immediate_action')
         self.arrival_processing_phase = self.get_property('arrival_processing_phase')
         self.queue_scaling = self.get_property('mdp/queue_scaling')
+        self.normalize_reward_matrix = self.get_property('mdp/normalize_reward_matrix')
         if self.algorithm == 'fh':
             self.timeslots = self.get_property('simulation/timeslots')
+        if self.algorithm != 'rvi':
+            self.discount_factor = self.get_property('mdp/discount_factor')
 
 
 class StaticPolicyConfig(SlicingConfig):

@@ -3,60 +3,115 @@ arrival_processing_phase: True
 
 # mdp specific config
 mdp:
-  algorithm: vi
-  discount_factor: 0.999
+  algorithm: rvi
+  discount_factor: 0.9
   # influences the state of the mdp, the policy is calculated for multiples of this number
   # IMPORTANT: queue_size + 1 have to be divisible by queue_scaling
   # es. queue_size=7 (+1 because of state with empty queue) -> 7+1/queue_scaling=2 OK
-  queue_scaling: 2
+  queue_scaling: 5
+  normalize_reward_matrix: True
 
 simulation:
   runs: 1
-  timeslots: 10000
+  timeslots: 1000
 
-server_max_cap: 5
+server_max_cap: 10
 
 slices: # Order matter! slice with index 0 is the highest priority ans so on..
   - arrivals_histogram:
       - 0.
-      - 0.2
-      - 0.2
-      - 0.2
-      - 0.2
-      - 0.2
+      - 0.0625
+      - 0.0625
+      - 0.0625
+      - 0.0625
+      - 0.0625
+      - 0.0625
+      - 0.0625
+      - 0.0625
+      - 0.0625
+      - 0.0625
+      - 0.0625
+      - 0.0625
+      - 0.0625
+      - 0.0625
+      - 0.0625
+      - 0.0625
     server_capacity_histogram:
       - 0.
-      - 1.
-    queue_size: 9
-    alpha: 1
+      - 0.
+      - 0.
+      - 0.
+      - 0.3333333333333333
+      - 0.3333333333333333
+      - 0.3333333333333333
+    queue_size: 19
+    alpha: 10
     beta: 1
-    gamma: 1
-    c_job: 1
-    c_server: 1
-    c_lost: 1
+    gamma: 5
+    c_job: 0.1
+    c_server: 0.1
+    c_lost: 0.1
   - arrivals_histogram:
-      - 0.4
-      - 0.05
-      - 0.05
-      - 0.05
-      - 0.05
-      - 0.05
-      - 0.05
-      - 0.05
-      - 0.05
-      - 0.05
-      - 0.05
-      - 0.05
-      - 0.05
+      - 0.02
+      - 0.02
+      - 0.02
+      - 0.02
+      - 0.02
+      - 0.02
+      - 0.02
+      - 0.02
+      - 0.02
+      - 0.02
+      - 0.02
+      - 0.02
+      - 0.02
+      - 0.02
+      - 0.02
+      - 0.02
+      - 0.02
+      - 0.02
+      - 0.02
+      - 0.02
+      - 0.02
+      - 0.02
+      - 0.02
+      - 0.02
+      - 0.02
+      - 0.02
+      - 0.02
+      - 0.02
+      - 0.02
+      - 0.02
+      - 0.02
+      - 0.02
+      - 0.02
+      - 0.02
+      - 0.02
+      - 0.02
+      - 0.02
+      - 0.02
+      - 0.02
+      - 0.02
+      - 0.02
+      - 0.02
+      - 0.02
+      - 0.02
+      - 0.02
+      - 0.02
+      - 0.02
+      - 0.02
+      - 0.02
+      - 0.02
     server_capacity_histogram:
       - 0.
       - 0.
-      - 0.5
-      - 0.5
-    queue_size: 9
+      - 0.3333333333333333
+      - 0.3333333333333333
+      - 0.3333333333333333
+    queue_size: 49
     alpha: 1
-    beta: 1
-    gamma: 1
-    c_job: 1
-    c_server: 1
-    c_lost: 1
+    beta: 5
+    gamma: 10
+    c_job: 0.1
+    c_server: 0.1
+    c_lost: 0.1

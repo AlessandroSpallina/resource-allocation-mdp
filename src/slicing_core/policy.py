@@ -118,6 +118,12 @@ class SingleSliceMdpPolicy(Policy):
             for i in range(len(self._policy)):
                 self._policy[i] = self._actions[self._policy[i]]
 
+        if self._config.algorithm == 'rvi':
+            self._policy = list(self._run_relative_value_iteration())
+            # translating action id in the policy table with the real action
+            for i in range(len(self._policy)):
+                self._policy[i] = self._actions[self._policy[i]]
+
         elif self._config.algorithm == 'fh':
             policy = self._run_finite_horizon(self._config.discount_factor)
             self._policy = np.empty_like(policy, dtype=object)
@@ -146,11 +152,6 @@ class SingleSliceMdpPolicy(Policy):
                         break
 
             return self.get_action_from_policy(current_state, current_timeslot)
-
-
-            # return ricorsiva con lo stato corretto
-
-
 
     def _generate_states(self):
         self._states = []
@@ -278,6 +279,11 @@ class SingleSliceMdpPolicy(Policy):
                         else:
                             self._reward_matrix[a][i][j] = self._calculate_transition_reward(self._states[j])
 
+        if self._config.normalize_reward_matrix:
+            # normalize the reward matrix
+            min_value = - self._reward_matrix.min()
+            self._reward_matrix /= min_value
+
     def _calculate_transition_reward(self, to_state):
         # C = alpha * C_k * num of jobs + beta * C_n * num of server + gamma * C_l * E(num of lost jobs)
         cost1 = self._config.c_job * to_state.k
@@ -293,16 +299,21 @@ class SingleSliceMdpPolicy(Policy):
                   self._config.beta * cost2 +
                   self._config.gamma * cost3)
 
+    def _run_relative_value_iteration(self):
+        rvi = mdptoolbox.mdp.RelativeValueIteration(self._transition_matrix, self._reward_matrix)
+        rvi.run()
+        return rvi.policy
+
     def _run_value_iteration(self, discount):
         vi = mdptoolbox.mdp.ValueIteration(self._transition_matrix, self._reward_matrix, discount)
         vi.run()
         return vi.policy
 
     def _run_finite_horizon(self, discount):
-        vi = mdptoolbox.mdp.FiniteHorizon(self._transition_matrix, self._reward_matrix,
+        fh = mdptoolbox.mdp.FiniteHorizon(self._transition_matrix, self._reward_matrix,
                                           discount, self._config.timeslots)
-        vi.run()
-        return vi.policy
+        fh.run()
+        return fh.policy
 
 
 class MultiSliceMdpPolicy(SingleSliceMdpPolicy):
