@@ -557,10 +557,8 @@ class MultiSliceStaticPolicy(Policy):
             self._policy.append(action)
 
     def get_action_from_policy(self, current_state, current_timeslot):
-        try:
-            return self._policy[self._states.index(current_state)]
-        except ValueError:
-            print('0c')
+        return self._policy[self._states.index(current_state)]
+
 
     def _init_slices(self):
         self._slices = []
