@@ -136,10 +136,10 @@ class SingleSliceMdpPolicy(Policy):
 
     def get_action_from_policy(self, current_state, current_timeslot):
         try:
-            if self._config.algorithm == 'vi':
-                return self._policy[self._states.index(current_state)]
-            elif self._config.algorithm == 'fh':
+            if self._config.algorithm == 'fh':
                 return self._policy[self._states.index(current_state)][current_timeslot]
+            else:
+                return self._policy[self._states.index(current_state)]
         except ValueError:
             # TODO: this can be faster
             to_ret = []
@@ -453,31 +453,17 @@ class PriorityMultiSliceMdpPolicy(MultiSliceMdpPolicy):
         for state in self._states:  # @ for each state
             multislice_action = []
 
-            if self._config.algorithm == 'vi':
-                servers_left = self._config.server_max_cap
+            if self._config.algorithm == 'fh':
+                servers_left = np.array([self._config.server_max_cap] * self._config.timeslots)
                 for i in range(self._config.slice_count):  # @ for each singleslice in the multislice
                     i_th_state = copy(state[i])
-                    if i_th_state.n > servers_left:
+                    if i_th_state.n > min(servers_left):
                         # we are here when state[i] is a not possible state due highest priority slice allocations
                         # i.e. state (0,2) when servers_left are only 1
                         # this will never happen when the system start from [(0,0) for all slices], but we have to
                         # be robust so if for any reason the low priority slice is in a (0,2) state, the policy have to
                         # handle this
-                        i_th_state.n = servers_left
 
-                    slice_action = \
-                        self._slices[i][servers_left].policy[self._slices[i][servers_left].states.index(i_th_state)]
-                    servers_left -= slice_action
-                    multislice_action.append(slice_action)
-
-                self._policy.append(multislice_action)
-
-            elif self._config.algorithm == 'fh':
-                servers_left = np.array([self._config.server_max_cap] * self._config.timeslots)
-                for i in range(self._config.slice_count):  # @ for each singleslice in the multislice
-                    i_th_state = copy(state[i])
-                    if i_th_state.n > min(servers_left):
-                        # the same as above, but for finite horizon mdp algo
                         i_th_state.n = min(servers_left)
 
                     slice_action = []
@@ -490,6 +476,21 @@ class PriorityMultiSliceMdpPolicy(MultiSliceMdpPolicy):
                     multislice_action.append(slice_action)
 
                 self._policy.append(np.column_stack(multislice_action).tolist())
+
+            else:
+                servers_left = self._config.server_max_cap
+                for i in range(self._config.slice_count):  # @ for each singleslice in the multislice
+                    i_th_state = copy(state[i])
+                    if i_th_state.n > servers_left:
+                        # the same as above, but for finite horizon mdp algo
+                        i_th_state.n = servers_left
+
+                    slice_action = \
+                        self._slices[i][servers_left].policy[self._slices[i][servers_left].states.index(i_th_state)]
+                    servers_left -= slice_action
+                    multislice_action.append(slice_action)
+
+                self._policy.append(multislice_action)
 
     def _init_slices(self):  # THIS HAVE MORE PARALLELISM, BUT SEEMS WORSE
         """ Preparing multiprocessing stuff """
@@ -556,7 +557,10 @@ class MultiSliceStaticPolicy(Policy):
             self._policy.append(action)
 
     def get_action_from_policy(self, current_state, current_timeslot):
-        return self._policy[self._states.index(current_state)]
+        try:
+            return self._policy[self._states.index(current_state)]
+        except ValueError:
+            print('0c')
 
     def _init_slices(self):
         self._slices = []
