@@ -1,7 +1,7 @@
 # SLICING_CORE MAIN
 
 from src.slicing_core.policy import MultiSliceMdpPolicy, PriorityMultiSliceMdpPolicy, MultiSliceStaticPolicy,\
-    CachedPolicy
+    CachedPolicy, SimplifiedPriorityMultiSliceMdpPolicy
 from src.slicing_core.agent import NetworkOperatorSimulator
 
 import src.slicing_core.config as config
@@ -63,12 +63,14 @@ def main(argv):
     # ---- POLICY STUFF ------------------------
     confs = [
         config.MdpPolicyConfig(custom_path=config.CONFIG_FILE_PATH),
+        config.MdpPolicyConfig(custom_path=config.CONFIG_FILE_PATH),
         config.StaticPolicyConfig(custom_path=config.CONFIG_FILE_PATH),
     ]
 
     policies = [
             CachedPolicy(confs[0], PriorityMultiSliceMdpPolicy),
-            CachedPolicy(confs[1], MultiSliceStaticPolicy)
+            CachedPolicy(confs[1], SimplifiedPriorityMultiSliceMdpPolicy),
+            CachedPolicy(confs[2], MultiSliceStaticPolicy),
         ]
 
     start_time = time.time()
@@ -82,6 +84,7 @@ def main(argv):
     for policy in policies:
         policy.calculate_policy()
 
+    # the last policy is a static that allocates the maximum required by the mdp policy (so, the optimal static alloc)
     priority_static_conf = config.StaticPolicyConfig(custom_path=config.CONFIG_FILE_PATH)
     priority_static_conf.set_allocation(0, int(np.array(policies[0].policy)[:, 0].max()))
     priority_static_conf.set_allocation(1, int(np.array(policies[0].policy)[:, 1].max()))

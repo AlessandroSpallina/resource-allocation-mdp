@@ -468,7 +468,7 @@ class PriorityMultiSliceMdpPolicy(MultiSliceMdpPolicy):
 
                     slice_action = []
                     for j in range(len(servers_left)):
-                        slice_action.append \
+                        slice_action.append\
                             (self._slices[i][servers_left[j]].policy[
                                  self._slices[i][servers_left[j]].states.index(i_th_state)][j])
 
@@ -508,6 +508,43 @@ class PriorityMultiSliceMdpPolicy(MultiSliceMdpPolicy):
 
         # when i am here my multiprocesses already cached slices policies, i can just pick all of these
         self._slices = [_run_subslices(self._config.slice(i)) for i in range(self._config.slice_count)]
+
+
+class SimplifiedPriorityMultiSliceMdpPolicy(MultiSliceMdpPolicy):
+    def init(self):
+        self._init_slices()
+        self._generate_states(self._slices)
+        self._generate_actions()
+
+    def _init_slices(self):
+        self._slices = []
+        servers_left = self._config.server_max_cap
+
+        for s_i in range(self._config.slice_count):
+            conf = self._config.slice(s_i)
+            conf.server_max_cap = servers_left
+            self._slices.append(CachedPolicy(conf, SingleSliceMdpPolicy))
+            self._slices[-1].init()
+            self._slices[-1].calculate_policy()
+            servers_left -= int(np.array(self._slices[-1].policy).max())
+
+    def calculate_policy(self):
+        self._policy = []
+
+        for state in self._states:  # @ for each state
+            multislice_action = []
+
+            if self._config.algorithm == 'fh':
+                raise NotImplementedError('add simplifiedprioritymdppolicy.calculate_policy() for fh')
+            else:
+                for i in range(self._config.slice_count):  # @ for each singleslice in the multislice
+                    i_th_state = copy(state[i])
+
+                    slice_action = \
+                        self._slices[i].policy[self._slices[i].states.index(i_th_state)]
+                    multislice_action.append(slice_action)
+
+                self._policy.append(multislice_action)
 
 
 class SingleSliceStaticPolicy(Policy):
@@ -558,7 +595,6 @@ class MultiSliceStaticPolicy(Policy):
 
     def get_action_from_policy(self, current_state, current_timeslot):
         return self._policy[self._states.index(current_state)]
-
 
     def _init_slices(self):
         self._slices = []
