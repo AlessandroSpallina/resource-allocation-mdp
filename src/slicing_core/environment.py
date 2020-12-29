@@ -60,11 +60,11 @@ class SingleSliceSimulator(Environment):
         self._state_sequence.append(initial_state)
 
         if self._config.arrival_processing_phase:
-            lost_count = self._simulate_arrival_phase_within_timeslot()
+            arrived_losses = self._simulate_arrival_phase_within_timeslot()
             processing = self._simulate_processing_phase_within_timeslot()
         else:
             processing = self._simulate_processing_phase_within_timeslot()
-            lost_count = self._simulate_arrival_phase_within_timeslot()
+            arrived_losses = self._simulate_arrival_phase_within_timeslot()
 
         if not self._config.immediate_action:
             self._allocate_server(slice_allocation)
@@ -74,7 +74,8 @@ class SingleSliceSimulator(Environment):
         return {
             "timeslot": self._current_timeslot,
             "state": copy(self._current_state),
-            "lost_jobs": lost_count,
+            "incoming_jobs": arrived_losses['arrivals'],
+            "lost_jobs": arrived_losses['losses'],
             "processed_jobs": processing['processed_jobs'],
             "wait_time_in_the_queue": processing['wait_time_in_the_queue'],
             "wait_time_in_the_system": processing['wait_time_in_the_system']
@@ -146,6 +147,7 @@ class SingleSliceSimulator(Environment):
     """ Returns the number of lost jobs in the timeslot """
     def _simulate_arrival_phase_within_timeslot(self):
         lost_counter = 0
+        arrived_jobs = 0
         if len(self._incoming_jobs) > 0:
             arrived_jobs = self._incoming_jobs.pop()
 
@@ -157,7 +159,7 @@ class SingleSliceSimulator(Environment):
                     self._current_state.k += 1
                 except queue.Full:
                     lost_counter += 1
-        return lost_counter
+        return {'arrivals': arrived_jobs, 'losses': lost_counter}
 
     """ Returns the number of processed jobs in the timeslot """
     def _simulate_processing_phase_within_timeslot(self):
@@ -209,6 +211,7 @@ class MultiSliceSimulator(Environment):
             "state":  copy(self._current_state),
             "active_servers": [s.n for s in self._current_state],
             "jobs_in_queue": [s.k for s in self._current_state],
+            "incoming_jobs": [s['incoming_jobs'] for s in tmp],
             "lost_jobs": [s['lost_jobs'] for s in tmp],
             "processed_jobs": [s['processed_jobs'] for s in tmp],
             "wait_time_in_the_queue": [s['wait_time_in_the_queue'] for s in tmp],
