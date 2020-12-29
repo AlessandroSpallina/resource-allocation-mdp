@@ -175,11 +175,13 @@ class SingleSliceMdpPolicy(Policy):
                         #   Pr[(0,X)->(5,X)] is the same as without the scaling
                         #   but Pr[(0,X)->(0,X)] is bigger because of the sum of the prob. of the hidden states
                         #   Pr[(0,X)->(0,X)] = Pr[(0,X)->(0,X)] + Pr[(0,X)->(1,X)] + Pr[(0,X)->(2,X)] ... etc
-                        hidden_from = copy(self._states[i])
+
                         for i_from in range(self._config.queue_scaling):
+                            hidden_from = copy(self._states[i])
                             hidden_from.k += i_from
-                            hidden_to = copy(self._states[j])
+
                             for j_to in range(self._config.queue_scaling):
+                                hidden_to = copy(self._states[j])
                                 hidden_to.k += j_to
                                 if hidden_to.k <= self._config.queue_size:
                                     prob_tmp = self._calculate_transition_probability(hidden_from, hidden_to, a)
@@ -189,6 +191,7 @@ class SingleSliceMdpPolicy(Policy):
                             self._calculate_transition_probability(self._states[i], self._states[j], a)
 
                 self._transition_matrix[a][i] /= self._transition_matrix[a][i].sum()
+
 
     def _calculate_transition_probability(self, from_state, to_state, action_id):
         if not self._config.immediate_action:
