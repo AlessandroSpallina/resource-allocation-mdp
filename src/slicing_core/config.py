@@ -125,7 +125,13 @@ class StaticPolicyConfig(SlicingConfig):
 
     # very important to use this function from 0 to N, with order!
     def set_allocation(self, slice_id, allocation):
-        self.slices[slice_id]['allocation'] = allocation
+        allocable_servers = self.server_max_cap
+        for i in range(slice_id):
+            allocable_servers -= self.slices[i].allocation
+        if allocation <= allocable_servers:
+            self.slices[slice_id]['allocation'] = allocation
+        else:
+            self.slices[slice_id]['allocation'] = allocable_servers
         remaining_servers = self.server_max_cap - allocation
         remaining_slices = self.slice_count - (slice_id + 1)
         new_allocations = self._eq_div(remaining_servers, remaining_slices)
