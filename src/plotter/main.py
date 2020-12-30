@@ -101,6 +101,12 @@ def plot_slice_results(plot_identifier, base_save_path, stats, window_average, i
                     save_path=f"{base_save_path}wait_time_in_queue")
 
 
+def get_average_waiting_time(slice_i_stats):
+    average_incoming_per_ts = np.average(np.array(slice_i_stats['incoming_jobs']))
+    ave
+
+
+
 def plot_slice_comparison(plot_identifier, base_save_path, stats, window_average):
     cost_per_ts = {}
     processed_per_ts = {}
@@ -118,13 +124,15 @@ def plot_slice_comparison(plot_identifier, base_save_path, stats, window_average
 
         cost_per_ts[slice_i['policy_name']] = moving_average(slice_i['cost'], window_average)[1]
         processed_per_ts[slice_i['policy_name']] = moving_average(slice_i['processed_jobs'], window_average)[1]
-        lost_per_ts[f"{slice_i['policy_name']} ({sum(slice_i['lost_jobs']) / sum(slice_i['incoming_jobs'])}%)"] = \
-            moving_average(slice_i['lost_jobs'], window_average)[1]
+        lost_per_ts[f"{slice_i['policy_name']} ({round((sum(slice_i['lost_jobs']) / sum(slice_i['incoming_jobs'])) * 100, 4)}%)"]\
+            = moving_average(slice_i['lost_jobs'], window_average)[1]
         jobs_in_queue_per_ts[slice_i['policy_name']] = moving_average(slice_i['jobs_in_queue'], window_average)[1]
         active_server_per_ts[slice_i['policy_name']] = moving_average(slice_i['active_servers'], window_average)[1]
 
-        wait_time_in_the_queue[slice_i['policy_name']] = slice_i['wait_time_in_the_queue']
-        wait_time_in_the_system[slice_i['policy_name']] = slice_i['wait_time_in_the_system']
+        wait_time_in_the_queue[f"{slice_i['policy_name']} " \
+                               f"(avg. {round(np.average(np.array(slice_i['jobs_in_queue'])) / np.average(np.array(slice_i['incoming_jobs'])), 4)} ts)"] \
+            = slice_i['wait_time_in_the_queue']
+        wait_time_in_the_system[f"{slice_i['policy_name']}"] = slice_i['wait_time_in_the_system']
 
     plotter.plot_cumulative(ydata=cost_per_ts, xdata=xdata,
                             xlabel="timeslot", title=f"[{plot_identifier}] Mean Cumulative Costs",
