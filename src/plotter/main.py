@@ -118,7 +118,8 @@ def plot_slice_comparison(plot_identifier, base_save_path, stats, window_average
 
         cost_per_ts[slice_i['policy_name']] = moving_average(slice_i['cost'], window_average)[1]
         processed_per_ts[slice_i['policy_name']] = moving_average(slice_i['processed_jobs'], window_average)[1]
-        lost_per_ts[slice_i['policy_name']] = moving_average(slice_i['lost_jobs'], window_average)[1]
+        lost_per_ts[f"{slice_i['policy_name']} ({sum(slice_i['lost_jobs']) / sum(slice_i['incoming_jobs'])}%)"] = \
+            moving_average(slice_i['lost_jobs'], window_average)[1]
         jobs_in_queue_per_ts[slice_i['policy_name']] = moving_average(slice_i['jobs_in_queue'], window_average)[1]
         active_server_per_ts[slice_i['policy_name']] = moving_average(slice_i['active_servers'], window_average)[1]
 
