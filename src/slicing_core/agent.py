@@ -95,6 +95,7 @@ class NetworkOperatorSimulator(Agent):
     def _average_history(self, history_to_average):
         active_servers_average = []
         jobs_in_queue_average = []
+        jobs_in_system_average = []
         incoming_jobs_average = []
         lost_jobs_average = []
         processed_jobs_average = []
@@ -105,6 +106,7 @@ class NetworkOperatorSimulator(Agent):
         for i in range(self._simulation_conf.runs):
             active_servers_average.append([d['active_servers'] for d in history_to_average[i]])
             jobs_in_queue_average.append([d['jobs_in_queue'] for d in history_to_average[i]])
+            jobs_in_system_average.append([d['jobs_in_system'] for d in history_to_average[i]])
             incoming_jobs_average.append([d['incoming_jobs'] for d in history_to_average[i]])
             lost_jobs_average.append([d['lost_jobs'] for d in history_to_average[i]])
             processed_jobs_average.append([d['processed_jobs'] for d in history_to_average[i]])
@@ -114,6 +116,7 @@ class NetworkOperatorSimulator(Agent):
 
         active_servers_average = np.average(np.array(active_servers_average), axis=0).tolist()
         jobs_in_queue_average = np.average(np.array(jobs_in_queue_average), axis=0).tolist()
+        jobs_in_system_average = np.average(np.array(jobs_in_system_average), axis=0).tolist()
         incoming_jobs_average = np.average(np.array(incoming_jobs_average), axis=0).tolist()
         lost_jobs_average = np.average(np.array(lost_jobs_average), axis=0).tolist()
         processed_jobs_average = np.average(np.array(processed_jobs_average), axis=0).tolist()
@@ -132,6 +135,7 @@ class NetworkOperatorSimulator(Agent):
         return {
             "active_servers": active_servers_average,
             "jobs_in_queue": jobs_in_queue_average,
+            "jobs_in_system": jobs_in_system_average,
             "incoming_jobs": incoming_jobs_average,
             "lost_jobs": lost_jobs_average,
             "processed_jobs": processed_jobs_average,

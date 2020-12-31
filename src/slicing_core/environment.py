@@ -74,6 +74,9 @@ class SingleSliceSimulator(Environment):
         return {
             "timeslot": self._current_timeslot,
             "state": copy(self._current_state),
+            "active_servers": self._current_state.n,
+            "jobs_in_queue": self._current_state.k,
+            "jobs_in_system": self._current_state.k + self._servers_internal_queue.qsize(),
             "incoming_jobs": arrived_losses['arrivals'],
             "lost_jobs": arrived_losses['losses'],
             "processed_jobs": processing['processed_jobs'],
@@ -209,8 +212,9 @@ class MultiSliceSimulator(Environment):
         return {
             "timeslot": tmp[0]['timeslot'],
             "state":  copy(self._current_state),
-            "active_servers": [s.n for s in self._current_state],
-            "jobs_in_queue": [s.k for s in self._current_state],
+            "active_servers": [s['active_servers'] for s in tmp],
+            "jobs_in_queue": [s['jobs_in_queue'] for s in tmp],
+            "jobs_in_system": [s['jobs_in_system'] for s in tmp],
             "incoming_jobs": [s['incoming_jobs'] for s in tmp],
             "lost_jobs": [s['lost_jobs'] for s in tmp],
             "processed_jobs": [s['processed_jobs'] for s in tmp],

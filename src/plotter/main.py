@@ -101,9 +101,9 @@ def plot_slice_results(plot_identifier, base_save_path, stats, window_average, i
                     save_path=f"{base_save_path}wait_time_in_queue")
 
 
-def get_average_waiting_time(slice_i_stats):
-    average_incoming_per_ts = np.average(np.array(slice_i_stats['incoming_jobs']))
-    ave
+# def get_average_waiting_time(slice_i_stats):
+#     average_incoming_per_ts = np.average(np.array(slice_i_stats['incoming_jobs']))
+#     ave
 
 
 
@@ -132,7 +132,9 @@ def plot_slice_comparison(plot_identifier, base_save_path, stats, window_average
         wait_time_in_the_queue[f"{slice_i['policy_name']} " \
                                f"(avg. {round(np.average(np.array(slice_i['jobs_in_queue'])) / np.average(np.array(slice_i['incoming_jobs'])), 4)} ts)"] \
             = slice_i['wait_time_in_the_queue']
-        wait_time_in_the_system[f"{slice_i['policy_name']}"] = slice_i['wait_time_in_the_system']
+        wait_time_in_the_system[f"{slice_i['policy_name']} " \
+                                f"(avg. {round(np.average(np.array(slice_i['jobs_in_system'])) / np.average(np.array(slice_i['incoming_jobs'])), 4)} ts)"] \
+            = slice_i['wait_time_in_the_system']
 
     plotter.plot_cumulative(ydata=cost_per_ts, xdata=xdata,
                             xlabel="timeslot", title=f"[{plot_identifier}] Mean Cumulative Costs",
