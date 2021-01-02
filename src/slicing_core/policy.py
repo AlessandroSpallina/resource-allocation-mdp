@@ -135,23 +135,13 @@ class SingleSliceMdpPolicy(Policy):
             self._policy = self._policy.tolist()
 
     def get_action_from_policy(self, current_state, current_timeslot):
-        try:
-            if self._config.algorithm == 'fh':
-                return self._policy[self._states.index(current_state)][current_timeslot]
-            else:
-                return self._policy[self._states.index(current_state)]
-        except ValueError:
-            # TODO: this can be faster
-            to_ret = []
+        for i in range(len(current_state)):
+            current_state[i].k = int(current_state[i].k / self._config.queue_scaling) * self._config.queue_scaling
 
-            for s_index in range(len(current_state)):
-                mega_states_count = int((self._config.slices[s_index].queue_size + 1) / self._config.queue_scaling) # es. 5
-                for i in range(mega_states_count):
-                    if i <= current_state[s_index].k < (i + 1) * mega_states_count:
-                        current_state[s_index].k = i
-                        break
-
-            return self.get_action_from_policy(current_state, current_timeslot)
+        if self._config.algorithm == 'fh':
+            return self._policy[self._states.index(current_state)][current_timeslot]
+        else:
+            return self._policy[self._states.index(current_state)]
 
     def _generate_states(self):
         self._states = []
