@@ -492,7 +492,9 @@ class PriorityMultiSliceMdpPolicy(MultiSliceMdpPolicy):
         processes = []
 
         for i in range(self._config.slice_count):
-            subconfs = _get_balanced_confs(_get_subconfs_from_singleslice(self._config.slice(i)))
+            #subconfs = _get_balanced_confs(_get_subconfs_from_singleslice(self._config.slice(i)))
+            subconds_dicts = _get_subconfs_from_singleslice(self._config.slice(i))
+            subconfs = [[subconds_dicts[e]] for e in subconds_dicts]
 
             for s in subconfs:
                 processes.append(multiprocessing.Process(target=_run_singleslice_from_confs, args=(i, s,)))
