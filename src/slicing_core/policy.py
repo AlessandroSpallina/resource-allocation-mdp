@@ -402,6 +402,14 @@ def _get_subconfs_from_singleslice(singleslice_conf):
         subconfs[i] = subconf
     return subconfs
 
+def _get_range_subconfs_from_singleslice(singleslice_conf, start, stop):
+    subconfs = {}
+    for i in range(start, stop + 1):
+        subconf = copy(singleslice_conf)
+        subconf.server_max_cap = i
+        subconfs[i] = subconf
+    return subconfs
+
 
 def _get_balanced_confs(confs_dict):
     keys = list(confs_dict.keys())
@@ -427,6 +435,16 @@ def _run_singleslice_from_confs(slice_index, slice_confs):
 def _run_subslices(slice_conf):
     subslices = []
     for i in range(slice_conf.server_max_cap + 1):
+        subconf = copy(slice_conf)
+        subconf.server_max_cap = i
+        subslices.append(CachedPolicy(subconf, cpolicy.SingleSliceMdpPolicy))
+        subslices[-1].init()
+        subslices[-1].calculate_policy()
+    return subslices
+
+def _run_range_subslices(slice_conf, start, stop):
+    subslices = []
+    for i in range(start, stop + 1):
         subconf = copy(slice_conf)
         subconf.server_max_cap = i
         subslices.append(CachedPolicy(subconf, cpolicy.SingleSliceMdpPolicy))
@@ -542,6 +560,50 @@ class SimplifiedPriorityMultiSliceMdpPolicy(MultiSliceMdpPolicy):
                     multislice_action.append(slice_action)
 
                 self._policy.append(multislice_action)
+
+
+# TODO: this only works with 2 slices, need to be updated!
+class SequentialPriorityMultiSliceMdpPolicy(PriorityMultiSliceMdpPolicy):
+    def init(self):
+        slice_1_max = self._init_slices()
+        self._generate_states([self._slices[0][self._config.server_max_cap], self._slices[1][slice_1_max]])
+        self._generate_actions()
+
+    def _init_slices(self):
+        """ Preparing multiprocessing stuff """
+        processes = []
+        self._slices = [list() for _ in range(self._config.slice_count)]
+
+        # run highest priority slice
+        _run_singleslice_from_confs(0, [self._config.slice(0)])
+        self._slices[0] = [list() for _ in range(self._config.slice(0).server_max_cap + 1)]
+        self._slices[0][self._config.slice(0).server_max_cap] = \
+            CachedPolicy(self._config.slice(0), cpolicy.SingleSliceMdpPolicy)
+
+        self._slices[1] = [list() for _ in range(self._config.server_max_cap + 1)]
+        slice_0_min = min(self._slices[0][self._config.slice(0).server_max_cap].policy)
+        slice_0_max = max(self._slices[0][self._config.slice(0).server_max_cap].policy)
+
+        slice_1_min = self._config.server_max_cap - slice_0_max
+        slice_1_max = self._config.server_max_cap - slice_0_min
+
+        subconds_dicts = _get_range_subconfs_from_singleslice(self._config.slice(1), slice_1_min, slice_1_max)
+        subconfs = [[subconds_dicts[e]] for e in subconds_dicts]
+
+        for s in subconfs:
+            processes.append(multiprocessing.Process(target=_run_singleslice_from_confs, args=(1, s,)))
+            processes[-1].start()
+
+        for process in processes:
+            process.join()
+
+        to_add = _run_range_subslices(self._config.slice(1), slice_1_min, slice_1_max)
+        to_add.reverse()
+
+        for i in range(slice_1_min, slice_1_max + 1):
+            self._slices[1][i] = to_add.pop()
+
+        return slice_1_max
 
 
 class SingleSliceStaticPolicy(Policy):

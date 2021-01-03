@@ -1,7 +1,7 @@
 # SLICING_CORE MAIN
 
 from src.slicing_core.policy import MultiSliceMdpPolicy, PriorityMultiSliceMdpPolicy, MultiSliceStaticPolicy,\
-    CachedPolicy, SimplifiedPriorityMultiSliceMdpPolicy
+    CachedPolicy, SimplifiedPriorityMultiSliceMdpPolicy, SequentialPriorityMultiSliceMdpPolicy
 from src.slicing_core.agent import NetworkOperatorSimulator
 
 import src.slicing_core.config as config
@@ -68,7 +68,7 @@ def main(argv):
     ]
 
     policies = [
-            CachedPolicy(confs[0], PriorityMultiSliceMdpPolicy),
+            CachedPolicy(confs[0], SequentialPriorityMultiSliceMdpPolicy),
             CachedPolicy(confs[1], SimplifiedPriorityMultiSliceMdpPolicy),
             CachedPolicy(confs[2], MultiSliceStaticPolicy),
         ]
