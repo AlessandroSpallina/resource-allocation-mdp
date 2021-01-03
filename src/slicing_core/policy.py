@@ -9,6 +9,8 @@ from copy import copy
 from src.slicing_core.state import SingleSliceState
 from src.slicing_core.config import POLICY_CACHE_FILES_PATH
 
+import src.slicing_core.src.slicing_core.cpolicy as cpolicy
+
 
 class _Cache:
     def __init__(self, config, file_extension):
@@ -416,7 +418,7 @@ def _get_balanced_confs(confs_dict):
 # target function for multiprocessing
 def _run_singleslice_from_confs(slice_index, slice_confs):
     for slice_conf in slice_confs:
-        p = CachedPolicy(slice_conf, SingleSliceMdpPolicy)
+        p = CachedPolicy(slice_conf, cpolicy.SingleSliceMdpPolicy)
         p.init()
         p.calculate_policy()
         print(f"Policy of slice-{slice_index} with {slice_conf.server_max_cap} servers done", flush=True)
@@ -427,7 +429,7 @@ def _run_subslices(slice_conf):
     for i in range(slice_conf.server_max_cap + 1):
         subconf = copy(slice_conf)
         subconf.server_max_cap = i
-        subslices.append(CachedPolicy(subconf, SingleSliceMdpPolicy))
+        subslices.append(CachedPolicy(subconf, cpolicy.SingleSliceMdpPolicy))
         subslices[-1].init()
         subslices[-1].calculate_policy()
     return subslices
@@ -516,7 +518,7 @@ class SimplifiedPriorityMultiSliceMdpPolicy(MultiSliceMdpPolicy):
         for s_i in range(self._config.slice_count):
             conf = self._config.slice(s_i)
             conf.server_max_cap = servers_left
-            self._slices.append(CachedPolicy(conf, SingleSliceMdpPolicy))
+            self._slices.append(CachedPolicy(conf, cpolicy.SingleSliceMdpPolicy))
             self._slices[-1].init()
             self._slices[-1].calculate_policy()
             servers_left -= int(np.array(self._slices[-1].policy).max())
@@ -587,10 +589,8 @@ class MultiSliceStaticPolicy(Policy):
             self._policy.append(action)
 
     def get_action_from_policy(self, current_state, current_timeslot):
-        try:
-            return self._policy[self._states.index(current_state)]
-        except ValueError:
-            print('c')
+        return self._policy[self._states.index(current_state)]
+
 
     def _init_slices(self):
         self._slices = []
