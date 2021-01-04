@@ -45,7 +45,7 @@ def main(argv):
     print(cli_args)
     if 'wdir' in cli_args:
         os.chdir(cli_args['wdir'])
-        print(f"changed working dir to {os.getcwd()}")
+        print(f"changed working dir to {os.getcwd()}", flush=True)
     if 'config' in cli_args:
         paths = config_paths(path=cli_args['config'])
     else:
