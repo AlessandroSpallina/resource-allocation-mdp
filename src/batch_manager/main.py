@@ -11,7 +11,7 @@ def cli_handler(argv):
     to_return = {}
     try:
         # help, config (path), name (directory name of the results)
-        opts, args = getopt.getopt(argv, "hw:c:", ["wdir="])
+        opts, args = getopt.getopt(argv, "hw:c:", ["wdir=", "config="])
     except getopt.GetoptError:
         print(USAGE)
         sys.exit(2)
