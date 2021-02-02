@@ -19,6 +19,10 @@ class SingleSliceState:
     def n(self, n):
         self._n = n
 
+    @property
+    def json(self):
+        return {'k': self._k, 'n': self._n}
+
     def __str__(self):
         return "(" + str(self._k) + "," + str(self._n) + ")"
 

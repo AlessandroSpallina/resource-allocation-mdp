@@ -77,6 +77,13 @@ class CachedPolicy(Policy):
     def states(self):
         return self.obj.states
 
+    @property
+    def json_states(self):
+        to_ret = []
+        for s in self.obj.states:
+            to_ret.append([s_i.json for s_i in s])
+        return to_ret
+
     def init(self):
         if not self._is_cached:
             self.obj.init()

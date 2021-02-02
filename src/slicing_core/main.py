@@ -115,7 +115,7 @@ def main(argv):
             {
                 'name': f"{i}_{policies[i].obj.__class__.__name__}",
                 'policy': policies[i].policy,
-                'states': policies[i].states,
+                'states': policies[i].json_states,
                 'slices': [
                     {
                         'arrivals_histogram': confs[i].slices[j].arrivals_histogram,

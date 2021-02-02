@@ -1,5 +1,6 @@
 import subprocess
-import jsons
+import json
+import orjson
 
 
 def get_last_commit_link():
@@ -8,7 +9,7 @@ def get_last_commit_link():
 
 
 def export_data(data, path):
-    to_export = jsons.dumps(data)
+    to_export = orjson.dumps(data)
     with open(path, 'w') as f:
         f.write(to_export)
 
