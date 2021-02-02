@@ -101,7 +101,7 @@ cdef class SingleSliceMdpPolicy(Policy):
         else:
             return self._policy[self._states.index(current_state)]
 
-    cpdef void _generate_states(self):
+    cdef void _generate_states(self):
         self._states = []
 
         cdef int i, j
@@ -110,10 +110,10 @@ cdef class SingleSliceMdpPolicy(Policy):
             for j in range(0, self._config.queue_size + 1, self._config.queue_scaling):
                 self._states.append(SingleSliceState(j, i))
 
-    cpdef void _generate_actions(self):
+    cdef void _generate_actions(self):
         self._actions = [i for i in range(self._config.server_max_cap + 1)]
 
-    cpdef void _generate_transition_matrix(self):
+    cdef void _generate_transition_matrix(self):
         cdef np.ndarray transition_matrix = np.zeros((self._config.server_max_cap + 1, len(self._states), len(self._states)))
 
         # lets iterate the trans matrix and fill with correct probabilities
@@ -152,7 +152,7 @@ cdef class SingleSliceMdpPolicy(Policy):
         self._transition_matrix = transition_matrix
 
 
-    cpdef double _calculate_transition_probability(self, object from_state, object to_state, int action_id):
+    cdef double _calculate_transition_probability(self, object from_state, object to_state, int action_id):
         cdef list h_d
 
         if not self._config.immediate_action:
@@ -230,7 +230,7 @@ cdef class SingleSliceMdpPolicy(Policy):
 
         return self._filter_transition_probability_by_action(transition_probability, to_state, action_id)
 
-    cpdef list _calculate_h_d(self, object state):
+    cdef list _calculate_h_d(self, object state):
         cdef list h_d = [1.]  # default H_d value for S = 0
         if state.n > 0:
             h_d = self._config.server_capacity_histogram
@@ -238,12 +238,12 @@ cdef class SingleSliceMdpPolicy(Policy):
                 h_d = np.convolve(h_d, self._config.server_capacity_histogram).tolist()
         return h_d
 
-    cpdef double _filter_transition_probability_by_action(self, double transition_probability, object to_state, int action_id):
+    cdef double _filter_transition_probability_by_action(self, double transition_probability, object to_state, int action_id):
         if to_state.n != action_id:
             return 0
         return transition_probability
 
-    cpdef void _generate_reward_matrix(self):
+    cdef void _generate_reward_matrix(self):
         cdef np.ndarray reward_matrix = np.zeros((self._config.server_max_cap + 1, len(self._states), len(self._states)))
 
         cdef int a, i, j, j_to
@@ -273,7 +273,7 @@ cdef class SingleSliceMdpPolicy(Policy):
 
         self._reward_matrix = reward_matrix
 
-    cpdef double _calculate_transition_reward(self, object to_state):
+    cdef double _calculate_transition_reward(self, object to_state):
         # C = alpha * C_k * num of jobs + beta * C_n * num of server + gamma * C_l * E(num of lost jobs)
         cdef double cost1 = self._config.c_job * to_state.k
         cdef double cost2 = self._config.c_server * to_state.n
@@ -289,17 +289,17 @@ cdef class SingleSliceMdpPolicy(Policy):
                   self._config.beta * cost2 +
                   self._config.gamma * cost3)
 
-    cpdef list _run_relative_value_iteration(self):
+    cdef list _run_relative_value_iteration(self):
         rvi = mdptoolbox.mdp.RelativeValueIteration(self._transition_matrix, self._reward_matrix)
         rvi.run()
         return list(rvi.policy)
 
-    cpdef list _run_value_iteration(self, float discount):
+    cdef list _run_value_iteration(self, float discount):
         vi = mdptoolbox.mdp.ValueIteration(self._transition_matrix, self._reward_matrix, discount)
         vi.run()
         return list(vi.policy)
 
-    cpdef list _run_finite_horizon(self, float discount):
+    cdef list _run_finite_horizon(self, float discount):
         fh = mdptoolbox.mdp.FiniteHorizon(self._transition_matrix, self._reward_matrix,
                                           discount, self._config.timeslots)
         fh.run()
