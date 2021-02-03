@@ -37,6 +37,7 @@ class SingleSliceState:
         return SingleSliceState(k, n)
 
     def __eq__(self, other):
-        if isinstance(other, SingleSliceState):
-            return self._k == other._k and self._n == other._n
-        return False
+        # if isinstance(other, SingleSliceState):
+        #     return self._k == other._k and self._n == other._n
+        return self._k == other._k and self._n == other._n
+        # return False

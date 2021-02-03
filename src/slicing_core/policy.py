@@ -191,7 +191,6 @@ class SingleSliceMdpPolicy(Policy):
 
                 self._transition_matrix[a][i] /= self._transition_matrix[a][i].sum()
 
-
     def _calculate_transition_probability(self, from_state, to_state, action_id):
         if not self._config.immediate_action:
             h_d = self._calculate_h_d(from_state)
@@ -318,7 +317,7 @@ class SingleSliceMdpPolicy(Policy):
         return fh.policy
 
 
-class MultiSliceMdpPolicy(SingleSliceMdpPolicy):
+class MultiSliceMdpPolicy(cpolicy.SingleSliceMdpPolicy):
     def init(self):
         self._init_slices()
         self._generate_states(self._slices)
@@ -448,6 +447,7 @@ def _run_subslices(slice_conf):
         subslices[-1].init()
         subslices[-1].calculate_policy()
     return subslices
+
 
 def _run_range_subslices(slice_conf, start, stop):
     subslices = []

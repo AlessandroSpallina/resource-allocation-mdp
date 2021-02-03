@@ -18,6 +18,6 @@ import os
 os.environ["CC"] = "g++"
 
 setup(
-    ext_modules=cythonize("cpolicy.pyx", language_level=3),
+    ext_modules=cythonize("*.pyx", language_level=3),
     include_dirs=[numpy.get_include()]
 )
