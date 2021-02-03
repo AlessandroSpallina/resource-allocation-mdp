@@ -1,6 +1,6 @@
 import subprocess
 import json
-import orjson
+import pickle
 
 
 def get_last_commit_link():
@@ -9,7 +9,10 @@ def get_last_commit_link():
 
 
 def export_data(data, path):
-    to_export = orjson.dumps(data)
+    to_export = json.dumps(data)
     with open(path, 'w') as f:
         f.write(to_export)
 
+
+def serialize_data(data, path):
+    pickle.dump(data, open(path, 'wb'))

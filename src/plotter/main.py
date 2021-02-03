@@ -106,7 +106,6 @@ def plot_slice_results(plot_identifier, base_save_path, stats, window_average, i
 #     ave
 
 
-
 def plot_slice_comparison(plot_identifier, base_save_path, stats, window_average):
     cost_per_ts = {}
     processed_per_ts = {}
@@ -247,7 +246,7 @@ def main(argv):
         os.system(f'ln -s \"{"/".join(DATA_PATH.split("/")[:-1])}\" \"{EXPORTED_FILES_PATH}raw_results\"')
     # ------------------------------------------------------
 
-    imported_data = utils.import_data(DATA_PATH)
+    imported_data = utils.import_serialized_data(DATA_PATH)
 
     # the number of slices is the same for each policy, because the config is the same
     slice_comparison_stats = {i: [] for i in range(len(imported_data[0]['slices']))}

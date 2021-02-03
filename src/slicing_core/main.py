@@ -110,7 +110,7 @@ def main(argv):
 
     logging.info(f"Simulation done in {time.time() - start_time} seconds")
 
-    utils.export_data(
+    utils.serialize_data(
         [
             {
                 'name': f"{i}_{policies[i].obj.__class__.__name__}",
