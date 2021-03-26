@@ -2,8 +2,14 @@ import numpy as np
 cimport numpy as np
 import mdptoolbox
 from copy import copy
+import multiprocessing
 
 from src.slicing_core.state import SingleSliceState
+from src.slicing_core.utils import _Cache
+
+
+cdef class CachedMatrix:
+    pass
 
 
 cdef class Policy:
@@ -304,3 +310,109 @@ cdef class SingleSliceMdpPolicy(Policy):
                                           discount, self._config.timeslots)
         fh.run()
         return list(fh.policy)
+
+# ---------------------------------------------------------------------------------------------------------
+
+cpdef void _calculate_single_trans_matrix(int action_num, object mdp_object):
+    cdef np.ndarray transition_matrix = np.zeros((len(mdp_object._states), len(mdp_object._states)))
+
+    cdef int i, j, i_from, j_to
+    cdef object hidden_from, hidden_to
+    cdef double prob_tmp
+    cdef object cache
+
+    for i in range(len(mdp_object._states)):
+        for j in range(len(mdp_object._states)):
+
+            if mdp_object._config.queue_scaling > 1:
+                # example: if queue_scaling is 5:
+                #   Pr[(0,X)->(5,X)] is the same as without the scaling
+                #   but Pr[(0,X)->(0,X)] is bigger because of the sum of the prob. of the hidden states
+                #   Pr[(0,X)->(0,X)] = Pr[(0,X)->(0,X)] + Pr[(0,X)->(1,X)] + Pr[(0,X)->(2,X)] ... etc
+
+                # cdef int i_from
+                for i_from in range(mdp_object._config.queue_scaling):
+                    hidden_from = copy(mdp_object._states[i])
+                    hidden_from.k += i_from
+
+                    # cdef int j_to
+                    for j_to in range(mdp_object._config.queue_scaling):
+                        hidden_to = copy(mdp_object._states[j])
+                        hidden_to.k += j_to
+                        if hidden_to.k <= mdp_object._config.queue_size:
+                            prob_tmp = mdp_object._calculate_transition_probability(hidden_from, hidden_to, action_num)
+                            transition_matrix[i][j] += prob_tmp
+            else:
+                transition_matrix[i][j] = \
+                    mdp_object._calculate_transition_probability(mdp_object._states[i], mdp_object._states[j], action_num)
+
+        transition_matrix[i] /= transition_matrix[i].sum()
+
+    base_conf = copy(mdp_object._config)
+    del base_conf.server_max_cap
+
+    cache = _Cache(base_conf, f"{action_num}.single_trans_matrix")
+    cache.store(transition_matrix)
+
+
+# this version have a faster init phase because of matrix caching and multiprocessing
+cdef class FastInitSingleSliceMdpPolicy(SingleSliceMdpPolicy):
+    cdef void _generate_transition_matrix(self):
+        cdef int a, i
+        cdef object processes = []
+        cdef np.ndarray transition_matrix
+
+        for a in range(self._config.server_max_cap + 1):
+            processes.append(multiprocessing.Process(target=_calculate_single_trans_matrix, args=(a, self)))
+            processes[-1].start()
+
+        for process in processes:
+            process.join()
+
+        # loading cached matrices and composing the
+        transition_matrix = np.zeros(
+            (self._config.server_max_cap + 1, len(self._states), len(self._states)))
+
+        base_cached_conf = copy(self._config)
+        del base_cached_conf.server_max_cap
+
+        for i in range(self._config.server_max_cap + 1):
+
+            cached = _Cache(base_cached_conf, f"{i}.single_trans_matrix")
+
+
+
+    cpdef double _calculate_transition_probability(self, object from_state, object to_state, int action_id):
+        return SingleSliceMdpPolicy._calculate_transition_probability(self, from_state, to_state, action_id)
+
+
+
+# ---------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+# # this version have a faster init phase because of matrix caching and multiprocessing
+# cdef class FastInitSingleSliceMdpPolicy(SingleSliceMdpPolicy):
+#
+#     cdef void _generate_transition_matrix(self):
+#         cdef int a
+#         cdef object processes = []
+#
+#         print("ECCOMIMIEMIEMIEIMEMI")
+#         for a in range(self._config.server_max_cap + 1):
+#             processes.append(multiprocessing.Process(target=_calculate_single_trans_matrix, args=(a, copy(self))))
+#             processes[-1].start()
+#
+#         for process in processes:
+#             process.join()
+
+
+
+
+
+
+

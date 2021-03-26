@@ -2,30 +2,13 @@ import abc
 import numpy as np
 import mdptoolbox
 import math
-import pickle
 import multiprocessing
 from copy import copy
 
 from src.slicing_core.state import SingleSliceState
-from src.slicing_core.config import POLICY_CACHE_FILES_PATH
+from src.slicing_core.utils import _Cache
 
 import src.slicing_core.src.slicing_core.cpolicy as cpolicy
-
-
-class _Cache:
-    def __init__(self, config, file_extension):
-        self._path = f"{POLICY_CACHE_FILES_PATH}{config.hash}.{file_extension}"
-
-    def load(self):
-        try:
-            loaded = pickle.load(open(self._path, "rb"))
-        except FileNotFoundError:
-            loaded = None
-        return loaded
-
-    def store(self, policy):
-        pickle.dump(policy, open(self._path, "wb"))
-        return self._path
 
 
 class Policy(metaclass=abc.ABCMeta):
@@ -408,6 +391,7 @@ def _get_subconfs_from_singleslice(singleslice_conf):
         subconfs[i] = subconf
     return subconfs
 
+
 def _get_range_subconfs_from_singleslice(singleslice_conf, start, stop):
     subconfs = {}
     for i in range(start, stop + 1):
@@ -432,7 +416,7 @@ def _get_balanced_confs(confs_dict):
 # target function for multiprocessing
 def _run_singleslice_from_confs(slice_index, slice_confs):
     for slice_conf in slice_confs:
-        p = CachedPolicy(slice_conf, cpolicy.SingleSliceMdpPolicy)
+        p = CachedPolicy(slice_conf, cpolicy.FastInitSingleSliceMdpPolicy)
         p.init()
         p.calculate_policy()
         print(f"Policy of slice-{slice_index} with {slice_conf.server_max_cap} servers done", flush=True)
