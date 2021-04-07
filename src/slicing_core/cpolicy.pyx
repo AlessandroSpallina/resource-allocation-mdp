@@ -97,7 +97,7 @@ cdef class SingleSliceMdpPolicy(Policy):
 
             self._policy = self._policy.tolist()
 
-    cpdef list get_action_from_policy(self, object current_state, int current_timeslot):
+    cpdef list get_action_from_policy(self, object current_state, int current_timeslot=0):
         cdef int i
         for i in range(len(current_state)):
             current_state[i].k = int(current_state[i].k / self._config.queue_scaling) * self._config.queue_scaling
