@@ -460,8 +460,6 @@ cdef class FastInitSingleSliceMdpPolicy(SingleSliceMdpPolicy):
         transition_matrix = np.zeros(
             (self._config.server_max_cap + 1, len(self._states), len(self._states)))
 
-        print(f"Creata trans_matrix con dimensioni {len(self._states)} * {len(self._states)}")
-
         base_cached_conf = copy(self._config)
         del base_cached_conf.server_max_cap
 
@@ -472,15 +470,10 @@ cdef class FastInitSingleSliceMdpPolicy(SingleSliceMdpPolicy):
             bigger_pattern = np.concatenate(tmp, axis=0)
 
             left_part = np.zeros((len(loaded) * (self._config.server_max_cap + 1), i * len(loaded)))
-            print(f"shape di left_part {left_part.shape[1]}")
-            print(f"shape di bigger_pattern {bigger_pattern.shape[1]}")
 
             right_part = np.zeros((len(loaded) * (self._config.server_max_cap + 1), len(self._states) - left_part.shape[1] - bigger_pattern.shape[1]))
-            print(f"shape di right_part {right_part.shape[1]}")
 
-            print("PRIMA")
             transition_matrix[i] = np.concatenate((left_part, bigger_pattern, right_part), axis=1)
-            print("QUI")
 
         self._transition_matrix = transition_matrix
 
