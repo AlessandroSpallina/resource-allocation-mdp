@@ -399,8 +399,6 @@ cpdef void _calculate_single_trans_matrix_pattern(int action_num, object mdp_obj
     cdef int last_pattern_state_index = first_pattern_state_index + pattern_dimension  # escluso questo
     cdef np.ndarray transition_matrix_pattern = np.zeros((pattern_dimension, pattern_dimension))
 
-    # -----------
-
     cdef int i, j, i_from, j_to
     cdef object hidden_from, hidden_to
     cdef double prob_tmp
@@ -441,6 +439,42 @@ cpdef void _calculate_single_trans_matrix_pattern(int action_num, object mdp_obj
         cache.store(transition_matrix_pattern)
 
 
+# NOTE: the reward pattern is NOT NORMALIZED
+cpdef void _calculate_single_rew_matrix_pattern(int action_num, object mdp_object):
+    cdef int pattern_dimension = len(mdp_object._states) / (mdp_object._config.server_max_cap + 1)
+    cdef int first_pattern_state_index = pattern_dimension * action_num
+    cdef int last_pattern_state_index = first_pattern_state_index + pattern_dimension  # escluso questo
+    cdef np.ndarray reward_matrix_pattern = np.zeros((pattern_dimension, pattern_dimension))
+
+    cdef int i, j, i_from, j_to
+    cdef object hidden_from, hidden_to
+    cdef double prob_tmp
+    cdef object cache, base_conf
+
+    base_conf = copy(mdp_object._config)
+    del base_conf.server_max_cap
+    cache = _Cache(base_conf, f"{action_num}.single_rew_matrix_pattern")
+
+    if cache.load() is None:
+        print(f"{action_num}.single_rew_matrix_pattern not yet cached: calculating")
+        for i in range(pattern_dimension):
+            for j in range(pattern_dimension):
+
+                if mdp_object._config.queue_scaling > 1:
+
+                    # is the same as _generate_transition_matrix but for the reward!
+                    hidden_to = copy(mdp_object._states[j + first_pattern_state_index])
+
+                    for j_to in range(mdp_object._config.queue_scaling):
+                        hidden_to.k += j_to
+                        if hidden_to.k <= mdp_object._config.queue_size:
+                            rew_tmp = mdp_object._calculate_transition_reward(hidden_to)
+                            reward_matrix_pattern[i][j] += rew_tmp
+                else:
+                    reward_matrix_pattern[i][j] = mdp_object._calculate_transition_reward(mdp_object._states[j + first_pattern_state_index])
+        cache.store(reward_matrix_pattern)
+
+
 # this version have a faster init phase because of matrix caching and multiprocessing
 cdef class FastInitSingleSliceMdpPolicy(SingleSliceMdpPolicy):
     cdef void _generate_transition_matrix(self):
@@ -477,10 +511,53 @@ cdef class FastInitSingleSliceMdpPolicy(SingleSliceMdpPolicy):
 
         self._transition_matrix = transition_matrix
 
-    # @findme: is this necessary?
     cpdef double _calculate_transition_probability(self, object from_state, object to_state, int action_id):
         return SingleSliceMdpPolicy._calculate_transition_probability(self, from_state, to_state, action_id)
 
+    cdef void _generate_reward_matrix(self):
+        cdef int a, i, j, j_to
+        cdef object hidden_to
+        cdef double rew_tmp, min_value
+
+        cdef object processes = []
+        cdef object cached, base_cached_conf
+        cdef np.ndarray reward_matrix, left_part, right_part
+
+        for a in range(self._config.server_max_cap + 1):
+            processes.append(multiprocessing.Process(target=_calculate_single_rew_matrix_pattern, args=(a, self)))
+            processes[-1].start()
+
+        for process in processes:
+            process.join()
+
+        # loading cached matrices and composing the
+        reward_matrix = np.zeros(
+            (self._config.server_max_cap + 1, len(self._states), len(self._states)))
+
+        base_cached_conf = copy(self._config)
+        del base_cached_conf.server_max_cap
+
+        for i in range(self._config.server_max_cap + 1):
+            cached = _Cache(base_cached_conf, f"{i}.single_rew_matrix_pattern")
+            loaded = cached.load()
+            tmp = tuple(loaded for s in range(self._config.server_max_cap + 1))
+            bigger_pattern = np.concatenate(tmp, axis=0)
+
+            left_part = np.zeros((len(loaded) * (self._config.server_max_cap + 1), i * len(loaded)))
+
+            right_part = np.zeros((len(loaded) * (self._config.server_max_cap + 1), len(self._states) - left_part.shape[1] - bigger_pattern.shape[1]))
+
+            reward_matrix[i] = np.concatenate((left_part, bigger_pattern, right_part), axis=1)
+
+        if self._config.normalize_reward_matrix:
+            # normalize the reward matrix
+            min_value = - reward_matrix.min()
+            reward_matrix /= min_value
+
+        self._reward_matrix = reward_matrix
+
+    cpdef double _calculate_transition_reward(self, object to_state):
+        return SingleSliceMdpPolicy._calculate_transition_reward(self, to_state)
 
 
 # ---------------------------------------------------------------------------------------------------------
