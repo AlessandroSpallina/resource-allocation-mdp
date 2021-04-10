@@ -1,6 +1,7 @@
 import subprocess
 import json
 import pickle
+import time
 
 from src.slicing_core.config import POLICY_CACHE_FILES_PATH
 
@@ -24,11 +25,25 @@ class _Cache:
     def __init__(self, config, file_extension):
         self._path = f"{POLICY_CACHE_FILES_PATH}{config.hash}.{file_extension}"
 
-    def load(self):
-        try:
-            loaded = pickle.load(open(self._path, "rb"))
-        except FileNotFoundError:
-            loaded = None
+    def load(self, blocking=False):
+        loaded = None
+
+        if not blocking:
+            try:
+                loaded = pickle.load(open(self._path, "rb"))
+            except FileNotFoundError:
+                pass
+        else:
+            waiting = True
+
+            while waiting:
+                try:
+                    loaded = pickle.load(open(self._path, "rb"))
+                    waiting = False
+                except FileNotFoundError:
+                    time.sleep(1)
+                    # print(f"Blocking cache.load is waiting {self._path}")
+
         return loaded
 
     def store(self, policy):

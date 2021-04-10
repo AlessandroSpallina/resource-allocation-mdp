@@ -67,9 +67,12 @@ class CachedPolicy(Policy):
             to_ret.append([s_i.json for s_i in s])
         return to_ret
 
-    def init(self):
+    def init(self, partial_initialization=False):
         if not self._is_cached:
-            self.obj.init()
+            if partial_initialization:
+                self.obj.init(partial_initialization)
+            else:
+                self.obj.init()
 
     def calculate_policy(self):
         if not self._is_cached:
@@ -415,10 +418,10 @@ def _get_balanced_confs(confs_dict):
 
 
 # target function for multiprocessing
-def _run_singleslice_from_confs(slice_index, slice_confs):
+def _run_singleslice_from_confs(slice_index, slice_confs, partial_initialization):
     for slice_conf in slice_confs:
         p = CachedPolicy(slice_conf, cpolicy.FastInitSingleSliceMdpPolicy)
-        p.init()
+        p.init(partial_initialization)
         p.calculate_policy()
         print(f"Policy of slice-{slice_index} with {slice_conf.server_max_cap} servers done", flush=True)
 
@@ -567,7 +570,7 @@ class SequentialPriorityMultiSliceMdpPolicy(PriorityMultiSliceMdpPolicy):
         self._slices = [list() for _ in range(self._config.slice_count)]
 
         # run highest priority slice
-        _run_singleslice_from_confs(0, [self._config.slice(0)])
+        _run_singleslice_from_confs(0, [self._config.slice(0)], False)
         self._slices[0] = [list() for _ in range(self._config.slice(0).server_max_cap + 1)]
         self._slices[0][self._config.slice(0).server_max_cap] = \
             CachedPolicy(self._config.slice(0), cpolicy.FastInitSingleSliceMdpPolicy)
@@ -582,17 +585,13 @@ class SequentialPriorityMultiSliceMdpPolicy(PriorityMultiSliceMdpPolicy):
         subconds_dicts = _get_range_subconfs_from_singleslice(self._config.slice(1), slice_1_min, slice_1_max)
         subconfs = [[subconds_dicts[e]] for e in subconds_dicts]
 
-        # ------------
-        for s in subconfs:
-            _run_singleslice_from_confs(1, s)
-        # ------------
+        for s in range(len(subconfs)):
+            processes.append(multiprocessing.Process(target=_run_singleslice_from_confs,
+                                                     args=(1, subconfs[s], True if s > 0 else False, )))
+            processes[-1].start()
 
-        # for s in subconfs:
-        #     processes.append(multiprocessing.Process(target=_run_singleslice_from_confs, args=(1, s,)))
-        #     processes[-1].start()
-        #
-        # for process in processes:
-        #     process.join()
+        for process in processes:
+            process.join()
 
         to_add = _run_range_subslices(self._config.slice(1), slice_1_min, slice_1_max)
         to_add.reverse()
