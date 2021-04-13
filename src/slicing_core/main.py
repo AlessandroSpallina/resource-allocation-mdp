@@ -123,7 +123,8 @@ def main(argv):
                     }
                     for j in range(confs[i].slice_count)
                 ],
-                'environment_data': agents[i].history
+                'environment_data': agents[i].history,
+                'environment_data_std': agents[i].history_std
             } for i in range(len(policies))
         ],
         f"{config.EXPORTED_FILES_PATH}{config.RESULTS_FILENAME}")

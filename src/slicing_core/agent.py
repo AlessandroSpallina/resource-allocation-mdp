@@ -69,11 +69,16 @@ class NetworkOperatorSimulator(Agent):
         self._policy = policy
         self._simulation_conf = simulation_config
         self._history = []
+        self._history_std = []
         self._init_agents()
 
     @property
     def history(self):
         return self._history
+
+    @property
+    def history_std(self):
+        return self._history_std
 
     def start_automatic_control(self):
         history_tmp = []
@@ -82,7 +87,7 @@ class NetworkOperatorSimulator(Agent):
             # TODO: this add_real_costs_to_stats can be moved inside the NetworkOperator object (useful with real scen.)
             history_tmp.append(_add_real_costs_to_stats(agent.history, self._simulation_conf.slices))
 
-        self._history = self._average_history(history_tmp)
+        self._history, self._history_std = self._average_history(history_tmp)
 
     def _init_agents(self):
         self._agents = []
@@ -93,34 +98,51 @@ class NetworkOperatorSimulator(Agent):
 
     # TODO: this can be written better and independent of what the environment returns
     def _average_history(self, history_to_average):
-        active_servers_average = []
-        jobs_in_queue_average = []
-        jobs_in_system_average = []
-        incoming_jobs_average = []
-        lost_jobs_average = []
-        processed_jobs_average = []
+        # active_servers_average = []
+        # jobs_in_queue_average = []
+        # jobs_in_system_average = []
+        # incoming_jobs_average = []
+        # lost_jobs_average = []
+        # processed_jobs_average = []
+        # cost_average = []
         wait_time_in_the_queue_average = []
         wait_time_in_the_system_average = []
-        cost_average = []
+
+        tmp_active_servers_average = []
+        tmp_jobs_in_queue_average = []
+        tmp_jobs_in_system_average = []
+        tmp_incoming_jobs_average = []
+        tmp_lost_jobs_average = []
+        tmp_processed_jobs_average = []
+        tmp_cost_average = []
 
         for i in range(self._simulation_conf.runs):
-            active_servers_average.append([d['active_servers'] for d in history_to_average[i]])
-            jobs_in_queue_average.append([d['jobs_in_queue'] for d in history_to_average[i]])
-            jobs_in_system_average.append([d['jobs_in_system'] for d in history_to_average[i]])
-            incoming_jobs_average.append([d['incoming_jobs'] for d in history_to_average[i]])
-            lost_jobs_average.append([d['lost_jobs'] for d in history_to_average[i]])
-            processed_jobs_average.append([d['processed_jobs'] for d in history_to_average[i]])
+            tmp_active_servers_average.append([d['active_servers'] for d in history_to_average[i]])
+            tmp_jobs_in_queue_average.append([d['jobs_in_queue'] for d in history_to_average[i]])
+            tmp_jobs_in_system_average.append([d['jobs_in_system'] for d in history_to_average[i]])
+            tmp_incoming_jobs_average.append([d['incoming_jobs'] for d in history_to_average[i]])
+            tmp_lost_jobs_average.append([d['lost_jobs'] for d in history_to_average[i]])
+            tmp_processed_jobs_average.append([d['processed_jobs'] for d in history_to_average[i]])
+            tmp_cost_average.append([d['cost'] for d in history_to_average[i]])
+
             wait_time_in_the_queue_average.append([d['wait_time_in_the_queue'] for d in history_to_average[i]])
             wait_time_in_the_system_average.append([d['wait_time_in_the_system'] for d in history_to_average[i]])
-            cost_average.append([d['cost'] for d in history_to_average[i]])
 
-        active_servers_average = np.average(np.array(active_servers_average), axis=0).tolist()
-        jobs_in_queue_average = np.average(np.array(jobs_in_queue_average), axis=0).tolist()
-        jobs_in_system_average = np.average(np.array(jobs_in_system_average), axis=0).tolist()
-        incoming_jobs_average = np.average(np.array(incoming_jobs_average), axis=0).tolist()
-        lost_jobs_average = np.average(np.array(lost_jobs_average), axis=0).tolist()
-        processed_jobs_average = np.average(np.array(processed_jobs_average), axis=0).tolist()
-        cost_average = np.average(np.array(cost_average), axis=0).tolist()
+        active_servers_average = np.average(np.array(tmp_active_servers_average), axis=0).tolist()
+        jobs_in_queue_average = np.average(np.array(tmp_jobs_in_queue_average), axis=0).tolist()
+        jobs_in_system_average = np.average(np.array(tmp_jobs_in_system_average), axis=0).tolist()
+        incoming_jobs_average = np.average(np.array(tmp_incoming_jobs_average), axis=0).tolist()
+        lost_jobs_average = np.average(np.array(tmp_lost_jobs_average), axis=0).tolist()
+        processed_jobs_average = np.average(np.array(tmp_processed_jobs_average), axis=0).tolist()
+        cost_average = np.average(np.array(tmp_cost_average), axis=0).tolist()
+
+        active_servers_average_std = np.std(np.array(tmp_active_servers_average), axis=0).tolist()
+        jobs_in_queue_average_std = np.std(np.array(tmp_jobs_in_queue_average), axis=0).tolist()
+        jobs_in_system_average_std = np.std(np.array(tmp_jobs_in_system_average), axis=0).tolist()
+        incoming_jobs_average_std = np.std(np.array(tmp_incoming_jobs_average), axis=0).tolist()
+        lost_jobs_average_std = np.std(np.array(tmp_lost_jobs_average), axis=0).tolist()
+        processed_jobs_average_std = np.std(np.array(tmp_processed_jobs_average), axis=0).tolist()
+        cost_average_std = np.std(np.array(tmp_cost_average), axis=0).tolist()
 
         # timing statistics need before to be processed in order to have histograms
         wait_time_in_the_queue_average = \
@@ -132,7 +154,7 @@ class NetworkOperatorSimulator(Agent):
                 [self._histogram_from_feature(sim, (np.array(wait_time_in_the_system_average, dtype=object).max()[0] + 1))
                  for sim in wait_time_in_the_system_average], axis=0)
 
-        return {
+        return ({
             "active_servers": active_servers_average,
             "jobs_in_queue": jobs_in_queue_average,
             "jobs_in_system": jobs_in_system_average,
@@ -142,7 +164,15 @@ class NetworkOperatorSimulator(Agent):
             "cost": cost_average,
             "wait_time_in_the_queue": wait_time_in_the_queue_average,
             "wait_time_in_the_system": wait_time_in_the_system_average
-        }
+        }, {
+            "active_servers": active_servers_average_std,
+            "jobs_in_queue": jobs_in_queue_average_std,
+            "jobs_in_system": jobs_in_system_average_std,
+            "incoming_jobs": incoming_jobs_average_std,
+            "lost_jobs": lost_jobs_average_std,
+            "processed_jobs": processed_jobs_average_std,
+            "cost": cost_average_std,
+        })
 
     def _histogram_from_feature(self, feature, output_dimension):
         # splitting feature per subslice
