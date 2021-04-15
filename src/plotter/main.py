@@ -6,6 +6,9 @@ import sys
 import os
 import numpy as np
 import copy
+import pandas as pd
+import functools
+import operator
 
 import src.plotter.utils as utils
 import src.plotter.plot as plotter
@@ -59,6 +62,76 @@ def plot_policy(base_save_path, policy, states):
                         f.write(f"{line}\n")
                 previous_policy = policy_ts
 
+
+def plot_slice_results_confidence(plot_identifier, base_save_path, stats, slice_index, window_average, is_system_pow=False):
+    slice_stats = []
+
+    for sim in stats:
+        slice_stats.append(sim[slice_index])
+
+    ts_in_simulation = moving_average(slice_stats[0]['active_servers'], window_average)[0].tolist()
+    #ts_in_simulation = list(range(len(slice_stats[0]['active_servers'])))
+    timeslot_tmp = ts_in_simulation * len(slice_stats)
+    simulation_tmp = functools.reduce(operator.iconcat, [[sim_id]*len(ts_in_simulation) for sim_id in range(len(slice_stats))], [])
+
+    active_servers_tmp = [moving_average(sim['active_servers'], window_average)[1] for sim in slice_stats]
+    jobs_in_queue_tmp = [moving_average(sim['jobs_in_queue'], window_average)[1] for sim in slice_stats]
+    lost_jobs_tmp = [moving_average(sim['lost_jobs'], window_average)[1] for sim in slice_stats]
+    processed_jobs_tmp = [moving_average(sim['processed_jobs'], window_average)[1] for sim in slice_stats]
+    cost_tmp = [moving_average(sim['cost'], window_average)[1] for sim in slice_stats]
+
+    active_servers_tmp = functools.reduce(operator.iconcat, active_servers_tmp, [])
+    jobs_in_queue_tmp = functools.reduce(operator.iconcat, jobs_in_queue_tmp, [])
+    lost_jobs_tmp = functools.reduce(operator.iconcat, lost_jobs_tmp, [])
+    processed_jobs_tmp = functools.reduce(operator.iconcat, processed_jobs_tmp, [])
+    cost_tmp = functools.reduce(operator.iconcat, cost_tmp, [])
+
+    # ----
+    active_servers_df = pd.DataFrame({'active_servers': active_servers_tmp,
+                                      'timeslot': timeslot_tmp,
+                                      'simulation': simulation_tmp})
+
+    plotter.plot_confidence(active_servers_df,
+                            title=f"[{plot_identifier}] Active servers",
+                            xlabel="timeslot", ylabel="active_servers",
+                            save_path=f"{base_save_path}active_servers_confidence-wa{window_average}")
+    # ----
+    jobs_in_queue_tmp = pd.DataFrame({'jobs_in_queue': jobs_in_queue_tmp,
+                                      'timeslot': timeslot_tmp,
+                                      'simulation': simulation_tmp})
+
+    plotter.plot_confidence(jobs_in_queue_tmp,
+                            title=f"[{plot_identifier}] Jobs in queue",
+                            xlabel="timeslot", ylabel="jobs_in_queue",
+                            save_path=f"{base_save_path}jobs_in_queue_confidence-wa{window_average}")
+    # ----
+    lost_jobs_tmp = pd.DataFrame({'lost_jobs': lost_jobs_tmp,
+                                  'timeslot': timeslot_tmp,
+                                  'simulation': simulation_tmp})
+
+    plotter.plot_confidence(lost_jobs_tmp,
+                            title=f"[{plot_identifier}] Lost jobs",
+                            xlabel="timeslot", ylabel="lost_jobs",
+                            save_path=f"{base_save_path}lost_jobs_confidence-wa{window_average}")
+    # ----
+    processed_jobs_tmp = pd.DataFrame({'processed_jobs': processed_jobs_tmp,
+                                       'timeslot': timeslot_tmp,
+                                       'simulation': simulation_tmp})
+
+    plotter.plot_confidence(processed_jobs_tmp,
+                            title=f"[{plot_identifier}] Processed jobs",
+                            xlabel="timeslot", ylabel="processed_jobs",
+                            save_path=f"{base_save_path}processed_jobs_confidence-wa{window_average}")
+    # ----
+    cost_tmp = pd.DataFrame({'cost': cost_tmp,
+                             'timeslot': timeslot_tmp,
+                             'simulation': simulation_tmp})
+
+    plotter.plot_confidence(cost_tmp,
+                            title=f"[{plot_identifier}] Costs",
+                            xlabel="timeslot", ylabel="cost",
+                            save_path=f"{base_save_path}cost_confidence-wa{window_average}")
+    # ----
 
 # Plotting stuff related to simulation results
 def plot_slice_results(plot_identifier, base_save_path, stats, window_average, is_system_pow=False):
@@ -192,6 +265,24 @@ def split_stats_per_slice(stats):
     return stats_per_slice
 
 
+# returns [sim1, sim2, ..., simN]
+# in which simN = [slice0, ..., sliceN]
+# in which slice0 = {'active_servers': ..., 'other_stuff': ...}
+def split_raw_stats_per_slice(stats):
+    raw_stats_per_slice = \
+        [[{} for i in range(len(stats['active_servers'][0][0]))] for _ in range(len(stats['active_servers']))]
+
+    for sim in range(len(raw_stats_per_slice)):
+        for key in stats:
+            for ts in stats[key][sim]:
+                for slice_i in range(len(ts)):
+                    if not key in raw_stats_per_slice[sim][slice_i]:
+                        raw_stats_per_slice[sim][slice_i][key] = []
+                    raw_stats_per_slice[sim][slice_i][key].append(ts[slice_i])
+
+    return raw_stats_per_slice
+
+
 # deletes 0s from wait_time in the queue and in the system, these 0s are without meaning here (not true in other stats!)
 def filter_stats_per_slice(stats_per_slice):
     # wait_time_in_the_queue_per_slice = stats_per_slice['wait_time_in_the_queue']
@@ -234,7 +325,7 @@ def main(argv):
 
     DATA_PATH = cli_args['data']
     EXPORTED_FILES_PATH = f"../../res/plots/{DATA_PATH.split('/')[-2]}/"
-    AVERAGE_WINDOWS = [100, 150, 200]
+    AVERAGE_WINDOWS = [10, 30, 90]
 
     print(f"PLOTTER: Current directory {os.getcwd()}")
 
@@ -257,11 +348,14 @@ def main(argv):
 
         stats_per_slice = filter_stats_per_slice(split_stats_per_slice(result['environment_data']))
 
+        raw_stats_per_slice = split_raw_stats_per_slice(result['environment_data_raw'])
+
         for i in range(len(stats_per_slice)):
             os.makedirs(f"{result_base_path}slice-{i}")
             plot_slices_configs(f"slice-{i}", f"{result_base_path}slice-{i}/", result['slices'][i])
             for aw in AVERAGE_WINDOWS:
                 plot_slice_results(f"slice-{i}", f"{result_base_path}slice-{i}/", stats_per_slice[i], aw)
+                plot_slice_results_confidence(f"slice-{i}", f"{result_base_path}slice-{i}/", raw_stats_per_slice, i, aw)
             tmp = stats_per_slice[i]
             tmp['policy_name'] = result['name']
             slice_comparison_stats[i].append(stats_per_slice[i])
@@ -280,6 +374,37 @@ def main(argv):
             plot_slice_comparison(f"comparison slice-{slice_i}",
                                   f"{EXPORTED_FILES_PATH}/comparison/slice-{slice_i}/",
                                   slice_comparison_stats[slice_i], aw)
+
+    #     result_base_path = f"{EXPORTED_FILES_PATH}{result['name']}/"
+    #     os.makedirs(result_base_path)
+    #
+    #     stats_per_slice = filter_stats_per_slice(split_stats_per_slice(result['environment_data']))
+    #
+    #     for i in range(len(stats_per_slice)):
+    #         os.makedirs(f"{result_base_path}slice-{i}")
+    #         plot_slices_configs(f"slice-{i}", f"{result_base_path}slice-{i}/", result['slices'][i])
+    #         for aw in AVERAGE_WINDOWS:
+    #             plot_slice_results(f"slice-{i}", f"{result_base_path}slice-{i}/", stats_per_slice[i], aw)
+    #         tmp = stats_per_slice[i]
+    #         tmp['policy_name'] = result['name']
+    #         slice_comparison_stats[i].append(stats_per_slice[i])
+    #
+    #     merged_per_system = merge_stats_for_system_pow(result['environment_data'])
+    #     os.makedirs(f"{result_base_path}system_pow")
+    #     for aw in AVERAGE_WINDOWS:
+    #         plot_slice_results(f"system-pow",
+    #                            f"{result_base_path}system_pow/", merged_per_system, aw, is_system_pow=True)
+    #     plot_policy(f"{result_base_path}system_pow/", result['policy'], result['states'])
+    #
+    # os.makedirs(f"{EXPORTED_FILES_PATH}comparison/")
+    # for slice_i in range(len(slice_comparison_stats)):
+    #     os.makedirs(f"{EXPORTED_FILES_PATH}/comparison/slice-{slice_i}")
+    #     for aw in AVERAGE_WINDOWS:
+    #         plot_slice_comparison(f"comparison slice-{slice_i}",
+    #                               f"{EXPORTED_FILES_PATH}/comparison/slice-{slice_i}/",
+    #                               slice_comparison_stats[slice_i], aw)
+
+
 
 
 if __name__ == '__main__':

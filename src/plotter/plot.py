@@ -1,9 +1,24 @@
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 from matplotlib.ticker import MaxNLocator
 from graphviz import Digraph
 
 import numpy as np
+
+
+def plot_confidence(dataframe, title="", xlabel="", ylabel="", save_path=""):
+    plt.rcParams.update({'font.size': 22})
+    fig, ax = plt.subplots(figsize=(15, 10))
+    ax.grid(True)
+    ax.minorticks_on()
+    sns.lineplot(data=dataframe, x=xlabel, y=ylabel)
+    ax.set_title(title)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    # ax.legend()
+    plt.savefig(save_path)
+    plt.close(fig)
 
 
 def plot(ydata, xdata=[], title="", xlabel="", ylabel="", save_path=""):
