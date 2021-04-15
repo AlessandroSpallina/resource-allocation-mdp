@@ -70,6 +70,7 @@ class NetworkOperatorSimulator(Agent):
         self._simulation_conf = simulation_config
         self._history = []
         self._history_std = []
+        self._history_raw = []
         self._init_agents()
 
     @property
@@ -80,6 +81,10 @@ class NetworkOperatorSimulator(Agent):
     def history_std(self):
         return self._history_std
 
+    @property
+    def history_raw(self):
+        return self._history_raw
+
     def start_automatic_control(self):
         history_tmp = []
         for agent in self._agents:
@@ -87,6 +92,7 @@ class NetworkOperatorSimulator(Agent):
             # TODO: this add_real_costs_to_stats can be moved inside the NetworkOperator object (useful with real scen.)
             history_tmp.append(_add_real_costs_to_stats(agent.history, self._simulation_conf.slices))
 
+        self._history_raw = self._raw_history(history_tmp)
         self._history, self._history_std = self._average_history(history_tmp)
 
     def _init_agents(self):
@@ -96,15 +102,36 @@ class NetworkOperatorSimulator(Agent):
                                                 MultiSliceSimulator(self._simulation_conf),
                                                 self._simulation_conf.timeslots))
 
+    def _raw_history(self, raw):
+        tmp_active_servers = []
+        tmp_jobs_in_queue = []
+        tmp_jobs_in_system = []
+        tmp_incoming_jobs = []
+        tmp_lost_jobs = []
+        tmp_processed_jobs = []
+        tmp_cost = []
+
+        for i in range(self._simulation_conf.runs):
+            tmp_active_servers.append([d['active_servers'] for d in raw[i]])
+            tmp_jobs_in_queue.append([d['jobs_in_queue'] for d in raw[i]])
+            tmp_jobs_in_system.append([d['jobs_in_system'] for d in raw[i]])
+            tmp_incoming_jobs.append([d['incoming_jobs'] for d in raw[i]])
+            tmp_lost_jobs.append([d['lost_jobs'] for d in raw[i]])
+            tmp_processed_jobs.append([d['processed_jobs'] for d in raw[i]])
+            tmp_cost.append([d['cost'] for d in raw[i]])
+
+        return {
+            "active_servers": tmp_active_servers,
+            "jobs_in_queue": tmp_jobs_in_queue,
+            "jobs_in_system": tmp_jobs_in_system,
+            "incoming_jobs": tmp_incoming_jobs,
+            "lost_jobs": tmp_lost_jobs,
+            "processed_jobs": tmp_processed_jobs,
+            "cost": tmp_cost,
+        }
+
     # TODO: this can be written better and independent of what the environment returns
     def _average_history(self, history_to_average):
-        # active_servers_average = []
-        # jobs_in_queue_average = []
-        # jobs_in_system_average = []
-        # incoming_jobs_average = []
-        # lost_jobs_average = []
-        # processed_jobs_average = []
-        # cost_average = []
         wait_time_in_the_queue_average = []
         wait_time_in_the_system_average = []
 

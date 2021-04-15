@@ -124,7 +124,8 @@ def main(argv):
                     for j in range(confs[i].slice_count)
                 ],
                 'environment_data': agents[i].history,
-                'environment_data_std': agents[i].history_std
+                'environment_data_std': agents[i].history_std,
+                'environment_data_raw': agents[i].history_raw
             } for i in range(len(policies))
         ],
         f"{config.EXPORTED_FILES_PATH}{config.RESULTS_FILENAME}")
@@ -132,6 +133,7 @@ def main(argv):
     # call the plotter script
     result_file_absolute_path = \
         os.path.abspath(f"{config.EXPORTED_FILES_PATH}{config.RESULTS_FILENAME}").replace('\\', '/')
+    print(f"cd ../../ && python -m src.plotter.main -d {result_file_absolute_path} -w ./src/plotter/")
     os.system(f"cd ../../ && python -m src.plotter.main -d {result_file_absolute_path} -w ./src/plotter/")
 
 
