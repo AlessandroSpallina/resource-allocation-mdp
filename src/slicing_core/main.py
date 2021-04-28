@@ -14,6 +14,7 @@ import shutil
 import sys
 import getopt
 import numpy as np
+import multiprocessing
 
 
 def cli_handler(argv):
@@ -37,6 +38,10 @@ def cli_handler(argv):
             to_return['name'] = arg
 
     return to_return
+
+
+def background_run_plotting(result_file_absolute_path):
+    os.system(f"cd ../../ && python -m src.plotter.main -d {result_file_absolute_path} -w ./src/plotter/")
 
 
 def main(argv):
@@ -134,7 +139,7 @@ def main(argv):
     result_file_absolute_path = \
         os.path.abspath(f"{config.EXPORTED_FILES_PATH}{config.RESULTS_FILENAME}").replace('\\', '/')
     print(f"cd ../../ && python -m src.plotter.main -d {result_file_absolute_path} -w ./src/plotter/")
-    os.system(f"cd ../../ && python -m src.plotter.main -d {result_file_absolute_path} -w ./src/plotter/")
+    multiprocessing.Process(target=background_run_plotting, args=(result_file_absolute_path,)).start()
 
 
 if __name__ == "__main__":
