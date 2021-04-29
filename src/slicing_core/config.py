@@ -6,6 +6,7 @@ import hashlib
 
 CONFIG_FILE_PATH = "config.yaml"
 POLICY_CACHE_FILES_PATH = "./exported/policy_cache/"
+SIMULATION_CACHE_FILES_PATH = "./exported/simulation_cache/"
 
 EXPORTED_FILES_PATH = f"./exported/results/{int(time.time())}/"
 LOG_FILENAME = "report.log"

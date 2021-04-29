@@ -2,8 +2,9 @@ import subprocess
 import json
 import pickle
 import time
+import os
 
-from src.slicing_core.config import POLICY_CACHE_FILES_PATH
+from src.slicing_core.config import POLICY_CACHE_FILES_PATH, SIMULATION_CACHE_FILES_PATH
 
 
 def get_last_commit_link():
@@ -49,3 +50,12 @@ class _Cache:
     def store(self, policy):
         pickle.dump(policy, open(self._path, "wb"))
         return self._path
+
+
+class _SimulationCache(_Cache):
+    def __init__(self, config, file_extension):
+        self._path = f"{SIMULATION_CACHE_FILES_PATH}{config.hash}.{file_extension}"
+
+    def remove(self):
+        os.remove(self._path)
+

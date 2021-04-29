@@ -1,7 +1,10 @@
 import abc
 import numpy as np
+import multiprocessing
+from copy import copy
 
 from src.slicing_core.environment import MultiSliceSimulator
+from src.slicing_core.utils import _SimulationCache
 
 
 class Agent:
@@ -57,6 +60,18 @@ def _add_real_costs_to_stats(environment_history, slices_paramethers):
     return to_return
 
 
+def _run_and_cache_simulation(policy, conf, cache):
+    agent = NetworkOperator(policy, MultiSliceSimulator(conf), conf.timeslots)
+
+    agent.start_automatic_control()
+    # TODO: this add_real_costs_to_stats can be moved inside the NetworkOperator object (useful with real scen.)
+    to_store = _add_real_costs_to_stats(
+        agent.history,
+        conf.slices)
+    cache.store(to_store)
+
+
+
 # TODO: This class does processing (i.e. wait time in the system/queue), this should not stay here in the future
 class NetworkOperatorSimulator(Agent):
     """
@@ -71,7 +86,8 @@ class NetworkOperatorSimulator(Agent):
         self._history = []
         self._history_std = []
         self._history_raw = []
-        self._init_agents()
+        self._caches = []
+        # self._init_agents()
 
     @property
     def history(self):
@@ -87,20 +103,33 @@ class NetworkOperatorSimulator(Agent):
 
     def start_automatic_control(self):
         history_tmp = []
-        for agent in self._agents:
-            agent.start_automatic_control()
-            # TODO: this add_real_costs_to_stats can be moved inside the NetworkOperator object (useful with real scen.)
-            history_tmp.append(_add_real_costs_to_stats(agent.history, self._simulation_conf.slices))
+        processes = []
+        self._caches = [_SimulationCache(self._simulation_conf, f'{i}') for i in range(self._simulation_conf.runs)]
+
+        for index in range(self._simulation_conf.runs):
+
+            processes.append(
+                multiprocessing.Process(target=_run_and_cache_simulation,
+                                        args=(self._policy, self._simulation_conf, self._caches[index]))
+            )
+            processes[-1].start()
+
+        for p in processes:
+            p.join()
+
+        for cache in self._caches:
+            history_tmp.append(cache.load(blocking=True))
+            cache.remove()
 
         self._history_raw = self._raw_history(history_tmp)
         self._history, self._history_std = self._average_history(history_tmp)
 
-    def _init_agents(self):
-        self._agents = []
-        for _ in range(self._simulation_conf.runs):
-            self._agents.append(NetworkOperator(self._policy,
-                                                MultiSliceSimulator(self._simulation_conf),
-                                                self._simulation_conf.timeslots))
+    # def _init_agents(self):
+    #     self._agents = []
+    #     for _ in range(self._simulation_conf.runs):
+    #         self._agents.append(NetworkOperator(self._policy,
+    #                                             MultiSliceSimulator(self._simulation_conf),
+    #                                             self._simulation_conf.timeslots))
 
     def _raw_history(self, raw):
         tmp_active_servers = []
