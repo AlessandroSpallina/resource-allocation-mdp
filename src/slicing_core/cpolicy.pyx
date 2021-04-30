@@ -262,15 +262,18 @@ cdef class SingleSliceMdpPolicy(Policy):
                     if self._transition_matrix[a][i][j] > 0:
                         if self._config.queue_scaling > 1:
                             # is the same as _generate_transition_matrix but for the reward!
-                            hidden_to = copy(self._states[j])
+                            for i_from in range(self._config.queue_scaling):
+                                hidden_from = copy(self._states[i])
+                                hidden_from.k += i_from
 
-                            for j_to in range(self._config.queue_scaling):
-                                hidden_to.k += j_to
-                                if hidden_to.k <= self._config.queue_size:
-                                    rew_tmp = self._calculate_transition_reward(hidden_to)
-                                    reward_matrix[a][i][j] += rew_tmp
+                                for j_to in range(self._config.queue_scaling):
+                                    hidden_to = copy(self._states[j])
+                                    hidden_to.k += j_to
+                                    if hidden_to.k <= self._config.queue_size:
+                                        rew_tmp = self._calculate_transition_reward(hidden_from, hidden_to)
+                                        reward_matrix[a][i][j] += rew_tmp
                         else:
-                            reward_matrix[a][i][j] = self._calculate_transition_reward(self._states[j])
+                            reward_matrix[a][i][j] = self._calculate_transition_reward(self._states[i], self._states[j])
 
         if self._config.normalize_reward_matrix:
             # normalize the reward matrix
@@ -279,11 +282,18 @@ cdef class SingleSliceMdpPolicy(Policy):
 
         self._reward_matrix = reward_matrix
 
-    cdef double _calculate_transition_reward(self, object to_state):
-        # C = alpha * C_k * num of jobs + beta * C_n * num of server + gamma * C_l * E(num of lost jobs)
+    cdef double _calculate_transition_reward(self, object from_state, object to_state):
+        # C =
+        # alpha * C_k * num of jobs +
+        # beta * C_n * num of servers +
+        # gamma * C_l * E(num of lost jobs) +
+        # delta * C_a * num of allocated servers +
+        # epsilon * C_d * num of deallocated servers
         cdef double cost1 = self._config.c_job * to_state.k
         cdef double cost2 = self._config.c_server * to_state.n
         cdef double cost3 = 0
+        cdef double cost4 = self._config.c_alloc * (0 if (to_state.n - from_state.n) <= 0 else (to_state.n - from_state.n))
+        cdef double cost5 = self._config.c_dealloc * (0 if (to_state.n - from_state.n) >= 0 else ((to_state.n - from_state.n)*-1))
 
         # expected value of lost packets
         cdef int i
@@ -293,7 +303,9 @@ cdef class SingleSliceMdpPolicy(Policy):
 
         return - (self._config.alpha * cost1 +
                   self._config.beta * cost2 +
-                  self._config.gamma * cost3)
+                  self._config.gamma * cost3 +
+                  self._config.delta * cost4 +
+                  self._config.epsilon * cost5)
 
     cdef list _run_relative_value_iteration(self):
         rvi = mdptoolbox.mdp.RelativeValueIteration(self._transition_matrix, self._reward_matrix)
@@ -381,17 +393,22 @@ cpdef void _calculate_single_rew_matrix_pattern(int action_num, object mdp_objec
             for j in range(pattern_dimension):
 
                 if mdp_object._config.queue_scaling > 1:
-
                     # is the same as _generate_transition_matrix but for the reward!
-                    hidden_to = copy(mdp_object._states[j + first_pattern_state_index])
 
-                    for j_to in range(mdp_object._config.queue_scaling):
-                        hidden_to.k += j_to
-                        if hidden_to.k <= mdp_object._config.queue_size:
-                            rew_tmp = mdp_object._calculate_transition_reward(hidden_to)
-                            reward_matrix_pattern[i][j] += rew_tmp
+                    for i_from in range(mdp_object._config.queue_scaling):
+                        hidden_from = copy(mdp_object._states[i + first_pattern_state_index])
+                        hidden_from.k += i_from
+
+                        for j_to in range(mdp_object._config.queue_scaling):
+                            hidden_to = copy(mdp_object._states[j + first_pattern_state_index])
+                            hidden_to.k += j_to
+                            if hidden_to.k <= mdp_object._config.queue_size:
+                                rew_tmp = mdp_object._calculate_transition_reward(hidden_from, hidden_to)
+                                reward_matrix_pattern[i][j] += rew_tmp
                 else:
-                    reward_matrix_pattern[i][j] = mdp_object._calculate_transition_reward(mdp_object._states[j + first_pattern_state_index])
+                    reward_matrix_pattern[i][j] = \
+                        mdp_object._calculate_transition_reward(mdp_object._states[i + first_pattern_state_index], mdp_object._states[j + first_pattern_state_index])
+
         cache.store(reward_matrix_pattern)
 
 
@@ -490,8 +507,8 @@ cdef class FastInitSingleSliceMdpPolicy(SingleSliceMdpPolicy):
 
         self._reward_matrix = reward_matrix
 
-    cpdef double _calculate_transition_reward(self, object to_state):
-        return SingleSliceMdpPolicy._calculate_transition_reward(self, to_state)
+    cpdef double _calculate_transition_reward(self, object from_state, object to_state):
+        return SingleSliceMdpPolicy._calculate_transition_reward(self, from_state, to_state)
 
 
 # ---------------------------------------------------------------------------------------------------------

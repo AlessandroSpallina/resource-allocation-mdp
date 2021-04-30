@@ -35,9 +35,13 @@ template = {
             'alpha': int,
             'beta': int,
             'gamma': int,
+            'delta': int,
+            'epsilon': int,
             'c_job': float,
             'c_server': float,
-            'c_lost': float
+            'c_lost': float,
+            'c_alloc': float,
+            'c_dealloc': float
         }
     )
 }
@@ -75,7 +79,7 @@ class SlicingConfig(Config):
         self.server_max_cap = self.get_property('server_max_cap')
         self.slices = self.get_property('slices')
 
-        self._normalize_alpha_beta_gamma()
+        self._normalize_alpha_beta_gamma_delta_epsilon()
 
     def slice(self, index):
         """Returns the config parameters of a slice (single-slice policy)"""
@@ -86,15 +90,19 @@ class SlicingConfig(Config):
         to_ret.slice_count = None
         return to_ret
 
-    def _normalize_alpha_beta_gamma(self):
+    def _normalize_alpha_beta_gamma_delta_epsilon(self):
         for i in range(self.slice_count):
             alpha = self._validated['slices'][i]['alpha']
             beta = self._validated['slices'][i]['beta']
             gamma = self._validated['slices'][i]['gamma']
+            delta = self._validated['slices'][i]['delta']
+            epsilon = self._validated['slices'][i]['epsilon']
 
-            self._validated['slices'][i]['alpha'] = alpha / (alpha + beta + gamma)
-            self._validated['slices'][i]['beta'] = beta / (alpha + beta + gamma)
-            self._validated['slices'][i]['gamma'] = gamma / (alpha + beta + gamma)
+            self._validated['slices'][i]['alpha'] = alpha / (alpha + beta + gamma + delta + epsilon)
+            self._validated['slices'][i]['beta'] = beta / (alpha + beta + gamma + delta + epsilon)
+            self._validated['slices'][i]['gamma'] = gamma / (alpha + beta + gamma + delta + epsilon)
+            self._validated['slices'][i]['delta'] = delta / (alpha + beta + gamma + delta + epsilon)
+            self._validated['slices'][i]['epsilon'] = epsilon / (alpha + beta + gamma + delta + epsilon)
 
 
 class MdpPolicyConfig(SlicingConfig):

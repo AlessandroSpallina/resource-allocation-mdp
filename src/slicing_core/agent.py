@@ -44,18 +44,33 @@ class NetworkOperator(Agent):
 
 
 def _add_real_costs_to_stats(environment_history, slices_paramethers):
-    # C = alpha * C_k * num of jobs in the queue + beta * C_n * num of server + gamma * C_l * num of lost jobs
+    # C = alpha * C_k * num of jobs in the queue + beta * C_n * num of server + gamma * C_l * num of lost jobs + alloc...dealloc
     to_return = []
-    for ts in environment_history:
+    for ts_index in range(len(environment_history)):
         ts_tmp = []
-        multislice_states = ts['state']
-        lost_jobs = ts['lost_jobs']
+        multislice_states = environment_history[ts_index]['state']
+        lost_jobs = environment_history[ts_index]['lost_jobs']
         for i in range(len(slices_paramethers)):
             cost1 = slices_paramethers[i].alpha * slices_paramethers[i].c_job * multislice_states[i].k
             cost2 = slices_paramethers[i].beta * slices_paramethers[i].c_server * multislice_states[i].n
             cost3 = slices_paramethers[i].gamma * slices_paramethers[i].c_lost * lost_jobs[i]
-            ts_tmp.append(cost1 + cost2 + cost3)
-        to_return.append(ts)
+
+            if ts_index > 0:
+                previous_state = environment_history[ts_index-1]['state']
+                cost4 = \
+                    slices_paramethers[i].delta * \
+                    slices_paramethers[i].c_alloc * \
+                    (0 if (multislice_states[i].n - previous_state[i].n) <= 0 else (multislice_states[i].n - previous_state[i].n))
+                cost5 = \
+                    slices_paramethers[i].epsilon * \
+                    slices_paramethers[i].c_dealloc * \
+                    (0 if (multislice_states[i].n - previous_state[i].n) >= 0 else ((multislice_states[i].n - previous_state[i].n)*-1))
+            else:
+                cost4 = 0
+                cost5 = 0
+
+            ts_tmp.append(cost1 + cost2 + cost3 + cost4 + cost5)
+        to_return.append(environment_history[ts_index])
         to_return[-1]['cost'] = ts_tmp
     return to_return
 
