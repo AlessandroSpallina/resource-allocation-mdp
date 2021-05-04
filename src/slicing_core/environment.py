@@ -182,11 +182,16 @@ class SingleSliceSimulator(Environment):
                     wait_time_in_the_system.append(self._current_timeslot - job.arrival_timeslot)
                 except queue.Empty:
                     tmp = self._refill_server_internal_queue()
-                    wait_time_in_the_queue += tmp['wait_time_in_the_queue']
+                    # wait_time_in_the_queue += tmp['wait_time_in_the_queue']
                     if tmp['refilled'] == 0:
                         # se entro qui posso processare più job di quanti ne ho in coda ->
                         # la stat deve essere relativa al reale processato!!!!
                         processed_jobs -= 1
+                    else:
+                        wait_time_in_the_queue += tmp['wait_time_in_the_queue']
+                        job = self._servers_internal_queue.get(False)
+                        wait_time_in_the_system.append(self._current_timeslot - job.arrival_timeslot)
+
         return {
             'processed_jobs': processed_jobs,
             'wait_time_in_the_queue': wait_time_in_the_queue,
