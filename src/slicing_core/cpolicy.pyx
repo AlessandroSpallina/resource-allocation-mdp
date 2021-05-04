@@ -295,25 +295,53 @@ cdef class SingleSliceMdpPolicy(Policy):
         cdef double cost4 = self._config.c_alloc * (0 if (to_state.n - from_state.n) <= 0 else (to_state.n - from_state.n))
         cdef double cost5 = self._config.c_dealloc * (0 if (to_state.n - from_state.n) >= 0 else ((to_state.n - from_state.n)*-1))
 
-        # expected value of lost packets
-        cdef int i
-        for i in range(len(self._config.arrivals_histogram)):
-            if to_state.k + i > self._config.queue_size:
-                cost3 += self._config.arrivals_histogram[i] * i * self._config.c_lost
+        # this calculation is done with arrival_processing phase in mind
+        # TODO: adjust these value for processing_arrival phase
+        cdef int arrivals, processed
+        cdef list h_d = self._calculate_h_d(to_state)
+        cdef int lost_jobs
 
-        return - (self._config.alpha * cost1 +
-                  self._config.beta * cost2 +
-                  self._config.gamma * cost3 +
-                  self._config.delta * cost4 +
-                  self._config.epsilon * cost5)
+        cdef np.ndarray lost_probabilies_tmp = np.zeros(len(self._config.arrivals_histogram))
+
+        # print(f"___From_State {from_state} -> To_State {to_state}___", flush=True)
+        for arrivals in range(self._config.queue_size - to_state.k + 1, len(self._config.arrivals_histogram)):
+            for processed in range(0, len(h_d)):
+                lost_jobs = to_state.k - processed + arrivals - self._config.queue_size
+
+                if lost_jobs > 0:
+                    # print(f"From_State {from_state} -> To_State {to_state}: Lost {lost_jobs} jobs", flush=True)
+                    lost_probabilies_tmp[lost_jobs] += self._config.arrivals_histogram[arrivals] * h_d[processed]
+
+        # for prob_i in range(len(lost_probabilies_tmp)):
+        #     print(f"index {prob_i} - prob: {lost_probabilies_tmp[prob_i]}", flush=True)
+        #     # cost3 += lost_probabilies_tmp[prob_i] * prob_i * self._config.c_lost
+
+        # lets consider the worse case (the maximum amount of lost jobs!)
+        # print(f"probabilities {lost_probabilies_tmp.sum()} * {len(lost_probabilies_tmp)} * {self._config.c_lost}", flush=True)
+        cost3 = lost_probabilies_tmp.sum() * len(lost_probabilies_tmp - 1) * self._config.c_lost
+
+        cdef float rew_tmp = - (self._config.alpha * cost1 +
+                                self._config.beta * cost2 +
+                                self._config.gamma * cost3 +
+                                self._config.delta * cost4 +
+                                self._config.epsilon * cost5)
+
+        # print(f"___From_State {from_state} -> To_State {to_state}: Cost {rew_tmp}___", flush=True)
+
+        return rew_tmp
 
     cdef list _run_relative_value_iteration(self):
-        rvi = mdptoolbox.mdp.RelativeValueIteration(self._transition_matrix, self._reward_matrix)
+        rvi = mdptoolbox.mdp.RelativeValueIteration(transitions=self._transition_matrix,
+                                                    reward=self._reward_matrix,
+                                                    epsilon=0.00000001)
         rvi.run()
         return list(rvi.policy)
 
     cdef list _run_value_iteration(self, float discount):
-        vi = mdptoolbox.mdp.ValueIteration(self._transition_matrix, self._reward_matrix, discount)
+        vi = mdptoolbox.mdp.ValueIteration(transitions=self._transition_matrix,
+                                           reward=self._reward_matrix,
+                                           discount=discount,
+                                           epsilon=0.00000001)
         vi.run()
         return list(vi.policy)
 
