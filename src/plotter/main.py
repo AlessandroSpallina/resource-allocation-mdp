@@ -35,7 +35,10 @@ def cli_handler(argv):
 
 def moving_average(data, average_window):
     averaged = np.convolve(data, np.ones((average_window,)) / average_window, mode='valid')
-    return np.arange(len(data), step=len(data) / averaged.size), averaged
+    timeline = np.arange(len(data), step=len(data) / averaged.size)
+    if timeline.size > averaged.size:
+        timeline = np.resize(timeline, -(timeline.size - averaged.size))
+    return timeline, averaged
 
 
 # TODO: needs to debug with fh
@@ -327,7 +330,7 @@ def main(argv):
 
     DATA_PATH = cli_args['data']
     EXPORTED_FILES_PATH = f"../../res/plots/{DATA_PATH.split('/')[-2]}/"
-    AVERAGE_WINDOWS = [10, 90]
+    AVERAGE_WINDOWS = [10, 90, 170, 250]
 
     print(f"PLOTTER: Current directory {os.getcwd()}")
 
