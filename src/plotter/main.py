@@ -1,5 +1,5 @@
 # PLOTTER MAIN
-# this software il executed by slicing_core passing via argument the path of a result.data
+# this software is executed by slicing_core passing via argument the path of a result.data
 
 import getopt
 import sys
@@ -50,6 +50,65 @@ def plot_policy(base_save_path, policy, states):
                 line = str([(sub['k'], sub['n']) for sub in states[policy_i]])
                 line += f";{policy[policy_i]}"
                 f.write(f"{line}\n")
+
+        single_slice_states = [[] for _ in range(len(states[0]))]
+        single_slice_actions = [[] for _ in range(len(states[0]))]
+        for multi_state_index in range(len(states)):
+            multi_state = states[multi_state_index]
+            multi_action = policy[multi_state_index]
+
+            for slice_index in range(len(multi_state)):
+                state_tmp = multi_state[slice_index]
+                action_tmp = multi_action[slice_index]
+
+                if state_tmp not in single_slice_states[slice_index]:
+                    single_slice_states[slice_index].append(state_tmp)
+                    single_slice_actions[slice_index].append([action_tmp])
+                else:
+                    # cerca l'index dello stato piccolo e verifica se c'è già action in policy
+                    state_i = single_slice_states[slice_index].index(state_tmp)
+                    if action_tmp not in single_slice_actions[slice_index][state_i]:
+                        single_slice_actions[slice_index][state_i].append(action_tmp)
+                        single_slice_actions[slice_index][state_i].sort()
+
+        dataframes_dictionaries = \
+            [{'job': [], 'server': [], 'action': []} if _ == 0 else
+             [{'job': [], 'server': [], 'action': []}, {'job': [], 'server': [], 'action': []}]
+             for _ in range(len(states[0]))]
+
+        # calculating dataframes
+        for slice_index in range(len(single_slice_states)):
+            for state_index in range(len(single_slice_states[slice_index])):
+                state_tmp = single_slice_states[slice_index][state_index]
+                actions_tmp = single_slice_actions[slice_index][state_index]
+
+                if slice_index == 0:  # if == 0 there is no min and max, but only one policy
+                    dataframes_dictionaries[slice_index]['job'].append(state_tmp['k'])
+                    dataframes_dictionaries[slice_index]['server'].append(state_tmp['n'])
+                    dataframes_dictionaries[slice_index]['action'].append(actions_tmp[0])
+                else:
+                    act_min = actions_tmp[0]
+                    act_max = actions_tmp[-1]
+
+                    dataframes_dictionaries[slice_index][0]['job'].append(state_tmp['k'])
+                    dataframes_dictionaries[slice_index][0]['server'].append(state_tmp['n'])
+                    dataframes_dictionaries[slice_index][0]['action'].append(act_min)
+
+                    dataframes_dictionaries[slice_index][1]['job'].append(state_tmp['k'])
+                    dataframes_dictionaries[slice_index][1]['server'].append(state_tmp['n'])
+                    dataframes_dictionaries[slice_index][1]['action'].append(act_max)
+
+        # doing heatmap
+        for i in range(len(dataframes_dictionaries)):
+            if i == 0:  # slice with index 0 need only 1 heatmap
+                df = pd.DataFrame(dataframes_dictionaries[i])
+                plotter.plot_heatmap(df, title=f"Slice-{i} Policy", save_path=f"{base_save_path}slice-{i}_policy.png")
+            else:
+                for d in range(len(dataframes_dictionaries[i])):
+                    df = pd.DataFrame(dataframes_dictionaries[i][d])
+                    plotter.plot_heatmap(df, title=f"Slice-{i} Policy {'min' if d==0 else 'max'}",
+                                         save_path=f"{base_save_path}slice-{i}_{'min' if d==0 else 'max'}_policy.png")
+
     else:  # fh
         previous_policy = []
         ts_len = len(policy[0])
