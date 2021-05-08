@@ -10,16 +10,19 @@ import numpy as np
 def plot_heatmap(dataframe, title="", save_path=""):
     # ax = sns.heatmap(df, annot=True, fmt="d", xticklabels=1, yticklabels=1, linewidth=.5)
     # plt.show()
+    try:
+        plt.rcParams.update({'font.size': 15})
+        # fig, ax = plt.subplots(figsize=(15, 15))
 
-    plt.rcParams.update({'font.size': 15})
-    # fig, ax = plt.subplots(figsize=(15, 15))
+        dataframe = dataframe.pivot("job", "server", "action")
 
-    dataframe = dataframe.pivot("job", "server", "action")
-    fig, ax = plt.subplots(figsize=(dataframe.columns.max(), dataframe.index.max()/3))
-    ax = sns.heatmap(dataframe, annot=True, fmt="d", xticklabels=1, yticklabels=1, linewidth=.5)
-    ax.set_title(title)
-    plt.savefig(save_path)
-    plt.close(fig)
+        fig, ax = plt.subplots(figsize=(dataframe.columns.max() + 5, dataframe.index.max()/3))
+        ax = sns.heatmap(dataframe, annot=True, fmt="d", xticklabels=1, yticklabels=1, linewidth=.5)
+        ax.set_title(title)
+        plt.savefig(save_path)
+        plt.close(fig)
+    except ValueError:
+        return
 
 
 def plot_confidence(dataframe, title="", xlabel="", ylabel="", save_path=""):
