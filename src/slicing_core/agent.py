@@ -48,13 +48,21 @@ def _add_real_costs_to_stats(environment_history, slices_paramethers):
     to_return = []
     for ts_index in range(len(environment_history)):
         ts_tmp = []
+        ts_tmp2 = []
         multislice_states = environment_history[ts_index]['state']
         lost_jobs = environment_history[ts_index]['lost_jobs']
         for i in range(len(slices_paramethers)):
+            ts_tmp2.append([])
+
             # TODO: remeber that here we don't have alpha,beta,gamma..
             cost1 = slices_paramethers[i].c_job * multislice_states[i].k
+            ts_tmp2[i].append(cost1)
+
             cost2 = slices_paramethers[i].c_server * multislice_states[i].n
+            ts_tmp2[i].append(cost2)
+
             cost3 = slices_paramethers[i].c_lost * lost_jobs[i]
+            ts_tmp2[i].append(cost3)
 
             if ts_index > 0:
                 previous_state = environment_history[ts_index-1]['state']
@@ -68,9 +76,13 @@ def _add_real_costs_to_stats(environment_history, slices_paramethers):
                 cost4 = 0
                 cost5 = 0
 
+            ts_tmp2[i].append(cost4)
+            ts_tmp2[i].append(cost5)
+
             ts_tmp.append(cost1 + cost2 + cost3 + cost4 + cost5)
         to_return.append(environment_history[ts_index])
         to_return[-1]['cost'] = ts_tmp
+        to_return[-1]['cost_component'] = ts_tmp2
     return to_return
 
 
@@ -83,7 +95,6 @@ def _run_and_cache_simulation(policy, conf, cache):
         agent.history,
         conf.slices)
     cache.store(to_store)
-
 
 
 # TODO: This class does processing (i.e. wait time in the system/queue), this should not stay here in the future
@@ -111,9 +122,9 @@ class NetworkOperatorSimulator(Agent):
     def history_std(self):
         return self._history_std
 
-    @property
-    def history_raw(self):
-        return self._history_raw
+    # @property
+    # def history_raw(self):
+    #     return self._history_raw
 
     def start_automatic_control(self):
         history_tmp = []
@@ -135,7 +146,7 @@ class NetworkOperatorSimulator(Agent):
             history_tmp.append(cache.load(blocking=True))
             cache.remove()
 
-        self._history_raw = self._raw_history(history_tmp)
+        # self._history_raw = self._raw_history(history_tmp)
         self._history, self._history_std = self._average_history(history_tmp)
 
     # def _init_agents(self):
@@ -145,33 +156,33 @@ class NetworkOperatorSimulator(Agent):
     #                                             MultiSliceSimulator(self._simulation_conf),
     #                                             self._simulation_conf.timeslots))
 
-    def _raw_history(self, raw):
-        tmp_active_servers = []
-        tmp_jobs_in_queue = []
-        tmp_jobs_in_system = []
-        tmp_incoming_jobs = []
-        tmp_lost_jobs = []
-        tmp_processed_jobs = []
-        tmp_cost = []
-
-        for i in range(self._simulation_conf.runs):
-            tmp_active_servers.append([d['active_servers'] for d in raw[i]])
-            tmp_jobs_in_queue.append([d['jobs_in_queue'] for d in raw[i]])
-            tmp_jobs_in_system.append([d['jobs_in_system'] for d in raw[i]])
-            tmp_incoming_jobs.append([d['incoming_jobs'] for d in raw[i]])
-            tmp_lost_jobs.append([d['lost_jobs'] for d in raw[i]])
-            tmp_processed_jobs.append([d['processed_jobs'] for d in raw[i]])
-            tmp_cost.append([d['cost'] for d in raw[i]])
-
-        return {
-            "active_servers": tmp_active_servers,
-            "jobs_in_queue": tmp_jobs_in_queue,
-            "jobs_in_system": tmp_jobs_in_system,
-            "incoming_jobs": tmp_incoming_jobs,
-            "lost_jobs": tmp_lost_jobs,
-            "processed_jobs": tmp_processed_jobs,
-            "cost": tmp_cost,
-        }
+    # def _raw_history(self, raw):
+    #     tmp_active_servers = []
+    #     tmp_jobs_in_queue = []
+    #     tmp_jobs_in_system = []
+    #     tmp_incoming_jobs = []
+    #     tmp_lost_jobs = []
+    #     tmp_processed_jobs = []
+    #     tmp_cost = []
+    #
+    #     for i in range(self._simulation_conf.runs):
+    #         tmp_active_servers.append([d['active_servers'] for d in raw[i]])
+    #         tmp_jobs_in_queue.append([d['jobs_in_queue'] for d in raw[i]])
+    #         tmp_jobs_in_system.append([d['jobs_in_system'] for d in raw[i]])
+    #         tmp_incoming_jobs.append([d['incoming_jobs'] for d in raw[i]])
+    #         tmp_lost_jobs.append([d['lost_jobs'] for d in raw[i]])
+    #         tmp_processed_jobs.append([d['processed_jobs'] for d in raw[i]])
+    #         tmp_cost.append([d['cost'] for d in raw[i]])
+    #
+    #     return {
+    #         "active_servers": tmp_active_servers,
+    #         "jobs_in_queue": tmp_jobs_in_queue,
+    #         "jobs_in_system": tmp_jobs_in_system,
+    #         "incoming_jobs": tmp_incoming_jobs,
+    #         "lost_jobs": tmp_lost_jobs,
+    #         "processed_jobs": tmp_processed_jobs,
+    #         "cost": tmp_cost,
+    #     }
 
     # TODO: this can be written better and independent of what the environment returns
     def _average_history(self, history_to_average):
@@ -185,6 +196,7 @@ class NetworkOperatorSimulator(Agent):
         tmp_lost_jobs_average = []
         tmp_processed_jobs_average = []
         tmp_cost_average = []
+        tmp_cost_component_average = []
 
         for i in range(self._simulation_conf.runs):
             tmp_active_servers_average.append([d['active_servers'] for d in history_to_average[i]])
@@ -194,6 +206,7 @@ class NetworkOperatorSimulator(Agent):
             tmp_lost_jobs_average.append([d['lost_jobs'] for d in history_to_average[i]])
             tmp_processed_jobs_average.append([d['processed_jobs'] for d in history_to_average[i]])
             tmp_cost_average.append([d['cost'] for d in history_to_average[i]])
+            tmp_cost_component_average.append([d['cost_component'] for d in history_to_average[i]])
 
             wait_time_in_the_queue_average.append([d['wait_time_in_the_queue'] for d in history_to_average[i]])
             wait_time_in_the_system_average.append([d['wait_time_in_the_system'] for d in history_to_average[i]])
@@ -205,6 +218,7 @@ class NetworkOperatorSimulator(Agent):
         lost_jobs_average = np.average(np.array(tmp_lost_jobs_average), axis=0).tolist()
         processed_jobs_average = np.average(np.array(tmp_processed_jobs_average), axis=0).tolist()
         cost_average = np.average(np.array(tmp_cost_average), axis=0).tolist()
+        cost_component_average = np.average(np.array(tmp_cost_component_average), axis=0).tolist()
 
         active_servers_average_std = np.std(np.array(tmp_active_servers_average), axis=0).tolist()
         jobs_in_queue_average_std = np.std(np.array(tmp_jobs_in_queue_average), axis=0).tolist()
@@ -213,6 +227,7 @@ class NetworkOperatorSimulator(Agent):
         lost_jobs_average_std = np.std(np.array(tmp_lost_jobs_average), axis=0).tolist()
         processed_jobs_average_std = np.std(np.array(tmp_processed_jobs_average), axis=0).tolist()
         cost_average_std = np.std(np.array(tmp_cost_average), axis=0).tolist()
+        cost_component_std = np.std(np.array(tmp_cost_component_average), axis=0).tolist()
 
         # timing statistics need before to be processed in order to have histograms
         wait_time_in_the_queue_average = \
@@ -232,6 +247,7 @@ class NetworkOperatorSimulator(Agent):
             "lost_jobs": lost_jobs_average,
             "processed_jobs": processed_jobs_average,
             "cost": cost_average,
+            "cost_component": cost_component_average,
             "wait_time_in_the_queue": wait_time_in_the_queue_average,
             "wait_time_in_the_system": wait_time_in_the_system_average
         }, {
@@ -242,6 +258,7 @@ class NetworkOperatorSimulator(Agent):
             "lost_jobs": lost_jobs_average_std,
             "processed_jobs": processed_jobs_average_std,
             "cost": cost_average_std,
+            "cost_component": cost_component_std,
         })
 
     def _histogram_from_feature(self, feature, output_dimension):

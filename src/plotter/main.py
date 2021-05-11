@@ -9,6 +9,7 @@ import copy
 import pandas as pd
 import functools
 import operator
+import itertools
 
 import src.plotter.utils as utils
 import src.plotter.plot as plotter
@@ -34,6 +35,17 @@ def cli_handler(argv):
 
 
 def moving_average(data, average_window):
+    if type(data[0]) == list:
+        return_values_timeline = None
+        return_values = []
+        to_average = np.hsplit(np.array(data), len(data[0]))
+        for subdata in to_average:
+            subdata = list(itertools.chain(*subdata))
+            tmp_timeline, tmp_values = moving_average(subdata, average_window)
+            return_values_timeline = tmp_timeline
+            return_values.append(tmp_values)
+        return return_values_timeline, return_values
+
     averaged = np.convolve(data, np.ones((average_window,)) / average_window, mode='valid')
     timeline = np.arange(len(data), step=len(data) / averaged.size)
     if timeline.size > averaged.size:
@@ -203,6 +215,7 @@ def plot_slice_results(plot_identifier, base_save_path, stats, window_average, i
     lost_jobs_per_ts = moving_average(stats['lost_jobs'], window_average)
     processed_jobs_per_ts = moving_average(stats['processed_jobs'], window_average)
     cost_per_ts = moving_average(stats['cost'], window_average)
+    cost_component_per_ts = moving_average(stats['cost_component'], window_average)
 
     # plotter.plot_cumulative(ydata={"costs": cost_per_ts[1],
     #                                "processed jobs": processed_jobs_per_ts[1],
@@ -213,6 +226,28 @@ def plot_slice_results(plot_identifier, base_save_path, stats, window_average, i
     plotter.plot(ydata={"costs per ts": cost_per_ts[1]},
                  xdata=cost_per_ts[0], xlabel="timeslot", title=f"[{plot_identifier}] Mean costs per Timeslot",
                  save_path=f"{base_save_path}per_ts_costs-wa{window_average}")
+
+    plotter.plot(ydata={
+        "job in the queue": cost_component_per_ts[1][0],
+        "running server": cost_component_per_ts[1][1],
+        "lost jobs": cost_component_per_ts[1][2],
+        "allocating server": cost_component_per_ts[1][3],
+        "deallocating server": cost_component_per_ts[1][4]
+    },
+                 xdata=cost_per_ts[0], xlabel="timeslot", ylabel="cost (usd)",
+                 title=f"[{plot_identifier}] Mean cost components per Timeslot",
+                 save_path=f"{base_save_path}per_ts_cost-components-wa{window_average}")
+
+    plotter.plot_cumulative(ydata={
+        "job in the queue": cost_component_per_ts[1][0],
+        "running server": cost_component_per_ts[1][1],
+        "lost jobs": cost_component_per_ts[1][2],
+        "allocating server": cost_component_per_ts[1][3],
+        "deallocating server": cost_component_per_ts[1][4]
+    },
+                            xdata=cost_per_ts[0], xlabel="timeslot", ylabel="cost (usd)",
+                            title=f"[{plot_identifier}] Mean cumulative cost components",
+                            save_path=f"{base_save_path}cumulative-cost-components-wa{window_average}")
 
     plotter.plot(ydata={"processed jobs per ts": processed_jobs_per_ts[1]},
                  xdata=cost_per_ts[0], xlabel="timeslot", title=f"[{plot_identifier}] Mean processed per Timeslot",
@@ -373,8 +408,9 @@ def merge_stats_for_system_pow(stats):
     merged = copy.deepcopy(stats)
 
     for key in stats:
-        for ts_i in range(len(stats[key])):
-            merged[key][ts_i] = sum(stats[key][ts_i])
+        merged[key] = np.sum(np.array(merged[key]), axis=1).tolist()
+        # for ts_i in range(len(stats[key])):
+        #     merged[key][ts_i] = sum(stats[key][ts_i])
 
     return merged
 
@@ -412,7 +448,7 @@ def main(argv):
 
         stats_per_slice = filter_stats_per_slice(split_stats_per_slice(result['environment_data']))
 
-        raw_stats_per_slice = split_raw_stats_per_slice(result['environment_data_raw'])
+        # raw_stats_per_slice = split_raw_stats_per_slice(result['environment_data_raw'])
 
         for i in range(len(stats_per_slice)):
             slice_label = i

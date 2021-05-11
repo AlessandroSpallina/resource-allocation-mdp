@@ -130,7 +130,7 @@ def main(argv):
                 ],
                 'environment_data': agents[i].history,
                 'environment_data_std': agents[i].history_std,
-                'environment_data_raw': agents[i].history_raw
+                # 'environment_data_raw': agents[i].history_raw
             } for i in range(len(policies))
         ],
         f"{config.EXPORTED_FILES_PATH}{config.RESULTS_FILENAME}")
