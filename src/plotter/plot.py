@@ -110,6 +110,17 @@ def bar(ydata, xdata=[], title="", xlabel="", ylabel="", save_path=""):
         ax.bar(np.array(xdata if len(xdata) else list(range(len(ydata[k])))) + offset, ydata[k], label=k, width=0.25)
         offset += 0.25
 
+    totals = []
+    # find the values and append to list
+    for i in ax.patches:
+        totals.append(i.get_height())
+
+    # set individual bar lables using above list
+    for i in ax.patches:
+        # get_x pulls left or right; get_height pushes up or down
+        ax.text(i.get_x() - .03, i.get_height(),
+                str(round((i.get_height()), 2)) + '%', fontsize=9, color='black', rotation=45)
+
     ax.set_title(title)
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
