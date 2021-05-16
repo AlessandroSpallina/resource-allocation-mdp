@@ -213,37 +213,8 @@ def main():
                         str(round((i.get_height()), 4)) + '%', fontsize=9, color='black', rotation=45)
 
             plt.savefig(f"{OUTPUT_DIRECTORY_PATH}{dataframe['name']}-slice{slice_i}")
+            plt.close()
 
-
-            # ax = dataframe['slices'][slice_i][['cost_job', 'cost_server', 'cost_lost', 'cost_alloc', 'cost_dealloc']].plot(
-            #     kind='bar',
-            #     stacked=False,
-            #     title=title,
-            #     figsize=(25, 10),
-            #     width=0.8,
-            # )
-            # ax.yaxis.grid(color='gray', linestyle='dashed')
-            # ax.set_ylabel("cost (usd)")
-            #
-            # plt.legend(bbox_to_anchor=(0., 1.01, 1., .102), loc='lower center', ncol=5, borderaxespad=0., frameon=False)
-            #
-            # # create a list to collect the plt.patches data
-            # totals = []
-            #
-            # # find the values and append to list
-            # for i in ax.patches:
-            #     totals.append(i.get_height())
-            #
-            # # set individual bar lables using above list
-            # total = sum(totals)
-            #
-            # # set individual bar lables using above list
-            # for i in ax.patches:
-            #     # get_x pulls left or right; get_height pushes up or down
-            #     ax.text(i.get_x() - .03, i.get_height() + .5,
-            #             str(round((i.get_height()), 4)) + '%', fontsize=9, color='black', rotation=45)
-            #
-            # plt.savefig(f"{OUTPUT_DIRECTORY_PATH}{dataframe['name']}-slice{slice_i}_costs")
             # -------------------------
 
         # TWO SLICES IN ONE FIGURE
@@ -276,6 +247,7 @@ def main():
         axs[1].legend(bbox_to_anchor=(0., 1.01, 1., .102), loc='lower right', ncol=3, borderaxespad=0., frameon=False)
         axs[1].grid(axis='y', which='both', color='grey', linestyle='dashed')
         plt.savefig(f"{OUTPUT_DIRECTORY_PATH}{dataframe['name']}")
+        plt.close()
 
         df0 = dataframe['slices'][0][['cost_job', 'cost_server', 'cost_lost', 'cost_alloc', 'cost_dealloc']]
         df1 = dataframe['slices'][1][['cost_job', 'cost_server', 'cost_lost', 'cost_alloc', 'cost_dealloc']]
@@ -304,6 +276,7 @@ def main():
         axs[1].legend(bbox_to_anchor=(1.05, 1), ncol=3, loc='lower right', borderaxespad=0., frameon=False)
         axs[1].grid(axis='y', which='both', color='grey', linestyle='dashed')
         plt.savefig(f"{OUTPUT_DIRECTORY_PATH}{dataframe['name']}_cost_component")
+        plt.close()
 
         df0 = dataframe['slices'][0][['cost_sum']]
         df1 = dataframe['slices'][1][['cost_sum']]
@@ -330,9 +303,292 @@ def main():
         axs[1].legend(bbox_to_anchor=(0., 1.01, 1., .102), loc='lower right', borderaxespad=0., frameon=False)
         axs[1].grid(axis='y', which='both', color='grey', linestyle='dashed')
         plt.savefig(f"{OUTPUT_DIRECTORY_PATH}{dataframe['name']}_costs")
+        plt.close()
+
+    # ------ uniform view ------- I KNOW, THIS IS NOT THE ELEGANT WAY TO DO IT
+    slice_0 = [d['slices'][0] for d in dataframes]
+    slice_1 = [d['slices'][1] for d in dataframes]
+
+    df_processed_on_time_slice_0 = \
+        pd.DataFrame({
+            'server': slice_0[0].index.to_list(),
+            '0_SequentialPriorityMultiSliceMdpPolicy': slice_0[0]['processed_on_time'].to_list(),
+            '1_SimplifiedPriorityMultiSliceMdpPolicy': slice_0[1]['processed_on_time'].to_list(),
+            '2_MultiSliceStaticPolicy': slice_0[2]['processed_on_time'].to_list(),
+            '3_MultiSliceStaticPolicy': slice_0[3]['processed_on_time'].to_list(),
+                     })
+
+    df_processed_on_time_slice_0['server'] = df_processed_on_time_slice_0['server'].astype(int)
+    df_processed_on_time_slice_0 = df_processed_on_time_slice_0.sort_values(by=["server"]).set_index("server")
+
+    ax = df_processed_on_time_slice_0.plot(
+        kind='bar',
+        stacked=False,
+        figsize=(25, 10),
+        width=0.8
+    )
+    ax.yaxis.grid(color='gray', linestyle='dashed')
+
+    ax.set_title(f"[High Priority] Processed on time", pad=40)
+    yticks = np.arange(0, 101, 10)
+    ylabels = ['{}%'.format(i) for i in np.arange(0, 101, 10)]
+    plt.yticks(yticks, ylabels)
+    ax.legend(bbox_to_anchor=(0., 1.01, 1., .102), loc='lower center', ncol=4, borderaxespad=0., frameon=False)
+
+    # create a list to collect the plt.patches data
+    totals = []
+
+    # find the values and append to list
+    for i in ax.patches:
+        totals.append(i.get_height())
+
+    # set individual bar lables using above list
+    total = sum(totals)
+
+    # set individual bar lables using above list
+    for i in ax.patches:
+        # get_x pulls left or right; get_height pushes up or down
+        ax.text(i.get_x(), i.get_height() + .5,
+                str(round((i.get_height()), 3)) + '%', fontsize=9, color='black', rotation=45)
+
+    plt.savefig(f"{OUTPUT_DIRECTORY_PATH}processed_on_time_slice0_allpolicy")
+    plt.close()
+
+    # ---
+
+    df_processed_on_time_slice_1 = \
+        pd.DataFrame({
+            'server': slice_1[0].index.to_list(),
+            '0_SequentialPriorityMultiSliceMdpPolicy': slice_1[0]['processed_on_time'].to_list(),
+            '1_SimplifiedPriorityMultiSliceMdpPolicy': slice_1[1]['processed_on_time'].to_list(),
+            '2_MultiSliceStaticPolicy': slice_1[2]['processed_on_time'].to_list(),
+            '3_MultiSliceStaticPolicy': slice_1[3]['processed_on_time'].to_list(),
+        })
+
+    df_processed_on_time_slice_1['server'] = df_processed_on_time_slice_1['server'].astype(int)
+    df_processed_on_time_slice_1 = df_processed_on_time_slice_1.sort_values(by=["server"]).set_index("server")
+
+    ax = df_processed_on_time_slice_1.plot(
+        kind='bar',
+        stacked=False,
+        figsize=(25, 10),
+        width=0.8
+    )
+    ax.yaxis.grid(color='gray', linestyle='dashed')
+
+    ax.set_title(f"[Low Priority] Processed on time", pad=40)
+    yticks = np.arange(0, 101, 10)
+    ylabels = ['{}%'.format(i) for i in np.arange(0, 101, 10)]
+    plt.yticks(yticks, ylabels)
+    ax.legend(bbox_to_anchor=(0., 1.01, 1., .102), loc='lower center', ncol=4, borderaxespad=0., frameon=False)
+
+    # create a list to collect the plt.patches data
+    totals = []
+
+    # find the values and append to list
+    for i in ax.patches:
+        totals.append(i.get_height())
+
+    # set individual bar lables using above list
+    total = sum(totals)
+
+    # set individual bar lables using above list
+    for i in ax.patches:
+        # get_x pulls left or right; get_height pushes up or down
+        ax.text(i.get_x(), i.get_height() + .5,
+                str(round((i.get_height()), 3)) + '%', fontsize=9, color='black', rotation=45)
+
+    plt.savefig(f"{OUTPUT_DIRECTORY_PATH}processed_on_time_slice1_allpolicy")
+    plt.close()
+
+    # ---
+
+    df_processed_too_late_slice_0 = \
+        pd.DataFrame({
+            'server': slice_0[0].index.to_list(),
+            '0_SequentialPriorityMultiSliceMdpPolicy': slice_0[0]['processed_too_late'].to_list(),
+            '1_SimplifiedPriorityMultiSliceMdpPolicy': slice_0[1]['processed_too_late'].to_list(),
+            '2_MultiSliceStaticPolicy': slice_0[2]['processed_too_late'].to_list(),
+            '3_MultiSliceStaticPolicy': slice_0[3]['processed_too_late'].to_list(),
+        })
+
+    df_processed_too_late_slice_0['server'] = df_processed_too_late_slice_0['server'].astype(int)
+    df_processed_too_late_slice_0 = df_processed_too_late_slice_0.sort_values(by=["server"]).set_index("server")
+
+    ax = df_processed_too_late_slice_0.plot(
+        kind='bar',
+        stacked=False,
+        figsize=(25, 10),
+        width=0.8
+    )
+    ax.yaxis.grid(color='gray', linestyle='dashed')
+
+    ax.set_title(f"[High Priority] Processed too late", pad=40)
+    yticks = np.arange(0, 101, 10)
+    ylabels = ['{}%'.format(i) for i in np.arange(0, 101, 10)]
+    plt.yticks(yticks, ylabels)
+    ax.legend(bbox_to_anchor=(0., 1.01, 1., .102), loc='lower center', ncol=4, borderaxespad=0., frameon=False)
+
+    # create a list to collect the plt.patches data
+    totals = []
+
+    # find the values and append to list
+    for i in ax.patches:
+        totals.append(i.get_height())
+
+    # set individual bar lables using above list
+    total = sum(totals)
+
+    # set individual bar lables using above list
+    for i in ax.patches:
+        # get_x pulls left or right; get_height pushes up or down
+        ax.text(i.get_x(), i.get_height() + .5,
+                str(round((i.get_height()), 3)) + '%', fontsize=9, color='black', rotation=45)
+
+    plt.savefig(f"{OUTPUT_DIRECTORY_PATH}processed_too_late_slice0_allpolicy")
+    plt.close()
+
+    # ---
+
+    df_processed_too_late_slice_1 = \
+        pd.DataFrame({
+            'server': slice_1[0].index.to_list(),
+            '0_SequentialPriorityMultiSliceMdpPolicy': slice_1[0]['processed_too_late'].to_list(),
+            '1_SimplifiedPriorityMultiSliceMdpPolicy': slice_1[1]['processed_too_late'].to_list(),
+            '2_MultiSliceStaticPolicy': slice_1[2]['processed_too_late'].to_list(),
+            '3_MultiSliceStaticPolicy': slice_1[3]['processed_too_late'].to_list(),
+        })
+
+    df_processed_too_late_slice_1['server'] = df_processed_too_late_slice_1['server'].astype(int)
+    df_processed_too_late_slice_1 = df_processed_too_late_slice_1.sort_values(by=["server"]).set_index("server")
+
+    ax = df_processed_too_late_slice_1.plot(
+        kind='bar',
+        stacked=False,
+        figsize=(25, 10),
+        width=0.8
+    )
+    ax.yaxis.grid(color='gray', linestyle='dashed')
+
+    ax.set_title(f"[Low Priority] Processed too late", pad=40)
+    yticks = np.arange(0, 101, 10)
+    ylabels = ['{}%'.format(i) for i in np.arange(0, 101, 10)]
+    plt.yticks(yticks, ylabels)
+    ax.legend(bbox_to_anchor=(0., 1.01, 1., .102), loc='lower center', ncol=4, borderaxespad=0., frameon=False)
+
+    # create a list to collect the plt.patches data
+    totals = []
+
+    # find the values and append to list
+    for i in ax.patches:
+        totals.append(i.get_height())
+
+    # set individual bar lables using above list
+    total = sum(totals)
+
+    # set individual bar lables using above list
+    for i in ax.patches:
+        # get_x pulls left or right; get_height pushes up or down
+        ax.text(i.get_x(), i.get_height() + .5,
+                str(round((i.get_height()), 3)) + '%', fontsize=9, color='black', rotation=45)
+
+    plt.savefig(f"{OUTPUT_DIRECTORY_PATH}processed_too_late_slice1_allpolicy")
+    plt.close()
+
+    # ---
+
+    df_lost_slice_0 = \
+        pd.DataFrame({
+            'server': slice_0[0].index.to_list(),
+            '0_SequentialPriorityMultiSliceMdpPolicy': slice_0[0]['lost'].to_list(),
+            '1_SimplifiedPriorityMultiSliceMdpPolicy': slice_0[1]['lost'].to_list(),
+            '2_MultiSliceStaticPolicy': slice_0[2]['lost'].to_list(),
+            '3_MultiSliceStaticPolicy': slice_0[3]['lost'].to_list(),
+        })
+
+    df_lost_slice_0['server'] = df_lost_slice_0['server'].astype(int)
+    df_lost_slice_0 = df_lost_slice_0.sort_values(by=["server"]).set_index("server")
+
+    ax = df_lost_slice_0.plot(
+        kind='bar',
+        stacked=False,
+        figsize=(25, 10),
+        width=0.8
+    )
+    ax.yaxis.grid(color='gray', linestyle='dashed')
+
+    ax.set_title(f"[High Priority] Lost jobs", pad=40)
+    yticks = np.arange(0, 101, 10)
+    ylabels = ['{}%'.format(i) for i in np.arange(0, 101, 10)]
+    plt.yticks(yticks, ylabels)
+    ax.legend(bbox_to_anchor=(0., 1.01, 1., .102), loc='lower center', ncol=4, borderaxespad=0., frameon=False)
+
+    # create a list to collect the plt.patches data
+    totals = []
+
+    # find the values and append to list
+    for i in ax.patches:
+        totals.append(i.get_height())
+
+    # set individual bar lables using above list
+    total = sum(totals)
+
+    # set individual bar lables using above list
+    for i in ax.patches:
+        # get_x pulls left or right; get_height pushes up or down
+        ax.text(i.get_x(), i.get_height() + .5,
+                str(round((i.get_height()), 3)) + '%', fontsize=9, color='black', rotation=45)
+
+    plt.savefig(f"{OUTPUT_DIRECTORY_PATH}lost_slice0_allpolicy")
+    plt.close()
 
 
+    # ---
 
+    df_lost_slice_1 = \
+        pd.DataFrame({
+            'server': slice_1[0].index.to_list(),
+            '0_SequentialPriorityMultiSliceMdpPolicy': slice_1[0]['lost'].to_list(),
+            '1_SimplifiedPriorityMultiSliceMdpPolicy': slice_1[1]['lost'].to_list(),
+            '2_MultiSliceStaticPolicy': slice_1[2]['lost'].to_list(),
+            '3_MultiSliceStaticPolicy': slice_1[3]['lost'].to_list(),
+        })
+
+    df_lost_slice_1['server'] = df_lost_slice_1['server'].astype(int)
+    df_lost_slice_1 = df_lost_slice_1.sort_values(by=["server"]).set_index("server")
+
+    ax = df_lost_slice_1.plot(
+        kind='bar',
+        stacked=False,
+        figsize=(25, 10),
+        width=0.8
+    )
+    ax.yaxis.grid(color='gray', linestyle='dashed')
+
+    ax.set_title(f"[Low Priority] Lost jobs", pad=40)
+    yticks = np.arange(0, 101, 10)
+    ylabels = ['{}%'.format(i) for i in np.arange(0, 109, 10)]
+    plt.yticks(yticks, ylabels)
+    ax.legend(bbox_to_anchor=(0., 1.01, 1., .102), loc='lower center', ncol=4, borderaxespad=0., frameon=False)
+
+    # create a list to collect the plt.patches data
+    totals = []
+
+    # find the values and append to list
+    for i in ax.patches:
+        totals.append(i.get_height())
+
+    # set individual bar lables using above list
+    total = sum(totals)
+
+    # set individual bar lables using above list
+    for i in ax.patches:
+        # get_x pulls left or right; get_height pushes up or down
+        ax.text(i.get_x(), i.get_height() + .5,
+                str(round((i.get_height()), 3)) + '%', fontsize=9, color='black', rotation=45)
+
+    plt.savefig(f"{OUTPUT_DIRECTORY_PATH}lost_slice1_allpolicy")
+    plt.close()
 
 
 if __name__ == '__main__':
