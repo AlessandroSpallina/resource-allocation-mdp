@@ -303,30 +303,26 @@ cdef class SingleSliceMdpPolicy(Policy):
 
         cdef np.ndarray lost_probabilies_tmp = np.zeros(len(self._config.arrivals_histogram))
 
-        # print(f"___From_State {from_state} -> To_State {to_state}___", flush=True)
         for arrivals in range(self._config.queue_size - to_state.k + 1, len(self._config.arrivals_histogram)):
             for processed in range(0, len(h_d)):
                 lost_jobs = to_state.k - processed + arrivals - self._config.queue_size
 
                 if lost_jobs > 0:
-                    # print(f"From_State {from_state} -> To_State {to_state}: Lost {lost_jobs} jobs", flush=True)
                     lost_probabilies_tmp[lost_jobs] += self._config.arrivals_histogram[arrivals] * h_d[processed]
 
-        # for prob_i in range(len(lost_probabilies_tmp)):
-        #     print(f"index {prob_i} - prob: {lost_probabilies_tmp[prob_i]}", flush=True)
-        #     # cost3 += lost_probabilies_tmp[prob_i] * prob_i * self._config.c_lost
+        if self._config.loss_expected_pessimistic:
+            # lets consider the worse case (the maximum amount of lost jobs!)
+            cost3 = lost_probabilies_tmp.sum() * len(lost_probabilies_tmp - 1) * self._config.c_lost
 
-        # lets consider the worse case (the maximum amount of lost jobs!)
-        # print(f"probabilities {lost_probabilies_tmp.sum()} * {len(lost_probabilies_tmp)} * {self._config.c_lost}", flush=True)
-        cost3 = lost_probabilies_tmp.sum() * len(lost_probabilies_tmp - 1) * self._config.c_lost
+        else:
+            for i, v in enumerate(lost_probabilies_tmp):
+                cost3 += v * i * self._config.c_lost
 
         cdef float rew_tmp = - (self._config.alpha * cost1 +
                                 self._config.beta * cost2 +
                                 self._config.gamma * cost3 +
                                 self._config.delta * cost4 +
                                 self._config.epsilon * cost5)
-
-        # print(f"___From_State {from_state} -> To_State {to_state}: Cost {rew_tmp}___", flush=True)
 
         return rew_tmp
 

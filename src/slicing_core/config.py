@@ -20,7 +20,8 @@ template = {
         'algorithm': confuse.OneOf(['vi', 'rvi', 'fh']),
         'discount_factor': float,
         'queue_scaling': confuse.Integer(),
-        'normalize_reward_matrix': confuse.OneOf([bool])
+        'normalize_reward_matrix': confuse.OneOf([bool]),
+        'loss_expected_pessimistic': confuse.Sequence(bool)
     },
     'simulation': {
         'runs': confuse.Integer(),
@@ -59,7 +60,7 @@ class Config:
 
     @property
     def hash(self):
-        tmp = self.__dict__
+        tmp = copy(self.__dict__)
         tmp.pop('_validated', None)
         return hashlib.sha256(json.dumps(tmp).encode('UTF8')).hexdigest()
 
@@ -86,8 +87,12 @@ class SlicingConfig(Config):
         to_ret = copy(self)
         for key in self.slices[index]:
             setattr(to_ret, key, self.slices[index][key])
-        to_ret.slices = None
-        to_ret.slice_count = None
+        # setattr(to_ret, 'loss_expected_pessimistic', self.get_property('mdp/loss_expected_pessimistic')[index])
+        del to_ret.slices
+        del to_ret.slice_count
+        # to_ret.slices = None
+        # to_ret.slice_count = None
+
         return to_ret
 
     def _normalize_alpha_beta_gamma_delta_epsilon(self):
@@ -117,6 +122,11 @@ class MdpPolicyConfig(SlicingConfig):
             self.timeslots = self.get_property('simulation/timeslots')
         if self.algorithm != 'rvi':
             self.discount_factor = self.get_property('mdp/discount_factor')
+
+    def slice(self, index):
+        to_ret = SlicingConfig.slice(self, index)
+        setattr(to_ret, 'loss_expected_pessimistic', self.get_property('mdp/loss_expected_pessimistic')[index])
+        return to_ret
 
 
 class StaticPolicyConfig(SlicingConfig):
