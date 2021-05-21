@@ -8,8 +8,11 @@ import src.plotter.utils as utils
 from src.plotter.main import *
 
 
-BATCH_RESULT_PATH = "C:/Users/SK3LA/PycharmProjects/Slicing-5G-MDP/res/RISULTATI/cjob_x5_in_high_prio/result/"
-OUTPUT_DIRECTORY_PATH = f"../../../res/RISULTATI/cjob_x5_in_high_prio/plot/aggregated-{BATCH_RESULT_PATH.split('/')[-2]}/"
+BATCH_RESULT_PATH = "C:/Users/SK3LA/Desktop/WORKSPACE/1_TSP/BATCH_FINALI/@RISULTATI@/res/SAMESERVICE/"
+OUTPUT_DIRECTORY_PATH = f"C:/Users/SK3LA/Desktop/WORKSPACE/1_TSP/BATCH_FINALI/@RISULTATI@/plot/SAMESERVICE/aggregated-{BATCH_RESULT_PATH.split('/')[-2]}/"
+
+# slice deadlines: after that time-slot the job is expired
+DEADLINES = [5, 5]
 
 
 def get_results_path(start_path=BATCH_RESULT_PATH):
@@ -46,17 +49,12 @@ def main():
 
                 slices = filter_stats_per_slice(split_stats_per_slice(imported_data[policy_index]['environment_data']))
 
-                try:
-                    toolate_jobs = sum(slices[0]['processed_jobs']) * slices[0]['wait_time_in_the_system'][1]
-                except IndexError:
-                    toolate_jobs = 0
-
                 policies_aggregated_stats[policy_index]['stats_per_slice'][-1]['slices'].append(
                     {
                         'processed_jobs': sum(slices[0]['processed_jobs']),
                         'incoming_jobs': sum(slices[0]['incoming_jobs']),
                         'lost_jobs': sum(slices[0]['lost_jobs']),
-                        'toolate_jobs': toolate_jobs,
+                        'toolate_jobs': sum(slices[0]['processed_jobs']) * sum(slices[0]['wait_time_in_the_system'][DEADLINES[0]:]),
                         'cost': sum(slices[0]['cost']),
                         'cost_component': np.array(slices[0]['cost_component']).sum(0).tolist()
                      }
@@ -67,7 +65,7 @@ def main():
                         'processed_jobs': sum(slices[1]['processed_jobs']),
                         'incoming_jobs': sum(slices[1]['incoming_jobs']),
                         'lost_jobs': sum(slices[1]['lost_jobs']),
-                        'toolate_jobs': sum(slices[1]['processed_jobs']) * sum(slices[1]['wait_time_in_the_system'][6:]),
+                        'toolate_jobs': sum(slices[1]['processed_jobs']) * sum(slices[1]['wait_time_in_the_system'][DEADLINES[1]:]),
                         'cost': sum(slices[1]['cost']),
                         'cost_component': np.array(slices[1]['cost_component']).sum(0).tolist()
                     }
