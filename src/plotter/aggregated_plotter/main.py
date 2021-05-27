@@ -8,11 +8,11 @@ import src.plotter.utils as utils
 from src.plotter.main import *
 
 
-BATCH_RESULT_PATH = "C:/Users/SK3LA/Desktop/WORKSPACE/1_TSP/BATCH_FINALI/@RISULTATI@/res/SAMESERVICE/"
-OUTPUT_DIRECTORY_PATH = f"C:/Users/SK3LA/Desktop/WORKSPACE/1_TSP/BATCH_FINALI/@RISULTATI@/plot/SAMESERVICE/aggregated-{BATCH_RESULT_PATH.split('/')[-2]}/"
+BATCH_RESULT_PATH = "C:/Users/SK3LA/Desktop/WORKSPACE/1_TSP/BATCH_FINALI/@RISULTATI@/res/SAMESERVICEGAUSIGMA2/"
+OUTPUT_DIRECTORY_PATH = f"C:/Users/SK3LA/Desktop/WORKSPACE/1_TSP/BATCH_FINALI/@RISULTATI@/plot/SAMESERVICEGAUSIGMA2/aggregated-{BATCH_RESULT_PATH.split('/')[-2]}/"
 
 # slice deadlines: after that time-slot the job is expired
-DEADLINES = [5, 5]
+DEADLINES = [1, 5]
 
 
 def get_results_path(start_path=BATCH_RESULT_PATH):
@@ -185,7 +185,7 @@ def main():
                 kind='bar',
                 stacked=False,
                 title=title,
-                figsize=(25, 10),
+                # figsize=(25, 10),
                 width=0.8
             )
             ax.yaxis.grid(color='gray', linestyle='dashed')
@@ -322,7 +322,7 @@ def main():
     ax = df_processed_on_time_slice_0.plot(
         kind='bar',
         stacked=False,
-        figsize=(25, 10),
+        # figsize=(25, 10),
         width=0.8
     )
     ax.yaxis.grid(color='gray', linestyle='dashed')
@@ -345,9 +345,13 @@ def main():
 
     # set individual bar lables using above list
     for i in ax.patches:
-        # get_x pulls left or right; get_height pushes up or down
-        ax.text(i.get_x(), i.get_height() + .5,
-                str(round((i.get_height()), 3)) + '%', fontsize=9, color='black', rotation=45)
+        if i.get_x() > 20:
+            ax.text(i.get_x(), i.get_height() - 5,
+                    str(round((i.get_height()), 3)) + '%', fontsize=9, color='white', rotation=180)
+        else:
+            # get_x pulls left or right; get_height pushes up or down
+            ax.text(i.get_x(), i.get_height() + .5,
+                    str(round((i.get_height()), 3)) + '%', fontsize=9, color='black', rotation=180)
 
     plt.savefig(f"{OUTPUT_DIRECTORY_PATH}processed_on_time_slice0_allpolicy")
     plt.close()
@@ -369,7 +373,7 @@ def main():
     ax = df_processed_on_time_slice_1.plot(
         kind='bar',
         stacked=False,
-        figsize=(25, 10),
+        # figsize=(25, 10),
         width=0.8
     )
     ax.yaxis.grid(color='gray', linestyle='dashed')
@@ -416,7 +420,7 @@ def main():
     ax = df_processed_too_late_slice_0.plot(
         kind='bar',
         stacked=False,
-        figsize=(25, 10),
+        # figsize=(25, 10),
         width=0.8
     )
     ax.yaxis.grid(color='gray', linestyle='dashed')
@@ -463,7 +467,7 @@ def main():
     ax = df_processed_too_late_slice_1.plot(
         kind='bar',
         stacked=False,
-        figsize=(25, 10),
+        # figsize=(25, 10),
         width=0.8
     )
     ax.yaxis.grid(color='gray', linestyle='dashed')
@@ -510,7 +514,7 @@ def main():
     ax = df_lost_slice_0.plot(
         kind='bar',
         stacked=False,
-        figsize=(25, 10),
+        # figsize=(25, 10),
         width=0.8
     )
     ax.yaxis.grid(color='gray', linestyle='dashed')
@@ -558,7 +562,7 @@ def main():
     ax = df_lost_slice_1.plot(
         kind='bar',
         stacked=False,
-        figsize=(25, 10),
+        # figsize=(25, 10),
         width=0.8
     )
     ax.yaxis.grid(color='gray', linestyle='dashed')
