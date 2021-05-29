@@ -258,7 +258,7 @@ def plot_slice_results(plot_identifier, base_save_path, stats, window_average, i
                  save_path=f"{base_save_path}per_ts_lost-wa{window_average}")
 
     plotter.plot_two_scales(jobs_in_queue_per_ts[1], active_servers_per_ts[1], xdata=jobs_in_queue_per_ts[0],
-                            ylabel1="jobs in queue", ylabel2="active servers", xlabel="timeslot",
+                            ylabel1="requests in queue", ylabel2="active servers", xlabel="timeslot",
                             title=f"[{plot_identifier}] Mean Queue and Servers",
                             save_path=f"{base_save_path}jobs_in_queue_vs_active_servers-wa{window_average}")
 
@@ -425,7 +425,8 @@ def main(argv):
 
     DATA_PATH = cli_args['data']
     EXPORTED_FILES_PATH = f"../../res/plots/{DATA_PATH.split('/')[-2]}/"
-    AVERAGE_WINDOWS = [10, 90, 170, 250]
+    #AVERAGE_WINDOWS = [10, 90, 170, 250]
+    AVERAGE_WINDOWS = [250, 300, 350]
 
     print(f"PLOTTER: Current directory {os.getcwd()}")
 
@@ -460,7 +461,7 @@ def main(argv):
             os.makedirs(f"{result_base_path}slice-{slice_label}")
             plot_slices_configs(f"slice-{slice_label}", f"{result_base_path}slice-{slice_label}/", result['slices'][i])
             for aw in AVERAGE_WINDOWS:
-                plot_slice_results(f"slice-{slice_label}", f"{result_base_path}slice-{slice_label}/", stats_per_slice[i], aw)
+                plot_slice_results(f"service-{slice_label}", f"{result_base_path}slice-{slice_label}/", stats_per_slice[i], aw)
                 # plot_slice_results_confidence(f"slice-{slice_label}", f"{result_base_path}slice-{slice_label}/", raw_stats_per_slice, i, aw)
             tmp = stats_per_slice[i]
             tmp['policy_name'] = result['name']
@@ -469,7 +470,7 @@ def main(argv):
         merged_per_system = merge_stats_for_system_pow(result['environment_data'])
         os.makedirs(f"{result_base_path}system_pow")
         for aw in AVERAGE_WINDOWS:
-            plot_slice_results(f"system-pow",
+            plot_slice_results(f"system",
                                f"{result_base_path}system_pow/", merged_per_system, aw, is_system_pow=True)
         plot_policy(f"{result_base_path}system_pow/", result['policy'], result['states'])
 

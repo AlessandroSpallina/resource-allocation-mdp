@@ -168,7 +168,7 @@ def plot_two_scales(data1, data2, xdata=[], ylabel1="", ylabel2="", xlabel="", t
 
     color = 'tab:blue'
     ax2.set_ylabel(ylabel2, color=color)  # we already handled the x-label with ax1
-    p2 = ax2.plot(xdata if len(xdata) else t, data2, color=color, label=ylabel2)
+    p2 = ax2.plot(xdata if len(xdata) else t, data2, color=color, label=ylabel2, linestyle='dashed')
     ax2.tick_params(axis='y', labelcolor=color)
 
     p = p1 + p2
