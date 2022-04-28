@@ -1,5 +1,3 @@
 # Slicing-5G-MDP
-Formultion document: https://www.overleaf.com/project/5efcad957a2a600001f02cbb
-
-Notes: https://www.dropbox.com/sh/3j8wnjl9ng1epjo/AAB6_18oOBBzbQXkrD_khVDba?dl=0
+Presentation: [here](https://docs.google.com/presentation/d/e/2PACX-1vTzljiBgxwC3JvTBHWWdApsdHx8b9qxzTt7m9_6SRdAB2-B9iyJg6AMIy3EzK_6YCTBqliwWn6FFwDf/pub?start=false&loop=false&delayms=60000)
 
